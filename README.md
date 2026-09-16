@@ -14,9 +14,7 @@ Deployment commands and runtime options: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md
 
 ![Workflow overview: raw waveforms → preprocess → PhaseNet+ → GaMMA → HYPOINVERSE → HypoDD → PALM MESS → joint HypoDD → three CC-tier catalogs](docs/images/catalog-pipeline-dark.png)
 
-
-
-## Why hand it to an agent
+Still hand-coding? Still doing research the old-fashioned way? So last season!
 
 - **Messy data? Unfamiliar formats? No fixed ingestion code.** The preprocessing stage intentionally ships none: the agent inspects your raw inputs and writes the dataset-specific adaptation itself, while the scientific configuration stays pinned (instrument-response removal to m/s, 1–40 Hz bandpass with Nyquist fallback, demean/detrend and taper handling, resample to 100 Hz, explicit per-channel merge). Output lands in a standard archive: one UTC day per station, three components.
 - **Parameters are derived and confirmed, not guessed.** Every later stage computes reference parameters from the actual upstream data and asks you to confirm or override them — compute resources at start-up, GaMMA's DBSCAN eps, the HypoDD DAMP trials, and more. The papers and software manuals behind every stage are exported into a layered LLM-Wiki knowledge base, so parameter choices are cross-checked against the cited sources instead of hallucinated defaults.
@@ -25,9 +23,7 @@ The workflow executed accurately on GLM-5.3, Kimi K3 and GPT-5.6; a 1M-token con
 
 A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, and post-MESS joint CC+CT HypoDD. The final joint stage uses independent PhaseNet+ arrivals for CT and produces exactly three CC-threshold catalogs. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
 
-The 0.3.0-dev revision adds `post_detection_relocation` after `detection`. Read [post-MESS joint relocation](docs/POST_MESS_RELOCATION.md) for inputs, parameters, output states and migration. Start a new run when adopting this revision; retain old run contracts and knowledge locks.
-
-**Start with [AGENTS.md](AGENTS.md) when handing this package to another agent.** No conversation history is required. Project-authored code uses MIT; third-party software retains its own terms.
+Project-authored code uses MIT; third-party software retains its own terms.
 
 This release targets **Linux x86-64** and includes pinned native binaries and a local PhaseNet+ checkpoint in the offline distribution. Its environment snapshots originate from a glibc 2.31 host. Run the compatibility checks on the destination machine. See [validation scope](docs/VALIDATION.md); another physical machine and another observed region must be evaluated there before claiming they have been tested.
 
