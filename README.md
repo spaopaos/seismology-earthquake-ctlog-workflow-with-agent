@@ -12,7 +12,7 @@ Deployment commands and runtime options: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md
 
 ## Workflow overview
 
-![Uploading image.png…]()
+![Workflow overview: raw waveforms → preprocess → PhaseNet+ → GaMMA → HYPOINVERSE → HypoDD → PALM MESS → joint HypoDD → three CC-tier catalogs](docs/images/catalog-pipeline-dark.png)
 
 
 
