@@ -10,6 +10,13 @@ Agent-guided seismology workflow: PhaseNet+ picking, GaMMA association, HYPOINVE
 
 Deployment commands and runtime options: [Environment setup and deployment](#environment-setup-and-deployment) below, and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
+## Why hand it to an agent
+
+- **Messy data? Unfamiliar formats? No fixed ingestion code.** The preprocessing stage intentionally ships none: the agent inspects your raw inputs and writes the dataset-specific adaptation itself, while the scientific configuration stays pinned (instrument-response removal to m/s, 1–40 Hz bandpass with Nyquist fallback, demean/detrend and taper handling, resample to 100 Hz, explicit per-channel merge). Output lands in a standard archive: one UTC day per station, three components.
+- **Parameters are derived and confirmed, not guessed.** Every later stage computes reference parameters from the actual upstream data and asks you to confirm or override them — compute resources at start-up, GaMMA's DBSCAN eps, the HypoDD DAMP trials, and more. The papers and software manuals behind every stage are exported into a layered LLM-Wiki knowledge base, so parameter choices are cross-checked against the cited sources instead of hallucinated defaults.
+- **QC at every stage.** Each stage ships data-driven visual checks and validity reports; a green contract is never silently treated as scientific truth, and empty or degraded products are reported rather than hidden. Until full AGI arrives, guided semi-automatic research is the practical optimum.
+- **Model-agnostic.** The workflow executed accurately on GLM-5.3, Kimi K3 and GPT-5.6; a 1M-token context window gives the best experience.
+
 A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, and post-MESS joint CC+CT HypoDD. The final joint stage uses independent PhaseNet+ arrivals for CT and produces exactly three CC-threshold catalogs. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
 
 The 0.3.0-dev revision adds `post_detection_relocation` after `detection`. Read [post-MESS joint relocation](docs/POST_MESS_RELOCATION.md) for inputs, parameters, output states and migration. Start a new run when adopting this revision; retain old run contracts and knowledge locks.
