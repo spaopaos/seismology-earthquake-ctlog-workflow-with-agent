@@ -2,6 +2,14 @@
 
 Agent-guided seismology workflow: PhaseNet+ picking, GaMMA association, HYPOINVERSE location, HypoDD relocation and PALM MESS detection — from raw waveforms to multi-grade earthquake catalogs（全CUG（武汉）最好用的指导agent从连续波形到地震目录制作框架）.
 
+## Three steps to a catalog
+
+1. **Get the package** — clone this repository, download the assets of the [v0.3.0-dev release](../../releases/tag/v0.3.0-dev), and run `scripts/restore_offline_assets.sh <download-dir>` to restore the runtime archives, model weights and native binaries.
+2. **Hand it to an agent** — point the agent at [AGENTS.md](AGENTS.md). It is self-contained; the agent reads the docs and skills it needs. No conversation history is required.
+3. **Point it at your data** — give the agent your raw waveforms, response information and station metadata, plus a new run directory. The agent writes the dataset-specific preprocessing and then drives the stages `preprocess → picking → association → location → relocation → detection → post_detection_relocation`, pausing at documented decision points (GaMMA eps, HypoDD DAMP) for your confirmation.
+
+Deployment commands and runtime options: [Environment setup and deployment](#environment-setup-and-deployment) below, and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, and post-MESS joint CC+CT HypoDD. The final joint stage uses independent PhaseNet+ arrivals for CT and produces exactly three CC-threshold catalogs. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
 
 The 0.3.0-dev revision adds `post_detection_relocation` after `detection`. Read [post-MESS joint relocation](docs/POST_MESS_RELOCATION.md) for inputs, parameters, output states and migration. Start a new run when adopting this revision; retain old run contracts and knowledge locks.
@@ -16,7 +24,7 @@ Unpack the v0.2.0 upgrade archive beside the old package. Reuse the old explicit
 
 The maintained Wiki remains in its original authoring folder. This package contains 32 exported pages, their eight original PDFs/texts, six execution bindings and access to the supplied HYPOINVERSE 1.40 manual. See [Wiki integration](docs/WIKI_INTEGRATION.md).
 
-## Quick start
+## Environment setup and deployment
 
 For the offline distribution, deploy the supplied existing-environment snapshots to a new directory:
 
