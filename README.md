@@ -6,34 +6,22 @@ Agent-guided seismology workflow: PhaseNet+ picking, GaMMA association, HYPOINVE
 
 1. **Get the package** — clone this repository, download the assets of the [v0.3.0-dev release](../../releases/tag/v0.3.0-dev), and run `scripts/restore_offline_assets.sh <download-dir>` to restore the runtime archives, model weights and native binaries.
 2. **Hand it to an agent** — point the agent at [AGENTS.md](AGENTS.md). It is self-contained; the agent reads the docs and skills it needs. No conversation history is required.
-3. **Point it at your data** — give the agent your raw waveforms, response information and station metadata, plus a new run directory. The agent writes the dataset-specific preprocessing and then drives the stages `preprocess → picking → association → location → relocation → detection → post_detection_relocation`, pausing at documented decision points (GaMMA eps, HypoDD DAMP) for your confirmation.
+3. **Point it at your data** — give the agent your raw waveforms, response information and station metadata, plus a new run directory. The agent writes the dataset-specific preprocessing and then drives the stages `preprocess → picking → association → location → relocation → detection → post_detection_relocation`, pausing at documented decision points (GaMMA eps, HypoDD DAMP...) for your confirmation.
 
 Deployment commands and runtime options: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Workflow overview
 
-```mermaid
-flowchart LR
-    A["Raw continuous waveforms<br/>(any layout / format)"] --> B["Preprocess<br/>agent-adaptive ingestion · fixed scientific config<br/>100 Hz · m/s · 1–40 Hz · Z/N/E per UTC day"]
-    B --> C["PhaseNet+ picking<br/>P/S arrivals + polarity"]
-    C --> D["GaMMA association<br/>DBSCAN eps — user-confirmed"]
-    D --> E["HYPOINVERSE 1.40<br/>absolute location"]
-    E --> F["HypoDD · round 1<br/>catalog-time (CT) relocation · DAMP trials"]
-    F --> G["PALM MESS<br/>matched-filter detection"]
-    G --> H["HypoDD · round 2<br/>joint CC + CT relocation<br/>(CT from independent PhaseNet+ arrivals)"]
-    H --> I1["Catalog CC ≥ 0.4"]
-    H --> I2["Catalog CC ≥ 0.6"]
-    H --> I3["Catalog CC ≥ 0.8"]
-```
+![Uploading image.png…]()
 
-Every stage publishes a versioned contract plus data-driven QC; parameter choices are cross-checked against the LLM-Wiki snapshot of the papers listed in [References](#references).
+
 
 ## Why hand it to an agent
 
 - **Messy data? Unfamiliar formats? No fixed ingestion code.** The preprocessing stage intentionally ships none: the agent inspects your raw inputs and writes the dataset-specific adaptation itself, while the scientific configuration stays pinned (instrument-response removal to m/s, 1–40 Hz bandpass with Nyquist fallback, demean/detrend and taper handling, resample to 100 Hz, explicit per-channel merge). Output lands in a standard archive: one UTC day per station, three components.
 - **Parameters are derived and confirmed, not guessed.** Every later stage computes reference parameters from the actual upstream data and asks you to confirm or override them — compute resources at start-up, GaMMA's DBSCAN eps, the HypoDD DAMP trials, and more. The papers and software manuals behind every stage are exported into a layered LLM-Wiki knowledge base, so parameter choices are cross-checked against the cited sources instead of hallucinated defaults.
 - **QC at every stage.** Each stage ships data-driven visual checks and validity reports; a green contract is never silently treated as scientific truth, and empty or degraded products are reported rather than hidden. Until full AGI arrives, guided semi-automatic research is the practical optimum.
-- **Model-agnostic.** The workflow executed accurately on GLM-5.3, Kimi K3 and GPT-5.6; a 1M-token context window gives the best experience.
+The workflow executed accurately on GLM-5.3, Kimi K3 and GPT-5.6; a 1M-token context window gives the best experience.
 
 A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, and post-MESS joint CC+CT HypoDD. The final joint stage uses independent PhaseNet+ arrivals for CT and produces exactly three CC-threshold catalogs. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
 
@@ -59,5 +47,5 @@ Agent-guided science:
 - Zhang, J., Clairmont, C., Que, X., Li, W., Chen, W., Li, C., & Ma, X. (2025). Streamlining geoscience data analysis with an LLM-driven workflow. *Applied Computing and Geosciences*, 25, 100218. https://doi.org/10.1016/j.acags.2024.100218
 - Ren, Y., Yu, S., Chen, K., & Ma, J. (2025). Seismology modeling agent: A smart assistant for geophysical researchers. *arXiv:2512.14429*.
 
-All eight sources ship as PDFs with SHA-256 provenance in the offline knowledge library (`knowledge/library/raw/sources/`).
+
 
