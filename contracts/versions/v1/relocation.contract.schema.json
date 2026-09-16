@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "relocation.contract.schema.json",
+  "title": "Relocation contract (ph2dt + HypoDD)",
+  "description": "重定位环节的产出契约：配对参数、求解设置、重定位目录与事件映射。",
+  "allOf": [{"$ref": "common.schema.json"}],
+  "type": "object",
+  "required": [
+    "pairing",
+    "times",
+    "solver",
+    "outputs",
+    "stats"
+  ],
+  "properties": {
+    "stage": {"const": "relocation"},
+    "pairing": {
+      "type": "object",
+      "properties": {
+        "max_pair_dist_km": {"type": "number"},
+        "min_links": {"type": "integer"},
+        "max_sep_km": {"type": "number"}
+      },
+      "additionalProperties": true
+    },
+    "times": {
+      "type": "object",
+      "required": ["catalog_dt", "cross_correlation"],
+      "properties": {
+        "catalog_dt": {"type": "boolean", "description": "目录差分时（ph2dt）"},
+        "cross_correlation": {
+          "type": "boolean",
+          "description": "是否叠加波形互相关差分时；true 时须补 CC 窗口/带通等字段（后续细化）"
+        },
+        "cc_window_s": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+        "cc_band_hz": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}
+      },
+      "additionalProperties": true
+    },
+    "solver": {
+      "type": "object",
+      "properties": {
+        "damping_trials": {
+          "type": "array",
+          "items": {"type": "number"},
+          "description": "少量阻尼试运行取值"
+        },
+        "lsqr_iters": {"type": "integer"},
+        "trial_curve_path": {"type": "string", "description": "阻尼试算曲线（条件数/残差权衡）"}
+      },
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["reloc_path", "event_mapping"],
+      "properties": {
+        "reloc_path": {"type": "string"},
+        "residuals_before_after": {"type": "string"},
+        "event_mapping": {
+          "type": "string",
+          "description": "与 location_contract 事件的对应表；孤儿事件保持可溯源"
+        }
+      },
+      "additionalProperties": true
+    },
+    "stats": {
+      "type": "object",
+      "required": ["events_relocated", "orphans"],
+      "properties": {
+        "events_relocated": {"type": "integer"},
+        "clusters": {"type": "integer"},
+        "orphans": {"type": "integer"},
+        "rms_median_before_s": {"type": "number"},
+        "rms_median_after_s": {"type": "number"},
+        "tier_counts": {
+          "type": "object",
+          "description": "三档目录各档事件数：high/medium/low（用户裁定 2026-09-11）",
+          "properties": {
+            "high": {"type": "integer"},
+            "medium": {"type": "integer"},
+            "low": {"type": "integer"}
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "tiers": {
+      "type": "object",
+      "description": "三档目录（v2 含义：档位=参数严格度，每档独立全流程含各自 DAMP 试算，每档目录全量保留；非质量切分）。键：loose/standard/strict，各档含 params、damp 证据、目录路径、事件数",
+      "properties": {
+        "definitions": {"type": "object"},
+        "paths": {"type": "object"},
+        "damp_per_tier": {"type": "object"},
+        "counts": {"type": "object"}
+      },
+      "additionalProperties": true
+    }
+  }
+}

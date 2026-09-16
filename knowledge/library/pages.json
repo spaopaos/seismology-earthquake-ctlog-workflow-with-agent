@@ -1,0 +1,614 @@
+{
+  "scientific-agent-comparison": {
+    "id": "scientific-agent-comparison",
+    "title": "Comparison of Scientific Agent Architectures",
+    "type": "comparison",
+    "path": "wiki/comparisons/scientific-agent-comparison.md",
+    "source_ids": [
+      "zhou-2024-autoba",
+      "zhang-2025-geoscience-workflow",
+      "ren-2025-seismology-modeling-agent"
+    ],
+    "related": [
+      "autoba",
+      "mindat-agent-workflow",
+      "specfem-mcp",
+      "research-agent-design-lessons"
+    ],
+    "original_sha256": "f5df8c48d2563ab09cf1ff8ee5d95fbd800749de4795a13714847cdc71caf38d",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "ec1da28fd2c93de65c711ff82fff53d2d4db5d5db9c61131033abb5bf1d4bce0"
+  },
+  "seismic-method-comparison": {
+    "id": "seismic-method-comparison",
+    "title": "Roles of the Seismic Processing Methods",
+    "type": "comparison",
+    "path": "wiki/comparisons/seismic-method-comparison.md",
+    "source_ids": [
+      "zhu-2019-phasenet",
+      "zhu-2022-gamma",
+      "klein-2002-hypoinverse",
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "catalog-construction",
+      "phase-picking",
+      "phase-association",
+      "absolute-location",
+      "double-difference-relocation",
+      "matched-filter-detection"
+    ],
+    "original_sha256": "c4c4791adea815625e149976a43a0494c18de31314e65e7e3fa128b26818b192",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "e2feb4dad5cbd0c1ce7021cfe6757be2754522665555ba2c94140594d825975d"
+  },
+  "absolute-location": {
+    "id": "absolute-location",
+    "title": "Absolute Earthquake Location",
+    "type": "concept",
+    "path": "wiki/concepts/absolute-location.md",
+    "source_ids": [
+      "klein-2002-hypoinverse",
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "hypoinverse",
+      "double-difference-relocation",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "0c7e64741db0e9c1b454e1d1699c94db78a22fcf831d371a9c72cf7afee12890",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "aa3505a38c9c258581413b82edb5f39bb95f9ba4108a94b40cbb3a7eac2e5831"
+  },
+  "agent-orchestration": {
+    "id": "agent-orchestration",
+    "title": "Scientific Agent Orchestration",
+    "type": "concept",
+    "path": "wiki/concepts/agent-orchestration.md",
+    "source_ids": [
+      "zhou-2024-autoba",
+      "zhang-2025-geoscience-workflow",
+      "ren-2025-seismology-modeling-agent"
+    ],
+    "related": [
+      "autoba",
+      "mindat-agent-workflow",
+      "specfem-mcp",
+      "scientific-agent-comparison"
+    ],
+    "original_sha256": "a415c80e86fffab3cb2b3ace43e7d37e9b6493abb54c7bea357c90ce8899fb44",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "22d22d8eb50a4f7ef0f461b382f2ca71d43cb7b57ed6683f630c86e2b55221b6"
+  },
+  "automated-code-repair": {
+    "id": "automated-code-repair",
+    "title": "Automated Code Repair in Scientific Workflows",
+    "type": "concept",
+    "path": "wiki/concepts/automated-code-repair.md",
+    "source_ids": [
+      "zhou-2024-autoba"
+    ],
+    "related": [
+      "autoba",
+      "agent-orchestration",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "f5c7f59a4f897b4e89c8e90bacf6196728a5a7a520b01ff1e8dfb614a3385b72",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "632de60de898f8c72cb485dcdca68fbd0c63c072f049fa1fbf94837481224ab9"
+  },
+  "double-difference-relocation": {
+    "id": "double-difference-relocation",
+    "title": "Double-Difference Relocation",
+    "type": "concept",
+    "path": "wiki/concepts/double-difference-relocation.md",
+    "source_ids": [
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "hypodd",
+      "absolute-location",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "6d83af7f909f3ecc544933adfa5dc3c657634d758d6ef2700d2a66a56d8ef983",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "2d240ce7d2b99b6b333afc0f9c7f60dedc305dbbb10e9a8d8a1fa9adfce080a4"
+  },
+  "matched-filter-detection": {
+    "id": "matched-filter-detection",
+    "title": "Matched-Filter Earthquake Detection",
+    "type": "concept",
+    "path": "wiki/concepts/matched-filter-detection.md",
+    "source_ids": [
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "palm-mess",
+      "phase-picking",
+      "double-difference-relocation"
+    ],
+    "original_sha256": "fbecc18270b3da94225394ea8811829ec1dcefe8b93d27243e658bd28580351f",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "78f6f7a3f17e338b3b420edef4b676b00f16af03246c6fdcf4f3f61c4794bdc1"
+  },
+  "phase-association": {
+    "id": "phase-association",
+    "title": "Earthquake Phase Association",
+    "type": "concept",
+    "path": "wiki/concepts/phase-association.md",
+    "source_ids": [
+      "zhu-2022-gamma",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "gamma",
+      "phase-picking",
+      "absolute-location"
+    ],
+    "original_sha256": "835845d94c2606079dc5e3f8b6a525f82524be43917c32f3139ca569506def92",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "f7457fe34a190c2d4d7e6a74d5451ec3719298a5a729a3b20fc5980d52f3b2ce"
+  },
+  "phase-picking": {
+    "id": "phase-picking",
+    "title": "Seismic Phase Picking",
+    "type": "concept",
+    "path": "wiki/concepts/phase-picking.md",
+    "source_ids": [
+      "zhu-2019-phasenet",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "phasenet",
+      "palm-mess",
+      "phase-association"
+    ],
+    "original_sha256": "f6f2600f7959cbad8cfe890a11f4a53080517936d34a83117c90836fa27e345d",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "c294191bf624760f2da666ab126ba4fceaea16b0ffacf9609d8985f501c06f09"
+  },
+  "tool-contracts-and-provenance": {
+    "id": "tool-contracts-and-provenance",
+    "title": "Scientific Tool Contracts and Provenance",
+    "type": "concept",
+    "path": "wiki/concepts/tool-contracts-and-provenance.md",
+    "source_ids": [
+      "zhang-2025-geoscience-workflow",
+      "ren-2025-seismology-modeling-agent",
+      "zhou-2024-autoba"
+    ],
+    "related": [
+      "mindat-agent-workflow",
+      "specfem-mcp",
+      "agent-orchestration",
+      "research-agent-design-lessons"
+    ],
+    "original_sha256": "39ffdc48ab1027f137ab73f682cc453faf89eaae0dee25a10bb2667210a0e08b",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "e3c84c0609171172fc0b65a33686e33395aa84c1b0939d26d371168200e4351c"
+  },
+  "uncertainty-and-quality-control": {
+    "id": "uncertainty-and-quality-control",
+    "title": "Uncertainty and Quality Control",
+    "type": "concept",
+    "path": "wiki/concepts/uncertainty-and-quality-control.md",
+    "source_ids": [
+      "zhu-2019-phasenet",
+      "zhu-2022-gamma",
+      "klein-2002-hypoinverse",
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "absolute-location",
+      "double-difference-relocation",
+      "catalog-construction"
+    ],
+    "original_sha256": "ead47ee669d15f97c95ad09d81a1f8c8261d838f793cafee6feb10c16f62dc9b",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "73cdf5be570a8f50e0ff308df6429b56f2f19a39212c8e4f7531351a8102abc4"
+  },
+  "autoba": {
+    "id": "autoba",
+    "title": "AutoBA",
+    "type": "entity",
+    "path": "wiki/entities/autoba.md",
+    "source_ids": [
+      "zhou-2024-autoba"
+    ],
+    "related": [
+      "zhou-2024-autoba",
+      "automated-code-repair",
+      "scientific-agent-comparison"
+    ],
+    "original_sha256": "f02c0853443aa036928cff21b0f1dcac518d6096d6d086509b45f6a6af29816b",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "7395c404e6228d4b574293085b1d567ccad85957efd63913d116b172f8451660"
+  },
+  "gamma": {
+    "id": "gamma",
+    "title": "GaMMA",
+    "type": "entity",
+    "path": "wiki/entities/gamma.md",
+    "source_ids": [
+      "zhu-2022-gamma"
+    ],
+    "related": [
+      "zhu-2022-gamma",
+      "phase-association",
+      "phasenet",
+      "hypoinverse"
+    ],
+    "original_sha256": "d1629bf7c47c78197c52db562c4a6ecf829bd071a3de7fada36ff1669646b352",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "346f4f6e143fb998b0678c0335bca6537b865b4a012f7a9c9c1b5b49e3025a82"
+  },
+  "hypodd": {
+    "id": "hypodd",
+    "title": "HypoDD and ph2dt",
+    "type": "entity",
+    "path": "wiki/entities/hypodd.md",
+    "source_ids": [
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "waldhauser-2001-hypodd",
+      "double-difference-relocation",
+      "hypoinverse"
+    ],
+    "original_sha256": "ce7d34e7cba8b0b9aee527d52c3182ea3ebcfaa4f8e2a8d3f23c25f7b30f38c3",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "f9d7fb08b7db049c240ba7275a14d07751bbb64a09bb932eec87f5e2d7dd6297"
+  },
+  "hypoinverse": {
+    "id": "hypoinverse",
+    "title": "HYPOINVERSE",
+    "type": "entity",
+    "path": "wiki/entities/hypoinverse.md",
+    "source_ids": [
+      "klein-2002-hypoinverse",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "klein-2002-hypoinverse",
+      "absolute-location",
+      "hypodd"
+    ],
+    "original_sha256": "f1a5a798cc7c7577ddcd89a308657704582b1615d452ad3549a073c782a68f9a",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "0c24e588ecd9e2a43df88dea6b455b41700c7cb5b0ba2f63f3d35702d4e9ece7"
+  },
+  "mindat-agent-workflow": {
+    "id": "mindat-agent-workflow",
+    "title": "Mindat LLM-Driven Workflow",
+    "type": "entity",
+    "path": "wiki/entities/mindat-agent-workflow.md",
+    "source_ids": [
+      "zhang-2025-geoscience-workflow"
+    ],
+    "related": [
+      "zhang-2025-geoscience-workflow",
+      "agent-orchestration",
+      "tool-contracts-and-provenance"
+    ],
+    "original_sha256": "a2dea60ee5f621abedf062208fc4edbe3b36a74ea9dc8a24b7c85e53f9d463f8",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "0ed30bd4d83fd7c7cf958b9e141a2ffcd65b19ecb3f713985a42220d47701d4a"
+  },
+  "palm-mess": {
+    "id": "palm-mess",
+    "title": "PALM and MESS",
+    "type": "entity",
+    "path": "wiki/entities/palm-mess.md",
+    "source_ids": [
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "zhou-2022-palm",
+      "matched-filter-detection",
+      "hypodd",
+      "catalog-construction"
+    ],
+    "original_sha256": "d152f4127237a871efbe7bb6a4d36d57d6a0ec35c843dd00013119239edbbd65",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "fcfce318ce2b77e49c37e839ec86f81cc7aaca345afe331532b57f2830127ee4"
+  },
+  "phasenet": {
+    "id": "phasenet",
+    "title": "PhaseNet",
+    "type": "entity",
+    "path": "wiki/entities/phasenet.md",
+    "source_ids": [
+      "zhu-2019-phasenet"
+    ],
+    "related": [
+      "zhu-2019-phasenet",
+      "phase-picking",
+      "gamma"
+    ],
+    "original_sha256": "1938aec0d8a54fd2449dc94623480cbb0c0246373e408533df2cbeebd7765111",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "f8e64948f194073d12418458d7a9d008e70d3fc3df2ce9826892a1d6e9fc730c"
+  },
+  "specfem-mcp": {
+    "id": "specfem-mcp",
+    "title": "SPECFEM MCP Server Suite",
+    "type": "entity",
+    "path": "wiki/entities/specfem-mcp.md",
+    "source_ids": [
+      "ren-2025-seismology-modeling-agent"
+    ],
+    "related": [
+      "ren-2025-seismology-modeling-agent",
+      "tool-contracts-and-provenance",
+      "scientific-agent-comparison"
+    ],
+    "original_sha256": "775fa56f6a09f0b32186f6783017532b9c4f3f299731f900924bce369f5512eb",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "061b01effe405a0783dbf9a3f96be83b84b39a83dd72e391c2e488c75fc64f6b"
+  },
+  "overview": {
+    "id": "overview",
+    "title": "Seismology and Scientific Agents",
+    "type": "overview",
+    "path": "wiki/overview.md",
+    "source_ids": [
+      "zhu-2019-phasenet",
+      "zhu-2022-gamma",
+      "klein-2002-hypoinverse",
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm",
+      "zhou-2024-autoba",
+      "zhang-2025-geoscience-workflow",
+      "ren-2025-seismology-modeling-agent"
+    ],
+    "related": [
+      "catalog-construction",
+      "scientific-agent-comparison",
+      "seismic-method-comparison",
+      "research-agent-design-lessons",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "ca280c5b34b9e3c409c1779849a32c3a082475f5367bd74f40d8dbf2c3193cc1",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "9d717ac3225e8fa9141764380d5ae7be2e5549b0c1b907697f67f7ff5fc04e5f"
+  },
+  "agent-evaluation-questions": {
+    "id": "agent-evaluation-questions",
+    "title": "How Should a Seismology Agent Be Evaluated?",
+    "type": "query",
+    "path": "wiki/queries/agent-evaluation-questions.md",
+    "source_ids": [
+      "zhou-2024-autoba",
+      "zhang-2025-geoscience-workflow",
+      "ren-2025-seismology-modeling-agent",
+      "waldhauser-2001-hypodd"
+    ],
+    "related": [
+      "research-agent-design-lessons",
+      "scientific-agent-comparison",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "e6d9ee6f3a27bbc4b01e05112fef77e3d357382a6f4c0b4bed56592c999ca7a3",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "e6d9ee6f3a27bbc4b01e05112fef77e3d357382a6f4c0b4bed56592c999ca7a3"
+  },
+  "version-and-evidence-gaps": {
+    "id": "version-and-evidence-gaps",
+    "title": "Version and Evidence Gaps",
+    "type": "query",
+    "path": "wiki/queries/version-and-evidence-gaps.md",
+    "source_ids": [
+      "zhu-2019-phasenet",
+      "klein-2002-hypoinverse",
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm",
+      "ren-2025-seismology-modeling-agent"
+    ],
+    "related": [
+      "phasenet",
+      "hypoinverse",
+      "hypodd",
+      "palm-mess",
+      "specfem-mcp"
+    ],
+    "original_sha256": "450e9b179b1a8d665f0530eed0abf35da79d423000719f87014d849197e321cf",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "450e9b179b1a8d665f0530eed0abf35da79d423000719f87014d849197e321cf"
+  },
+  "klein-2002-hypoinverse": {
+    "id": "klein-2002-hypoinverse",
+    "title": "User’s Guide to HYPOINVERSE-2000, a Fortran Program to Solve for Earthquake Locations and Magnitudes",
+    "type": "source",
+    "path": "wiki/sources/klein-2002-hypoinverse.md",
+    "source_ids": [
+      "klein-2002-hypoinverse"
+    ],
+    "related": [
+      "hypoinverse",
+      "absolute-location",
+      "uncertainty-and-quality-control",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "4bc75c3fcb04fd75f8d3d6f99185c945522a9fd9aaec6885dc4c371ed3e65c79",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "f852abec22e1a7450c43af9aabd33c1d3a264da5e4cff180247ac40075804d36"
+  },
+  "ren-2025-seismology-modeling-agent": {
+    "id": "ren-2025-seismology-modeling-agent",
+    "title": "Seismology modeling agent: A smart assistant for geophysical researchers",
+    "type": "source",
+    "path": "wiki/sources/ren-2025-seismology-modeling-agent.md",
+    "source_ids": [
+      "ren-2025-seismology-modeling-agent"
+    ],
+    "related": [
+      "specfem-mcp",
+      "agent-orchestration",
+      "tool-contracts-and-provenance",
+      "scientific-agent-comparison",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "8256ebbbc1a37986350049c630114225234ac34cac2892931cd6f18d3011d603",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "15aaa2350b8dcd98fa8c036806d58cb28c8029d171ee590e8251879aa3965948"
+  },
+  "waldhauser-2001-hypodd": {
+    "id": "waldhauser-2001-hypodd",
+    "title": "hypoDD — A Program to Compute Double-Difference Hypocenter Locations",
+    "type": "source",
+    "path": "wiki/sources/waldhauser-2001-hypodd.md",
+    "source_ids": [
+      "waldhauser-2001-hypodd"
+    ],
+    "related": [
+      "hypodd",
+      "double-difference-relocation",
+      "uncertainty-and-quality-control",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "7dd91e1bec9b3b7718128af3b56a34eb01236c990612ecf970ceabe9044c0b66",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "837af3ef3e72970662679092714aa5804eb34a0bf108ff4774eadb41fa5710cc"
+  },
+  "zhang-2025-geoscience-workflow": {
+    "id": "zhang-2025-geoscience-workflow",
+    "title": "Streamlining geoscience data analysis with an LLM-driven workflow",
+    "type": "source",
+    "path": "wiki/sources/zhang-2025-geoscience-workflow.md",
+    "source_ids": [
+      "zhang-2025-geoscience-workflow"
+    ],
+    "related": [
+      "mindat-agent-workflow",
+      "agent-orchestration",
+      "tool-contracts-and-provenance",
+      "scientific-agent-comparison"
+    ],
+    "original_sha256": "b0f59294d96ef31e9ffc67ea353db49fba5353876f84aad14426e7cc02b0e70e",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "e72d6425fb5d91818a36400c96707a8f4099f74cf018c8b4ea08282fe5c08514"
+  },
+  "zhou-2022-palm": {
+    "id": "zhou-2022-palm",
+    "title": "An Earthquake Detection and Location Architecture for Continuous Seismograms: Phase Picking, Association, Location, and Matched Filter (PALM)",
+    "type": "source",
+    "path": "wiki/sources/zhou-2022-palm.md",
+    "source_ids": [
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "palm-mess",
+      "matched-filter-detection",
+      "catalog-construction",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "7181d2e53e2db98f5af4d8c6b371cbacff72300f2c1b70ce11591d7abb57c027",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "2379dc45cf74f4280fd6c39083b2037046767af1af8a7e297541902cfb0709d1"
+  },
+  "zhou-2024-autoba": {
+    "id": "zhou-2024-autoba",
+    "title": "An AI Agent for Fully Automated Multi-Omic Analyses",
+    "type": "source",
+    "path": "wiki/sources/zhou-2024-autoba.md",
+    "source_ids": [
+      "zhou-2024-autoba"
+    ],
+    "related": [
+      "autoba",
+      "agent-orchestration",
+      "automated-code-repair",
+      "scientific-agent-comparison"
+    ],
+    "original_sha256": "c49cd9f9319151b231f7d4619bf989578f94431ab85ee3ade3fdc2ebfcad3b84",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "4b99c50ceeb5c4d594db9d0d1265222b9decf2aba20684837389d254c647e502"
+  },
+  "zhu-2019-phasenet": {
+    "id": "zhu-2019-phasenet",
+    "title": "PhaseNet: a deep-neural-network-based seismic arrival-time picking method",
+    "type": "source",
+    "path": "wiki/sources/zhu-2019-phasenet.md",
+    "source_ids": [
+      "zhu-2019-phasenet"
+    ],
+    "related": [
+      "phasenet",
+      "phase-picking",
+      "catalog-construction",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "38694f2bbf9b2a9a97eb063b7f81b3a4e6c623b575425f0c82a229b1fb55d1f8",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "d42863cc703d8dc20851dd42887ba9624743bb3bd10ba4eadcd639a067bad306"
+  },
+  "zhu-2022-gamma": {
+    "id": "zhu-2022-gamma",
+    "title": "Earthquake Phase Association Using a Bayesian Gaussian Mixture Model",
+    "type": "source",
+    "path": "wiki/sources/zhu-2022-gamma.md",
+    "source_ids": [
+      "zhu-2022-gamma"
+    ],
+    "related": [
+      "gamma",
+      "phase-association",
+      "catalog-construction",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "9d2c89b5db6eeddf3c556747a9740222c3248ecc36827985aa4af241c5493496",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "461fefc81e6b23a7b965d434ce3f47671810fd1dc6067aa5f431a78ad9f1093e"
+  },
+  "catalog-construction": {
+    "id": "catalog-construction",
+    "title": "From Waveforms to an Expanded Earthquake Catalog",
+    "type": "synthesis",
+    "path": "wiki/synthesis/catalog-construction.md",
+    "source_ids": [
+      "zhu-2019-phasenet",
+      "zhu-2022-gamma",
+      "klein-2002-hypoinverse",
+      "waldhauser-2001-hypodd",
+      "zhou-2022-palm"
+    ],
+    "related": [
+      "seismic-method-comparison",
+      "phasenet",
+      "gamma",
+      "hypoinverse",
+      "hypodd",
+      "palm-mess",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "05400c877c96f08dc2c42266620f5ef89d555e26ab81da92a7a0831c090fdfac",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "08d2538f3920004fd95ec5db527eb76837d640d2c9e0a7da9231e515ce19f343"
+  },
+  "research-agent-design-lessons": {
+    "id": "research-agent-design-lessons",
+    "title": "Design Lessons for a Seismology Research Agent",
+    "type": "synthesis",
+    "path": "wiki/synthesis/research-agent-design-lessons.md",
+    "source_ids": [
+      "zhou-2024-autoba",
+      "zhang-2025-geoscience-workflow",
+      "ren-2025-seismology-modeling-agent",
+      "waldhauser-2001-hypodd"
+    ],
+    "related": [
+      "scientific-agent-comparison",
+      "tool-contracts-and-provenance",
+      "agent-orchestration",
+      "agent-evaluation-questions"
+    ],
+    "original_sha256": "ac14bf0cf5228e1e5700aa3fe731ba796a69429918d3bfea46ad3f158c2300eb",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "37e28eb59dafa75593ac9594ada211a1720054b453b4a6940bf4c3a9975cf12b"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "config_version": "1.0",
+  "run_id": "new-region",
+  "raw_inputs": ["raw"],
+  "archive": "archive",
+  "stations": "input/stations.csv",
+  "velocity_model": "input/velocity.csv",
+  "region": {
+    "horizontal_datum": "WGS84",
+    "depth_reference": "sea_level",
+    "elevation_units": "m",
+    "depth_range_km": [0, 30],
+    "station_margin_km": 20
+  },
+  "resources": {"cpu_workers": 4, "picking_device": "cpu", "mess_device": "cpu", "gpu_index": null},
+  "picking": {"min_prob": 0.3},
+  "association": {
+    "dbscan_eps_choice": null,
+    "dbscan_eps_s": null,
+    "dbscan_vp_km_s": 6.0,
+    "min_picks": 5,
+    "min_p": 3,
+    "min_s": 1,
+    "min_stations": 3,
+    "max_sigma11": 2.0,
+    "max_sigma22": 1.0,
+    "oversample": 5
+  },
+  "location": {"pos": 1.75},
+  "relocation": {
+    "vp_vs_ratio": null,
+    "damping_trials": [20, 50, 100, 200],
+    "tiers": {
+      "loose": {"minlnk": 3, "minobs": 3, "obsct": 3, "wdct_last": 4, "maxdist": 100, "maxsep": 10, "maxngh": 10},
+      "medium": {"minlnk": 4, "minobs": 4, "obsct": 4, "wdct_last": 3, "maxdist": 100, "maxsep": 10, "maxngh": 10},
+      "strict": {"minlnk": 6, "minobs": 6, "obsct": 6, "wdct_last": 2, "maxdist": 100, "maxsep": 10, "maxngh": 10}
+    }
+  },
+  "detection": {"time_range": null},
+  "post_detection_relocation": {
+    "detection_catalogs": "detection/catalogs",
+    "idat": 3,
+    "ipha": 3,
+    "ct_source": "independent_phasenet",
+    "min_pick_probability": 0.3,
+    "match_window_s": {"P": 0.6, "S": 1.0},
+    "initial_erh_km": null,
+    "damping_trials": [20, 50, 100, 200],
+    "pairing": {"minlnk": 4, "minobs": 4, "maxdist": 100, "maxsep": 10, "maxngh": 10},
+    "obscc": 0,
+    "obsct": 4,
+    "iterations": [
+      {"niter": 4, "wtccp": 0.01, "wtccs": 0.005, "wrcc": -9, "wdcc": -9, "wtctp": 1.0, "wtcts": 0.5, "wrct": -9, "wdct": -9},
+      {"niter": 8, "wtccp": 0.1, "wtccs": 0.05, "wrcc": 6, "wdcc": 5, "wtctp": 1.0, "wtcts": 0.5, "wrct": 6, "wdct": 5},
+      {"niter": 12, "wtccp": 1.0, "wtccs": 0.5, "wrcc": 4, "wdcc": 3, "wtctp": 0.1, "wtcts": 0.04, "wrct": 4, "wdct": 4},
+      {"niter": 16, "wtccp": 1.0, "wtccs": 0.5, "wrcc": 3, "wdcc": 2, "wtctp": 0.1, "wtcts": 0.03, "wrct": 3, "wdct": 3}
+    ],
+    "parameter_rationale": "Initial joint working schedule: CT first constrains broad structure, CC later constrains nearby pairs. Effective joint link threshold OBSCC+OBSCT=4; independent-pick matching windows P=0.6 s/S=1.0 s are explicit starting settings, not fitted optima. Re-evaluate DAMP for each of the three CC tiers."
+  },
+  "parameter_rationale": {
+    "profile": "Initial working configuration; inspect regional applicability. No case-specific optimum is implied.",
+    "region": "Researcher-specified analysis extent and datum; review before scientific computation.",
+    "relocation_ratio": "Record source and applicability here when setting vp_vs_ratio. The supplied P/S model may have depth-varying ratios."
+  }
+}

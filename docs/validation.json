@@ -1,0 +1,21 @@
+{
+  "test_knowledge.py": "PASS",
+  "test_portability.py": "PASS",
+  "native_smoke.py": "PASS",
+  "original_live_wiki_unchanged": true,
+  "original_release_unchanged": true,
+  "scientific_scripts_checked_unchanged": 37,
+  "runtime_binaries_weights_unchanged": true,
+  "actual_driver_archive_revalidation": "PASS",
+  "copied_package_standard_python_query": "PASS",
+  "independent_agent_scientific_evaluation": "NOT_TESTED",
+  "scientific_fact_review_of_all_wiki_pages": "NOT_TESTED",
+  "doctor": "PASS",
+  "release": "0.2.0",
+  "knowledge_tests": 9,
+  "inherited_interface_regression_tests": 8,
+  "wiki_pages": 32,
+  "wiki_source_pdfs": 8,
+  "additional_execution_manual": "HYPOINVERSE1.40, already present in the baseline package",
+  "scientific_pipeline_numeric_results": "Inherited from v0.1.0; not rerun by this Wiki-integration task"
+}

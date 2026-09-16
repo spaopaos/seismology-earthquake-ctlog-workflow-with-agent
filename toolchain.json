@@ -1,0 +1,42 @@
+{
+  "release": "0.3.0-dev",
+  "platform": "linux-x86_64",
+  "sources": {
+    "EQNet": {
+      "path": "knowledge/repos/EQNet",
+      "commit": "af94a08a85de4b2c917a1b9429b044e7f38e4c28"
+    },
+    "GAMMA": {
+      "path": "knowledge/repos/GAMMA",
+      "commit": "80394dd4a4c29450da599f507916ecf1db6203dd"
+    },
+    "PALM": {
+      "path": "knowledge/repos/PALM",
+      "commit": "1d87476a4078442111081840444ba99b43e020da"
+    }
+  },
+  "binaries": {
+    "hyp1.40": {
+      "path": "bin/hyp1.40",
+      "sha256": "892f465a5de16c4fdee47f1fd2e06aa76a4c8f9fb3001638fa014f0e3827a5c2",
+      "rebuild_provenance": "Source and build recipe included"
+    },
+    "ph2dt": {
+      "path": "bin/ph2dt",
+      "sha256": "81438e6afb045bccaf3ee27e6b2d7321834ebec81c513b29af2fe764efb63cf7",
+      "rebuild_provenance": "Pinned production binary; exact matching source/build provenance not established. Supported prebuilt platform only."
+    },
+    "hypoDD": {
+      "path": "bin/hypoDD",
+      "sha256": "f21ce7b4aa0d391d7a32264b89f2288fdbf17919f3d2e44a1b07dcaf8ec7d610",
+      "rebuild_provenance": "Pinned production binary; exact matching source/build provenance not established. Supported prebuilt platform only."
+    }
+  },
+  "weights": {
+    "phasenet_plus": {
+      "path": "assets/weights/phasenet_plus_v1.pth",
+      "sha256": "f1643330e34bffaa4f7e3a5f7dd9205fb4019d76e5b9b6cb598232360d22f384",
+      "source": "https://github.com/AI4EPS/models/releases/download/PhaseNet-Plus-v1/model_99.pth"
+    }
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "schema_version": "1.0",
+  "template_only": true,
+  "description": "QC CSV列定义，不是可执行程序或已完成记录。实现可增列但不得删除含义或将未知当作0。",
+  "rules": {
+    "encoding": "UTF-8",
+    "delimiter": ",",
+    "list_fields": "JSON arrays within quoted CSV cells",
+    "unknown_value": "empty CSV field with status/reason; JSON uses null",
+    "booleans": "true/false; unchecked empty",
+    "counts": "nonnegative integers if known",
+    "fractions": "0..1, not percent; plots multiply by100",
+    "time": "ISO8601 UTC, interval ends explicitly exclusive where named",
+    "duration": "seconds",
+    "paths": "relative to output_root, absent empty",
+    "domain_values": [
+      "source",
+      "output"
+    ],
+    "gap_axis_values": [
+      "Z",
+      "N",
+      "E",
+      "AXIS1",
+      "AXIS2",
+      "AXIS3",
+      "ANY_3C"
+    ],
+    "source_axis_handling": "unverified orientation uses actual source axes, never invent N/E; explicit metadata mapping needed for raw Z/N/E slots",
+    "check_values": [
+      "PASS",
+      "FAIL",
+      "NOT_RUN",
+      "NOT_APPLICABLE"
+    ]
+  },
+  "tables": {
+    "station_summary.csv": {
+      "columns": [
+        "station_id",
+        "group_id",
+        "location_epoch_id",
+        "latitude_deg",
+        "longitude_deg",
+        "elevation_m",
+        "epoch_start_utc",
+        "epoch_end_utc",
+        "coordinate_source",
+        "map_status",
+        "map_omission_reason",
+        "original_sampling_rates_hz",
+        "executed_bands_hz",
+        "requested_group_days",
+        "published_group_days",
+        "processing_statuses",
+        "warnings"
+      ]
+    },
+    "availability.csv": {
+      "columns": [
+        "group_id",
+        "utc_date",
+        "request_status",
+        "requested_samples",
+        "archive_status",
+        "input_checked",
+        "raw_support_z_samples",
+        "raw_support_n_samples",
+        "raw_support_e_samples",
+        "raw_support_3c_samples",
+        "data_z_samples",
+        "data_n_samples",
+        "data_e_samples",
+        "usable_z_samples",
+        "usable_n_samples",
+        "usable_e_samples",
+        "usable_3c_samples",
+        "usable_3c_fraction_day",
+        "usable_3c_fraction_requested",
+        "delivered_usable_3c_seconds",
+        "metadata_path",
+        "reason"
+      ]
+    },
+    "sampling_rate_epochs.csv": {
+      "columns": [
+        "group_id",
+        "source_channel_id",
+        "sampling_epoch_id",
+        "start_utc",
+        "end_utc",
+        "sampling_rate_hz",
+        "response_epoch_id",
+        "input_file_paths",
+        "reason"
+      ]
+    },
+    "component_completeness.csv": {
+      "columns": [
+        "group_id",
+        "utc_date",
+        "request_status",
+        "input_axis_labels",
+        "input_axis_count",
+        "input_three_axis_overlap_samples",
+        "output_components",
+        "output_three_component_usable_samples",
+        "archive_status",
+        "rotation_method",
+        "reason"
+      ]
+    },
+    "gap_statistics.csv": {
+      "columns": [
+        "group_id",
+        "utc_date",
+        "domain",
+        "axis",
+        "scope_samples",
+        "coverage_known",
+        "internal_gap_count",
+        "internal_gap_seconds",
+        "longest_daily_internal_gap_seconds",
+        "leading_gap_seconds",
+        "trailing_gap_seconds",
+        "entire_scope_missing",
+        "any_axis_missing_seconds",
+        "edge_excluded_seconds",
+        "support_clipped_samples",
+        "archive_pad_samples",
+        "reason"
+      ]
+    },
+    "effective_band_summary.csv": {
+      "columns": [
+        "band_low_hz",
+        "band_high_hz",
+        "band_limited",
+        "published_group_day_count",
+        "source_manifest_path"
+      ]
+    },
+    "response_status.csv": {
+      "columns": [
+        "group_id",
+        "source_channel_id",
+        "segment_id",
+        "first_sample_utc",
+        "last_sample_utc",
+        "response_source",
+        "response_epoch_id",
+        "match_status",
+        "covers_entire_segment",
+        "sampling_metadata_consistent",
+        "response_removal_status",
+        "input_motion_type",
+        "output_units",
+        "finite_after_response",
+        "warnings",
+        "reason"
+      ]
+    },
+    "archive_integrity.csv": {
+      "columns": [
+        "group_id",
+        "utc_date",
+        "archive_status",
+        "z_path",
+        "n_path",
+        "e_path",
+        "metadata_path",
+        "readback_status",
+        "three_component_files_check",
+        "grid_and_npts_check",
+        "finite_values_check",
+        "units_check",
+        "calib_scale_check",
+        "orientation_check",
+        "valid_intervals_check",
+        "zero_fill_check",
+        "support_limits_check",
+        "all_checks_passed",
+        "reason"
+      ]
+    },
+    "sample_selection.csv": {
+      "columns": [
+        "sample_id",
+        "kind",
+        "group_id",
+        "utc_date",
+        "selection_reason",
+        "source_segment_id",
+        "window_start_utc",
+        "window_end_utc_exclusive",
+        "waveform_duration_seconds",
+        "psd_duration_seconds",
+        "source_channel_ids",
+        "axis_basis",
+        "original_sampling_rates_hz",
+        "effective_config_path",
+        "snapshot_path",
+        "snapshot_metadata_path",
+        "waveform_paths",
+        "psd_paths",
+        "response_diagnostic_paths",
+        "generation_status",
+        "reason"
+      ]
+    }
+  }
+}

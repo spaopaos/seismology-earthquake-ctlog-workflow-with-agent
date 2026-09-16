@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "detection.contract.schema.json",
+  "title": "Matched-filter detection contract (MESS)",
+  "description": "One CC-threshold catalog from a single HypoDD-medium template library; no cross-catalog merge.",
+  "allOf": [
+    {
+      "$ref": "common.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "template_source",
+    "template_processing",
+    "scan",
+    "dedup",
+    "outputs",
+    "stats",
+    "workflow",
+    "selection"
+  ],
+  "properties": {
+    "stage": {
+      "const": "detection"
+    },
+    "template_source": {
+      "type": "object",
+      "properties": {
+        "contract_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "event_selection_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "const": "medium"
+        },
+        "catalog_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "contract_path",
+        "event_selection_rule",
+        "tier",
+        "catalog_path"
+      ],
+      "additionalProperties": true
+    },
+    "template_processing": {
+      "type": "object",
+      "required": [
+        "compatible_with_preprocess_contract",
+        "min_snr"
+      ],
+      "properties": {
+        "compatible_with_preprocess_contract": {
+          "type": "boolean",
+          "description": "模板与扫描数据是否采用与归档兼容的处理设置"
+        },
+        "derived_copy_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "不兼容时生成单独派生副本的路径；绝不修改原归档"
+        },
+        "band_hz": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "sampling_rate_hz": {
+          "type": "number"
+        },
+        "min_snr": {
+          "const": 2
+        }
+      },
+      "additionalProperties": true
+    },
+    "scan": {
+      "type": "object",
+      "properties": {
+        "window_s": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "min_stations": {
+          "const": 4
+        },
+        "channel_rule": {
+          "type": "string",
+          "description": "如 Z_only_or_3c"
+        },
+        "threshold": {
+          "const": {
+            "kind": "fixed_cc",
+            "value": 0.3
+          }
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "threshold"
+      ],
+      "not": {
+        "required": [
+          "threshold_mad"
+        ]
+      }
+    },
+    "dedup": {
+      "type": "object",
+      "required": [
+        "rule",
+        "against_known_catalog"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "description": "如 same_event_within_2s_keep_max_cc"
+        },
+        "against_known_catalog": {
+          "type": "boolean",
+          "description": "是否对已有目录去重，区分新检测与已知事件"
+        }
+      },
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "object",
+      "required": [
+        "detections_path",
+        "new_events_path",
+        "schema",
+        "phase_path",
+        "event_path",
+        "dt_cc_path",
+        "reference_events_path"
+      ],
+      "properties": {
+        "detections_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "new_events_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "至少含 detect_id/template_event/time_utc/mean_cc/n_stations"
+        },
+        "phase_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "event_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dt_cc_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reference_events_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true,
+      "not": {
+        "required": [
+          "per_tier"
+        ]
+      }
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "templates": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "detections_raw": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "after_dedup": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "new_events": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "contract_version": {
+      "const": "2.1"
+    },
+    "workflow": {
+      "const": "single_medium_library"
+    },
+    "selection": {
+      "type": "object",
+      "required": [
+        "cc_min",
+        "score_field",
+        "operator"
+      ],
+      "properties": {
+        "cc_min": {
+          "enum": [
+            0.4,
+            0.6,
+            0.8
+          ]
+        },
+        "score_field": {
+          "const": "best_detection_cc"
+        },
+        "operator": {
+          "const": ">="
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

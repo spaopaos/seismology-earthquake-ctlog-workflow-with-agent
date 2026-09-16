@@ -1,0 +1,325 @@
+{
+  "type": "object",
+  "properties": {
+    "contract_version": {
+      "enum": [
+        "2.0",
+        "2.1"
+      ]
+    },
+    "stage": {
+      "enum": [
+        "preprocess",
+        "picking",
+        "association",
+        "location",
+        "relocation",
+        "detection",
+        "post_detection_relocation",
+        "mechanism"
+      ]
+    },
+    "software": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": true
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "upstream": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "enum": [
+              "preprocess",
+              "picking",
+              "association",
+              "location",
+              "relocation",
+              "detection",
+              "post_detection_relocation",
+              "mechanism"
+            ]
+          },
+          "contract_path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+          },
+          "input_verification": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "NOT_TESTED"
+            ]
+          },
+          "verification_basis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "verification_note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "contract_path",
+          "input_verification"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "NOT_TESTED"
+            ]
+          },
+          "evidence_paths": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+            }
+          },
+          "note": {
+            "type": "string"
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "evidence_paths"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "status": {
+      "enum": [
+        "READY",
+        "PARTIAL",
+        "FAILED"
+      ]
+    },
+    "qc_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+    },
+    "config_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+    },
+    "script_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+          },
+          "kind": {
+            "enum": [
+              "file",
+              "directory"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "kind",
+          "required"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "source_contract_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "source_contract_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source_contract_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "revision_created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_created_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": true
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "schema_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_TESTED"
+          ]
+        },
+        "artifact_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_TESTED"
+          ]
+        },
+        "scientific_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_TESTED"
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              },
+              "artifact": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": true
+          }
+        }
+      },
+      "required": [
+        "schema_status",
+        "artifact_status",
+        "scientific_status",
+        "issues"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "contract_version",
+    "stage",
+    "software",
+    "run_id",
+    "created_at",
+    "upstream",
+    "status",
+    "artifacts"
+  ],
+  "additionalProperties": true,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "READY"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "qc_path"
+        ]
+      }
+    }
+  ]
+}

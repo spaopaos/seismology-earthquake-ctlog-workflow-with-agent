@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+runtime.local.json
+runtime/
+runs/
+dist/
+*.tar.gz
+.cache/
+# Large release assets are distributed separately from the Git source archive.
+assets/weights/*.pth
+bin/hypoDD
+bin/ph2dt
+bin/hyp1.40
+bin/lib/

@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "picking.contract.schema.json",
+  "title": "Picking contract (PhaseNet+)",
+  "description": "拾取环节的产出契约：拾取结果、模型与窗口设置、读入验证状态。",
+  "allOf": [{"$ref": "common.schema.json"}],
+  "type": "object",
+  "required": [
+    "reader",
+    "component_order",
+    "normalization",
+    "model",
+    "window",
+    "thresholds",
+    "interval_policy",
+    "outputs",
+    "coverage"
+  ],
+  "properties": {
+    "stage": {"const": "picking"},
+    "reader": {
+      "type": "object",
+      "required": ["name", "input_verification"],
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "adapted": {"type": "boolean", "description": "是否使用了读取适配器/中间表示"},
+        "input_verification": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": {"type": "string", "enum": ["PASS", "FAIL", "NOT_TESTED"]},
+            "method": {"type": "string", "description": "如 known_velocity_array_roundtrip"},
+            "checked_no_rescale_no_integration_no_axis_swap": {"type": "boolean"}
+          },
+          "description": "用已知速度数组验证读入无误才写 PASS；对强震来源通道须额外验证未触发再积分",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "component_order": {
+      "type": "array",
+      "items": {"type": "string", "enum": ["Z", "N", "E"]},
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "实际送入模型的分量顺序，须与权重期望顺序核对，不假定文件排序"
+    },
+    "normalization": {
+      "type": "string",
+      "enum": ["temp_copy_only", "none", "model_internal_moving_normalize"],
+      "description": "归档数据不被改写；EQNet phasenet_plus 的归一化在模型 forward 内部（moving_normalize，10.24s 滑窗），输入保持原始物理量"
+    },
+    "model": {
+      "type": "object",
+      "required": ["weights"],
+      "properties": {
+        "weights": {"type": "string"},
+        "weights_sha256": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "window": {
+      "type": "object",
+      "required": ["mode", "sampling_rate_hz"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["whole_day", "chunked"], "description": "默认整日输入；chunked 须记录块长与边缘裁弃宽度"},
+        "chunk_length_s": {"type": "number"},
+        "chunk_margin_s": {"type": "number", "description": "边缘重叠裁弃宽度，>=60"},
+        "sampling_rate_hz": {"type": "number", "description": "模型实际消费的采样率"}
+      },
+      "additionalProperties": true
+    },
+    "thresholds": {
+      "type": "object",
+      "properties": {
+        "min_prob": {"type": "number", "description": "EQNet --min_prob，P/S 共用单一阈值"}
+      },
+      "description": "EQNet 无 P/S 分设阈值与极性阈值参数；极性从有符号分数取号",
+      "additionalProperties": true
+    },
+    "interval_policy": {
+      "type": "string",
+      "enum": ["picks_outside_usable_3c_flagged", "picks_outside_usable_3c_dropped", "picks_outside_usable_3c_kept"],
+      "description": "落在 usable_3c_intervals 之外的拾取如何处理；须实际执行并记录"
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["picks_path", "schema", "time_base"],
+      "properties": {
+        "picks_path": {"type": "string"},
+        "schema": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "拾取表列定义，至少含 station/phase/time_utc/prob/polarity_score；polarity_score 为 ±3 样本窗内 P(up)−P(down) 有符号分数 [-1,1]，非概率；P 和 S 拾取均带极性值，SKHASH 只消费 P 拾取极性；phase_amplitude 保留并标注单位 m/s"
+        },
+        "time_base": {"const": "UTC"}
+      },
+      "additionalProperties": true
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["station_days_processed"],
+      "properties": {
+        "station_days_processed": {"type": "integer"},
+        "station_days_skipped": {"type": "integer"},
+        "skip_reasons": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "n_p": {"type": "integer"},
+        "n_s": {"type": "integer"},
+        "n_polarity": {"type": "integer"}
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "schema_version": "1.3",
+  "profile_name": "local-earthquake-velocity-daily-v4",
+  "waveform_paths": [],
+  "inventory_paths": [],
+  "input_state": null,
+  "output_root": null,
+  "python_executable": null,
+  "station_group_selectors": [],
+  "start_utc": null,
+  "end_utc_exclusive": null,
+  "allow_environment_changes": false,
+  "allow_overwrite": false,
+  "workers": 1,
+  "processing": {
+    "target_sampling_rate_hz": 100.0,
+    "target_units": "m/s",
+    "demean": true,
+    "detrend_type": "linear",
+    "taper": {
+      "type": "hann",
+      "max_percentage_per_end": 0.05,
+      "max_length_seconds_per_end": 20.0
+    },
+    "response": {
+      "output": "VEL",
+      "water_level": null,
+      "zero_mean": false,
+      "taper": false,
+      "pre_filt_low_corners_hz": [
+        0.01,
+        0.02
+      ],
+      "pre_filt_high_caps_hz": [
+        45.0,
+        48.0
+      ],
+      "pre_filt_high_nyquist_fractions": [
+        0.9,
+        0.96
+      ],
+      "matching": {
+        "key": "network.station.location.channel",
+        "require_unique_response_per_segment": true,
+        "require_entire_segment_epoch_coverage": true,
+        "check_original_sampling_metadata": true,
+        "split_at_response_or_orientation_change": true,
+        "duplicate_identical_metadata_policy": "deduplicate_with_record",
+        "conflicting_response_policy": "block_affected_segment",
+        "unknown_response_units_policy": "block_affected_segment"
+      }
+    },
+    "bandpass": {
+      "low_hz": 1.0,
+      "high_target_hz": 40.0,
+      "high_nyquist_fraction": 0.8,
+      "corners": 4,
+      "zerophase": true
+    },
+    "band_policy": "common_per_sensor_group_over_requested_interval",
+    "resampling": {
+      "method": "scipy.signal.resample_poly",
+      "utc_grid_alignment": "lanczos_if_needed",
+      "alignment_lanczos_a": 20,
+      "window": [
+        "kaiser",
+        5.0
+      ],
+      "padtype": "constant",
+      "cval": 0.0,
+      "coverage_policy": "clip_to_original_first_and_last_sample_support",
+      "discard_unsupported_boundary_samples": true,
+      "do_not_reinterpolate_documented_sac_roundoff": true
+    },
+    "day_context_seconds_per_side": 60.0,
+    "segment_edge_guard_seconds_per_side": 20.0,
+    "target_components": [
+      "Z",
+      "N",
+      "E"
+    ],
+    "orientation_source": "inventory_or_verified_header",
+    "overlap_conflict_policy": "block_affected_group_day",
+    "gap_fill_value": 0.0,
+    "fill_only_after_signal_processing": true,
+    "missing_component_policy": "no_fake_3c_archive",
+    "normalize_archive": false,
+    "merge": {
+      "required": true,
+      "api": "obspy.core.stream.Stream.merge",
+      "method": 0,
+      "fill_value": 0,
+      "stage": "after_response_filter_resampling_alignment_and_rotation",
+      "group_by": "network.station.location.channel",
+      "check_overlap_conflicts_before_merge": true,
+      "record_coverage_before_merge": true,
+      "require_confirmed_velocity": true,
+      "required_calib": 1.0
+    },
+    "calibration": {
+      "set_derived_calib_only_after_confirmed_velocity": true,
+      "derived_calib": 1.0,
+      "apply_additional_gain_after_response_removal": false,
+      "preserve_calibration_history": true
+    },
+    "orientation": {
+      "seed_dip_convention": "degrees_down_from_horizontal",
+      "sac_cmpinc_convention": "degrees_from_upward_vertical",
+      "sac_to_seed_dip_formula": "dip = cmpinc - 90.0",
+      "azimuth_convention": "degrees_clockwise_from_north",
+      "require_verified_orientation_not_channel_name_only": true,
+      "invalid_angle_policy": "block_affected_group",
+      "general_rotation_validity": "intersection_of_all_participating_usable_intervals",
+      "rewrite_output_orientation_headers": true
+    },
+    "short_segments": {
+      "skip_if_no_usable_interior_after_edge_guards": true,
+      "do_not_lengthen_with_gap_padding": true,
+      "auto_change_prefilter_or_water_level": false,
+      "boundary_defaults_are_not_accuracy_guarantees": true
+    },
+    "finite_checks_after": [
+      "response_removal",
+      "bandpass",
+      "resampling",
+      "grid_alignment",
+      "rotation",
+      "float32_cast"
+    ],
+    "nonfinite_processing_output_policy": "fail_segment_without_nan_to_num_or_clipping"
+  },
+  "archive": {
+    "format": "SAC",
+    "files_per_group_day": 3,
+    "dtype": "float32",
+    "time_zone": "UTC",
+    "nominal_day_samples_per_component": 8640000,
+    "blank_location_filename_token": "--",
+    "sac_idep": "IUNKN",
+    "sac_kuser0": "VEL_M_S",
+    "metadata_file": "metadata.json",
+    "interval_encoding": "zero_based_half_open_sample_indices",
+    "manifest": "daily_manifest.csv",
+    "daily_padding": {
+      "api": "obspy.core.trace.Trace.trim",
+      "pad": true,
+      "fill_value": 0,
+      "endtime_rule": "day_start + 86400 - 1 / target_sampling_rate_hz",
+      "nearest_sample": true,
+      "requires_prior_sample_grid_alignment": true
+    },
+    "sac_scale": 1.0,
+    "trace_calib": 1.0,
+    "output_orientation_headers": {
+      "Z": {
+        "azimuth_deg": 0.0,
+        "dip_deg": -90.0,
+        "cmpaz": 0.0,
+        "cmpinc": 0.0
+      },
+      "N": {
+        "azimuth_deg": 0.0,
+        "dip_deg": 0.0,
+        "cmpaz": 0.0,
+        "cmpinc": 90.0
+      },
+      "E": {
+        "azimuth_deg": 90.0,
+        "dip_deg": 0.0,
+        "cmpaz": 90.0,
+        "cmpinc": 90.0
+      }
+    },
+    "physical_quantity": "ground_velocity",
+    "processing_state": "response_corrected_band_limited",
+    "readback_apply_calib": false
+  },
+  "read": {
+    "apply_calib": false,
+    "preserve_original_calib_and_sac_scale": true,
+    "preserve_first_and_last_sample_times": true,
+    "preserve_input_masks": true,
+    "sampling_rate_header_roundoff_policy": "normalize_only_with_documented_nominal_grid"
+  },
+  "quality_control": {
+    "first_group_day_readback": true,
+    "representative_response_type_diagnostic": true,
+    "inspect_midnight_and_gap_boundaries_in_initial_batch": true,
+    "not_a_frequency_optimization": true,
+    "implementation_checklist": "references/IMPLEMENTATION_CHECKLIST.md",
+    "required": true,
+    "output_directory": "qc",
+    "specification": "references/QC_OUTPUTS.md",
+    "table_columns_definition": "assets/qc_table_columns.json",
+    "preserve_source_intervals_and_failed_group_days": true,
+    "availability_source": "actual_input_support_and_recorded_output_valid_intervals",
+    "availability_denominator_samples": 8640000,
+    "joint_component_coverage": "intersection_not_mean_or_min",
+    "report_requested_interval_coverage_separately": true,
+    "unknown_values": "null_with_explicit_status",
+    "sampling_rate_count_unit": "unique_channel_sampling_epoch",
+    "effective_band_count_unit": "published_group_day",
+    "required_overview_plots": [
+      "availability_heatmap",
+      "station_map",
+      "sampling_rate_hist",
+      "component_completeness",
+      "gap_statistics",
+      "effective_band_summary"
+    ],
+    "plotting": {
+      "library": "matplotlib",
+      "format": "png",
+      "dpi": 160,
+      "one_logical_chart_per_figure": true,
+      "max_groups_per_page": 50,
+      "max_days_per_page": 90,
+      "basemap_policy": "existing_local_only_optional",
+      "missing_map_dependency_fallback": "labeled_lon_lat_scatter",
+      "missing_coordinates": "list_omissions_no_fake_points",
+      "allow_generated_illustrations_as_qc": false
+    },
+    "representative_examples": {
+      "max_baseline_groups": 6,
+      "max_anomaly_cases": 3,
+      "grouping": [
+        "original_sampling_rate_class",
+        "response_input_physical_type",
+        "rotation_required"
+      ],
+      "selection": "deterministic_coverage_first_then_group_id_and_date",
+      "waveform_window_seconds": 120,
+      "spectrum_window_target_seconds": 600,
+      "spectrum_minimum_contiguous_seconds": 20,
+      "capture_actual_processing_stage_snapshots": true,
+      "snapshot_directory": "qc/snapshots",
+      "record_sampling_and_missing_stages": true,
+      "allow_silent_diagnostic_reprocessing": false
+    },
+    "psd": {
+      "method": "scipy.signal.welch",
+      "window": "explicit_periodic_hann_array",
+      "segment_seconds": 10.0,
+      "overlap_fraction": 0.5,
+      "detrend": "constant",
+      "scaling": "density",
+      "return_onesided": true,
+      "average": "mean",
+      "respect_stage_sampling_rate": true,
+      "exclude_padded_and_unusable_samples": true,
+      "do_not_cross_gaps": true,
+      "separate_counts_and_velocity_axes": true
+    },
+    "required_tables": [
+      "station_summary.csv",
+      "availability.csv",
+      "sampling_rate_epochs.csv",
+      "component_completeness.csv",
+      "gap_statistics.csv",
+      "effective_band_summary.csv",
+      "response_status.csv",
+      "archive_integrity.csv",
+      "sample_selection.csv"
+    ],
+    "artifact_manifest": "qc_artifacts.json",
+    "summary_json": "qc_summary.json",
+    "summary_markdown": "qc_summary.md",
+    "visual_review_record": "visual_review.json",
+    "visual_review_required_when_image_tools_available": true,
+    "initial_generation_status": "NOT_RUN",
+    "initial_review_status": "NOT_REVIEWED",
+    "plot_failure_policy": "retain_checked_archive_and_report_incomplete_qc",
+    "qc_success_does_not_imply_model_input_verified": true
+  },
+  "downstream_handoff": {
+    "contract_filename": "downstream_contract.json",
+    "auto_start_model": false,
+    "verify_reader_uses_actual_physical_units": true,
+    "allow_repeated_response_or_sensitivity_removal": false,
+    "allow_channel_name_based_acceleration_integration": false,
+    "allow_silent_channel_renaming_to_bypass_integration": false,
+    "reader_must_consume_valid_intervals": true,
+    "sac_is_archive_not_universal_inference_format": true,
+    "model_input_verification_initial_status": "NOT_TESTED"
+  }
+}

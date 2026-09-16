@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "post_detection_relocation.contract.schema.json",
+  "allOf": [{"$ref": "common.schema.json"}],
+  "type": "object",
+  "required": ["times", "solver", "tiers", "outputs", "stats"],
+  "properties": {
+    "stage": {"const": "post_detection_relocation"},
+    "contract_version": {"const": "2.0"},
+    "times": {
+      "type": "object", "required": ["catalog_dt", "cross_correlation", "ct_source"],
+      "properties": {"catalog_dt": {"const": true}, "cross_correlation": {"const": true},
+        "ct_source": {"const": "independent_phasenet"}}
+    },
+    "solver": {
+      "type": "object", "required": ["idat", "ipha", "damping_rule", "parameters_path"],
+      "properties": {"idat": {"const": 3}, "ipha": {"const": 3},
+        "damping_rule": {"const": "spatial-evidence-1.7"}, "parameters_path": {"type": "string", "minLength": 1}}
+    },
+    "tiers": {
+      "type": "object", "required": ["cc_0p4", "cc_0p6", "cc_0p8"], "additionalProperties": false,
+      "properties": {"cc_0p4": {"$ref": "post_detection_relocation.contract.schema.json#/$defs/outcome"}, "cc_0p6": {"$ref": "post_detection_relocation.contract.schema.json#/$defs/outcome"},
+        "cc_0p8": {"$ref": "post_detection_relocation.contract.schema.json#/$defs/outcome"}}
+    },
+    "outputs": {
+      "type": "object", "required": ["catalogs", "reloc_paths", "event_mapping_paths"],
+      "properties": {"catalogs": {"$ref": "post_detection_relocation.contract.schema.json#/$defs/paths"}, "reloc_paths": {"$ref": "post_detection_relocation.contract.schema.json#/$defs/paths"},
+        "event_mapping_paths": {"allOf": [{"$ref": "post_detection_relocation.contract.schema.json#/$defs/paths"}], "required": ["cc_0p4", "cc_0p6", "cc_0p8"]}}
+    },
+    "stats": {
+      "type": "object", "required": ["tier_counts", "unique_relocated_detection_events"],
+      "properties": {"tier_counts": {"type": "object", "required": ["cc_0p4", "cc_0p6", "cc_0p8"],
+        "additionalProperties": {"type": ["integer", "null"], "minimum": 0}},
+        "unique_relocated_detection_events": {"type": "integer", "minimum": 0}}
+    }
+  },
+  "$defs": {
+    "outcome": {"type": "object", "required": ["status", "reason", "damp"],
+      "properties": {"status": {"enum": ["READY", "EMPTY", "UNAVAILABLE"]},
+        "reason": {"type": "string", "minLength": 1}, "damp": {"type": ["number", "null"], "exclusiveMinimum": 0}}},
+    "paths": {"type": "object", "additionalProperties": false,
+      "properties": {"cc_0p4": {"type": "string", "minLength": 1}, "cc_0p6": {"type": "string", "minLength": 1},
+        "cc_0p8": {"type": "string", "minLength": 1}}}
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "preprocess.contract.schema.json",
+  "title": "Preprocess downstream contract",
+  "description": "预处理归档环节向下游声明的数据语义。对应 seismic-preprocess skill 的 downstream_contract.json。",
+  "allOf": [
+    {
+      "$ref": "common.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "data_contract",
+    "reader_requirements",
+    "manifest_path",
+    "archive_root",
+    "archive_validation_status",
+    "model_input_verification",
+    "stats"
+  ],
+  "properties": {
+    "stage": {
+      "const": "preprocess"
+    },
+    "data_contract": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "enum": [
+            "SAC",
+            "MiniSEED",
+            "MSEED"
+          ]
+        },
+        "physical_quantity": {
+          "const": "ground_velocity"
+        },
+        "units": {
+          "const": "m/s"
+        },
+        "response_removed": {
+          "const": true
+        },
+        "sampling_rate_hz": {
+          "const": 100.0
+        },
+        "archive_component_labels": {
+          "const": [
+            "Z",
+            "N",
+            "E"
+          ]
+        },
+        "target_band_hz": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "format",
+        "physical_quantity",
+        "units",
+        "response_removed",
+        "sampling_rate_hz",
+        "archive_component_labels",
+        "target_band_hz"
+      ],
+      "additionalProperties": true
+    },
+    "reader_requirements": {
+      "type": "object"
+    },
+    "manifest_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+    },
+    "archive_root": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+    },
+    "archive_validation_status": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "PARTIAL"
+      ]
+    },
+    "model_input_verification": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_TESTED"
+          ]
+        },
+        "reader": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        }
+      },
+      "description": "归档通过检查不等于模型读入已验证；未实测保持 NOT_TESTED",
+      "additionalProperties": true
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "group_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ready": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "partial": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unavailable": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "group_days",
+        "ready",
+        "partial",
+        "unavailable"
+      ],
+      "additionalProperties": true
+    },
+    "contract_version": {
+      "const": "2.0"
+    }
+  }
+}

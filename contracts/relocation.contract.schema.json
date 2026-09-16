@@ -1,0 +1,306 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "relocation.contract.schema.json",
+  "title": "Relocation contract (ph2dt + HypoDD)",
+  "description": "重定位环节的产出契约：配对参数、求解设置、重定位目录与事件映射。",
+  "allOf": [
+    {
+      "$ref": "common.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "pairing",
+    "times",
+    "solver",
+    "outputs",
+    "stats"
+  ],
+  "properties": {
+    "stage": {
+      "const": "relocation"
+    },
+    "pairing": {
+      "type": "object",
+      "properties": {
+        "max_pair_dist_km": {
+          "type": "number"
+        },
+        "min_links": {
+          "type": "integer"
+        },
+        "max_sep_km": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "times": {
+      "type": "object",
+      "required": [
+        "catalog_dt",
+        "cross_correlation"
+      ],
+      "properties": {
+        "catalog_dt": {
+          "type": "boolean",
+          "description": "目录差分时（ph2dt）"
+        },
+        "cross_correlation": {
+          "type": "boolean",
+          "description": "是否叠加波形互相关差分时；true 时须补 CC 窗口/带通等字段（后续细化）"
+        },
+        "cc_window_s": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "cc_band_hz": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": true
+    },
+    "solver": {
+      "type": "object",
+      "properties": {
+        "damping_trials": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "少量阻尼试运行取值"
+        },
+        "lsqr_iters": {
+          "type": "integer"
+        },
+        "trial_curve_paths": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "catalogs": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+          }
+        },
+        "reloc_paths": {
+          "type": "object",
+          "minProperties": 0,
+          "description": "Only native files from completed solver runs; verified empty pairing tiers need no fabricated native file.",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+          }
+        },
+        "event_mapping_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "residuals_before_after_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+          }
+        }
+      },
+      "required": [
+        "catalogs",
+        "reloc_paths",
+        "event_mapping_path"
+      ],
+      "additionalProperties": true
+    },
+    "stats": {
+      "type": "object",
+      "required": [
+        "events_relocated",
+        "orphans"
+      ],
+      "properties": {
+        "events_relocated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "clusters": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "orphans": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Null when unavailable pairing evidence prevents a complete count.",
+          "minimum": 0
+        },
+        "rms_median_before_s": {
+          "type": "number"
+        },
+        "rms_median_after_s": {
+          "type": "number"
+        },
+        "tier_counts": {
+          "type": "object",
+          "properties": {
+            "loose": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "medium": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "strict": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "tiers": {
+      "type": "object",
+      "description": "Parameter strictness tiers: loose / medium / strict.",
+      "properties": {
+        "definitions": {
+          "type": "object"
+        },
+        "paths": {
+          "type": "object"
+        },
+        "damp_per_tier": {
+          "type": "object"
+        },
+        "counts": {
+          "type": "object"
+        },
+        "statuses": {
+          "type": "object",
+          "required": [
+            "loose",
+            "medium",
+            "strict"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "loose": {
+              "type": "object",
+              "required": [
+                "status",
+                "reason"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "READY",
+                    "EMPTY",
+                    "UNAVAILABLE"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "damp": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "medium": {
+              "type": "object",
+              "required": [
+                "status",
+                "reason"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "READY",
+                    "EMPTY",
+                    "UNAVAILABLE"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "damp": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "strict": {
+              "type": "object",
+              "required": [
+                "status",
+                "reason"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "READY",
+                    "EMPTY",
+                    "UNAVAILABLE"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "damp": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "contract_version": {
+      "const": "2.0"
+    }
+  }
+}

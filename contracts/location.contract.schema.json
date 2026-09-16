@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "location.contract.schema.json",
+  "title": "Absolute location contract (HYPOINVERSE)",
+  "description": "绝对定位环节的产出契约：定位目录、原生输出保留、模型一致性与定位质量。",
+  "allOf": [
+    {
+      "$ref": "common.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "model_file",
+    "station_file",
+    "phase_file",
+    "outputs",
+    "stats"
+  ],
+  "properties": {
+    "stage": {
+      "const": "location"
+    },
+    "model_file": {
+      "type": "object",
+      "properties": {
+        "p_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "s_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "comparison_with_association": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_TESTED"
+          ]
+        },
+        "comparison_note": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "p_path",
+        "comparison_with_association"
+      ],
+      "additionalProperties": true
+    },
+    "station_file": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "generated_from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        }
+      },
+      "required": [
+        "path",
+        "generated_from"
+      ],
+      "additionalProperties": true
+    },
+    "phase_file": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "generator": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "path",
+        "generator"
+      ],
+      "additionalProperties": true
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "depth_init_km": {
+          "type": "number"
+        },
+        "fix_depth_rule": {
+          "type": "string"
+        },
+        "distance_weighting": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "object",
+      "required": [
+        "catalog_path",
+        "arc_path",
+        "located_schema",
+        "rejected_path"
+      ],
+      "properties": {
+        "catalog_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "arc_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "located_schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "至少含 event_id/origin_utc/lat/lon/depth_km/nph/gap_deg/rms_s/erh_km/erz_km"
+        },
+        "prt_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "sum_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "rejected_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        }
+      },
+      "additionalProperties": true
+    },
+    "stats": {
+      "type": "object",
+      "required": [
+        "events_in",
+        "located",
+        "rejected",
+        "reject_reasons"
+      ],
+      "properties": {
+        "events_in": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "located": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reject_reasons": {
+          "type": "object",
+          "description": "失败原因计数；不可用的原因是数据不是备注"
+        }
+      },
+      "additionalProperties": true
+    },
+    "qc": {
+      "type": "object",
+      "properties": {
+        "rms_median_s": {
+          "type": "number"
+        },
+        "gap_p90_deg": {
+          "type": "number"
+        },
+        "depth_histogram": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "contract_version": {
+      "const": "2.0"
+    }
+  }
+}

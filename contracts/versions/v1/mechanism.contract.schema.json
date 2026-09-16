@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mechanism.contract.schema.json",
+  "title": "Focal mechanism contract (SKHASH)",
+  "description": "机制解环节的产出契约：极性与几何来源一致性、质量分级、不可用原因留档。",
+  "allOf": [{"$ref": "common.schema.json"}],
+  "type": "object",
+  "required": [
+    "polarity_source",
+    "geometry_source",
+    "velocity_model",
+    "outputs",
+    "coverage"
+  ],
+  "properties": {
+    "stage": {"const": "mechanism"},
+    "polarity_source": {
+      "type": "string",
+      "description": "极性来源契约，如 picking_contract；事件自身极性，不混用其他目录"
+    },
+    "geometry_source": {
+      "type": "string",
+      "description": "震源-台站几何与离源角来源，如 location_contract.outputs.arc_path"
+    },
+    "velocity_model": {
+      "type": "object",
+      "required": ["same_as_location"],
+      "properties": {
+        "same_as_location": {
+          "type": "boolean",
+          "description": "与定位环节速度模型是否一致；false 必须在 warnings 中说明理由"
+        },
+        "path": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "grid": {"type": "string"},
+        "min_polarities": {"type": "integer"},
+        "quality_thresholds": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["mechanisms_path", "schema"],
+      "properties": {
+        "mechanisms_path": {"type": "string"},
+        "schema": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "至少含 event_id/strike/dip/rake 双节面/quality/n_polarities/misfit"
+        }
+      },
+      "additionalProperties": true
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["events_attempted", "mechanisms_obtained", "unavailable_reasons"],
+      "properties": {
+        "events_attempted": {"type": "integer"},
+        "mechanisms_obtained": {"type": "integer"},
+        "unavailable_reasons": {
+          "type": "object",
+          "description": "如 too_few_polarities / poor_azimuth_coverage；不可用原因必须留档计数"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "platform": "linux-x86_64",
+  "kind": "existing-environment snapshots, validated after relocation",
+  "environments": {
+    "science_python": {
+      "name": "phasenet_plus",
+      "archive": "phasenet_plus-linux-x86_64.tar.gz",
+      "sha256": "73709e543579cc78fa83e2bd53352f23c22258b70ae68973807f295eff46f67b",
+      "bytes": 3216250640
+    },
+    "validator_python": {
+      "name": "phasenet2",
+      "archive": "phasenet2-linux-x86_64.tar.gz",
+      "sha256": "0153ae6c93f6bce91a8696348f610366203c970b4390c5113421c239ba6e1083",
+      "bytes": 819152879
+    },
+    "mess_python": {
+      "name": "plam",
+      "archive": "plam-linux-x86_64.tar.gz",
+      "sha256": "bb0742a70ea5d7e53b0de0ed48b4b9c16d858e6d626a285018e1f9d056e0aa18",
+      "bytes": 4065247151
+    }
+  }
+}

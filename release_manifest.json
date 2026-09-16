@@ -1,0 +1,2214 @@
+{
+  "release": "0.3.0-dev",
+  "platform": "linux-x86_64",
+  "files": {
+    ".gitignore": {
+      "sha256": "3027e0b8a812df3b20fdd0a482aba3a39199ba3347db5cabf7225aa5700217c6",
+      "category": "source"
+    },
+    "AGENTS.md": {
+      "sha256": "01a7f399766dad0b92816184f237cfc4cda6c16b3911e8be3d9a6f45e74355e3",
+      "category": "source"
+    },
+    "LICENSE": {
+      "sha256": "a2da3244d52a6fac2da74d12996e86a48af8d57debbf377e96f305dd6304271a",
+      "category": "source"
+    },
+    "README.md": {
+      "sha256": "0f90aaf0f673c576f8461705d1d2e546c682f1e37f0f3a9f426f837973a09216",
+      "category": "source"
+    },
+    "THIRD_PARTY.md": {
+      "sha256": "bba6945b9d3f13d9b05859ff44f9720270c5146d553ebd97982f96edef28b502",
+      "category": "source"
+    },
+    "seisflow.py": {
+      "sha256": "109d03f32ce3b8496313a71b46c757b34ccb31dc6e9b06aa3cb711f116a55a00",
+      "category": "source"
+    },
+    "toolchain.json": {
+      "sha256": "6d9a005725e1bd3a40f1e38dd72e28cb9ab898f6c2387e83b5891b993b12c3cb",
+      "category": "source"
+    },
+    "assets/weights/phasenet_plus_v1.pth": {
+      "sha256": "f1643330e34bffaa4f7e3a5f7dd9205fb4019d76e5b9b6cb598232360d22f384",
+      "category": "runtime_asset"
+    },
+    "bin/hyp1.40": {
+      "sha256": "892f465a5de16c4fdee47f1fd2e06aa76a4c8f9fb3001638fa014f0e3827a5c2",
+      "category": "runtime_asset"
+    },
+    "bin/hypoDD": {
+      "sha256": "f21ce7b4aa0d391d7a32264b89f2288fdbf17919f3d2e44a1b07dcaf8ec7d610",
+      "category": "runtime_asset"
+    },
+    "bin/ph2dt": {
+      "sha256": "81438e6afb045bccaf3ee27e6b2d7321834ebec81c513b29af2fe764efb63cf7",
+      "category": "runtime_asset"
+    },
+    "bin/lib/libgcc_s.so.1": {
+      "sha256": "489803ded8a4d803e2c792763a2767c12185f5764b7bba080742d14ef2452b27",
+      "category": "runtime_asset"
+    },
+    "bin/lib/libgfortran.so.5": {
+      "sha256": "01fc721062fc3c2b5492202d276c5a374b7d952fc168d2d1e603fa85660cc502",
+      "category": "runtime_asset"
+    },
+    "bin/lib/libquadmath.so.0": {
+      "sha256": "36ccd8fddb16b65129879a6ecf379b468d6e920bdcaeb01e3a7fdd4e7ddf1be8",
+      "category": "runtime_asset"
+    },
+    "configs/pipeline.example.json": {
+      "sha256": "31da1af1497561daabe39847a755e3246f33bbb04a7a3ecec74827d96ba6d688",
+      "category": "source"
+    },
+    "contracts/README.md": {
+      "sha256": "5aae1af86b572f950321082f0a2a4e2fb5b3cad1efff694a537d5b07940c1454",
+      "category": "source"
+    },
+    "contracts/SHA256SUMS.txt": {
+      "sha256": "b0a20e9a110cd842644bb11630fdfb49e74d981437d85f0e11c58161bc79c9ad",
+      "category": "source"
+    },
+    "contracts/archive_interface.py": {
+      "sha256": "4f6256a648f1bfd56c84d0dafc89b941096092fc0f7081bd0be303affc77f428",
+      "category": "source"
+    },
+    "contracts/association.contract.schema.json": {
+      "sha256": "cd7848d060b1e40f57341ce17b3c9c147e55727c9ac0479c042ad6e4f9e6b502",
+      "category": "source"
+    },
+    "contracts/common.schema.json": {
+      "sha256": "873a2779525f8b3d1bfccfbd0f2713b5bd90b9afeb62a517f1507be6520bbabc",
+      "category": "source"
+    },
+    "contracts/detection.contract.schema.json": {
+      "sha256": "193c13c1fff65e66b2a1d9f422af1e47fc9c907503c9138292554ec5fc116d2f",
+      "category": "source"
+    },
+    "contracts/hypodd_inputs.py": {
+      "sha256": "8832a5ea139c54c277fbf221d3662c6300421515646d4b5f942ac5d366559e68",
+      "category": "source"
+    },
+    "contracts/knowledge_access.py": {
+      "sha256": "861d770e6504aa28abf9e0e134cc154c76aa08684cb78c11eb32e633fb4ffab7",
+      "category": "source"
+    },
+    "contracts/location.contract.schema.json": {
+      "sha256": "52fa6b3891f3f0fd27b2ac1d4cf956ce69900fa4cf4f18feb7bce211e0d4e7a2",
+      "category": "source"
+    },
+    "contracts/mechanism.contract.schema.json": {
+      "sha256": "356cad80f950dfa9e620d5841c6009c8e080d71c8af00aebc7c2a2f70b8cf074",
+      "category": "source"
+    },
+    "contracts/migrate_contracts.py": {
+      "sha256": "6acaa4650aebfa19a53c4c79ec21709c5f3d7b3a4cc25a59eb8f7b09ea5d7da3",
+      "category": "source"
+    },
+    "contracts/picking.contract.schema.json": {
+      "sha256": "e556eee30c108cf417d4f17595689f55609fa8aceb4b4e86c14c95ce1e692980",
+      "category": "source"
+    },
+    "contracts/pipeline_contracts.py": {
+      "sha256": "796b21a57ffa5770c6ee76928d5d0f7b937f3ac394d8832f85b896cc82529e6c",
+      "category": "source"
+    },
+    "contracts/post_detection_relocation.contract.schema.json": {
+      "sha256": "c4092ea50797006380107ca11ff7672b467a4da00656844042b709e9a6fc2f2c",
+      "category": "source"
+    },
+    "contracts/preprocess.contract.schema.json": {
+      "sha256": "cbeececaf3375c4e14e79c3240cbd5555d45999d7a813aaecf3bdfdaed8abdee",
+      "category": "source"
+    },
+    "contracts/relocation.contract.schema.json": {
+      "sha256": "9affca3ef407e50a126ac21a641c92a5f2dcb3dbc66b91950024f8c70c8f501d",
+      "category": "source"
+    },
+    "contracts/runtime_support.py": {
+      "sha256": "d6fae250e2012915d5471738d1ff69776429585d12af9fd52d5b5e1d0f88b647",
+      "category": "source"
+    },
+    "contracts/station_identity.py": {
+      "sha256": "3fb15ad22f7aaf55533d34464a6aadfad7a96cfed093d8dd29c4bc0494bd7ed6",
+      "category": "source"
+    },
+    "contracts/validator_config.json": {
+      "sha256": "c214b47563653257d3530b150d86e79c6d0256402843491acd5b2451fa47588c",
+      "category": "source"
+    },
+    "contracts/versions/v1/README.md": {
+      "sha256": "6ce501e26fe926b9135570486458da0394d62f99b8f88ab5f424d67f30afb5ad",
+      "category": "source"
+    },
+    "contracts/versions/v1/association.contract.schema.json": {
+      "sha256": "5b182e2489f770b15311aab1b45cc850e54e22e234e8f749f7893dba0925763f",
+      "category": "source"
+    },
+    "contracts/versions/v1/common.schema.json": {
+      "sha256": "aa1dde4eafdcded87de3d66843c2db79860754a03d27ad187f01002b9d787d7f",
+      "category": "source"
+    },
+    "contracts/versions/v1/detection.contract.schema.json": {
+      "sha256": "fdab023159b8de5dc5fe334088717310396f890511c8ab163d4e663151654667",
+      "category": "source"
+    },
+    "contracts/versions/v1/location.contract.schema.json": {
+      "sha256": "cd18dd931ef9543411f74a34bd69990d3652ce613e8b66b658e2503e461ed77c",
+      "category": "source"
+    },
+    "contracts/versions/v1/mechanism.contract.schema.json": {
+      "sha256": "bdc8ce18c1388dc61238ecd492cbbc7b61a08320faaab5140f8f7c2e4603c260",
+      "category": "source"
+    },
+    "contracts/versions/v1/picking.contract.schema.json": {
+      "sha256": "22307044ae0579b96df795bbd54d2140804e238418edeaa43bcacf291bdbd528",
+      "category": "source"
+    },
+    "contracts/versions/v1/preprocess.contract.schema.json": {
+      "sha256": "7cfa300aeb1e9372b0e1143e5fa628d364a208dd69b4cdf1b9a3325404ce139b",
+      "category": "source"
+    },
+    "contracts/versions/v1/relocation.contract.schema.json": {
+      "sha256": "4444bdadbfc4fcb1dce6fedd13c9d2b25bdfc3e82476fbf6c4db239b5c26c33b",
+      "category": "source"
+    },
+    "docs/ARCHIVE_INTERFACE.md": {
+      "sha256": "f8566a368cda066f6121cd1dcc97e57e7e3eb08b2cdc4f57158d36c07b043e54",
+      "category": "source"
+    },
+    "docs/BASELINE_VALIDATION_0.1.0.md": {
+      "sha256": "42d3dd322f8c0bfcde9b40344e196bcc72a4ee09410357883e1ec8ff922dacbf",
+      "category": "source"
+    },
+    "docs/DEPLOYMENT.md": {
+      "sha256": "e9d5b4badb65ebe83348f23d9c59b22b3624645868c0344f9b87746024ab5595",
+      "category": "source"
+    },
+    "docs/POST_MESS_RELOCATION.md": {
+      "sha256": "5b87bb430f9f0845458a5b2e0359bffd6e20a98306462f2a78f1366da193ff18",
+      "category": "source"
+    },
+    "docs/POST_MESS_VALIDATION.md": {
+      "sha256": "974210e3bf69ff2227a690cc2c281f0912c36e033c496d470be808d39c99fcf6",
+      "category": "source"
+    },
+    "docs/SUPPORTED_INPUTS.md": {
+      "sha256": "48a63fa85a3fe7b5e9a46e2e80896d63f02e789596993bd41d23b306ea6e2ce5",
+      "category": "source"
+    },
+    "docs/VALIDATION.md": {
+      "sha256": "98d62229b6c2b111137a4e08c8314e7fea71a12ac81c5af0d2780a9bb50b702c",
+      "category": "source"
+    },
+    "docs/WIKI_INTEGRATION.md": {
+      "sha256": "c23e73706e6ec342b36082cdeda6f6cb5bae6071b3ae2edf5e9e78feec1ffe6d",
+      "category": "source"
+    },
+    "docs/baseline_validation_0.1.0.json": {
+      "sha256": "02cfaf4035eb04a6544ce382a8d4fa38abee71ce8d2d17a33f456011b571f4ad",
+      "category": "source"
+    },
+    "docs/validation.json": {
+      "sha256": "318412ae3bb151c41dbec3bb8c9b548e11666db7864da3216588abeb15b83c34",
+      "category": "source"
+    },
+    "docs/superpowers/plans/2026-09-15-mess-joint-hypodd.md": {
+      "sha256": "0e480c8912952921c33fddf77532dd578ea8bf866c13cc0a12480af5883f8f5a",
+      "category": "source"
+    },
+    "docs/superpowers/specs/2026-09-15-mess-joint-hypodd-design.md": {
+      "sha256": "3cc99fbf608f1681552e92e8edfd025d4731de04564d28b2de37a3fc5c454de1",
+      "category": "source"
+    },
+    "environments/PACKAGING_NOTES.md": {
+      "sha256": "e8d78c93f20c942ae235c1e60ba210e5dc6ef0f0681629d96a5a14f4a07f4ee3",
+      "category": "source"
+    },
+    "environments/phasenet2.environment.yml": {
+      "sha256": "89fc4bfb675d001b6d7a796cad0bee344b16ecc19a88b819b9f425d69f044c60",
+      "category": "source"
+    },
+    "environments/phasenet2.explicit.txt": {
+      "sha256": "7dfa8844069e87d453212ab291c3448c6e11282168d20db14e8fd0fb42e77ada",
+      "category": "source"
+    },
+    "environments/phasenet2.installed.json": {
+      "sha256": "916876415a4d470fb35ad68c6d2d657cc3590a7bf655c8f3aedf7a5b9e619409",
+      "category": "source"
+    },
+    "environments/phasenet_plus.environment.yml": {
+      "sha256": "8b3c1c036f5f3ea35e29a500d9ebd6dd4e22847e5d13e5cf0c333bb05cfa61fb",
+      "category": "source"
+    },
+    "environments/phasenet_plus.explicit.txt": {
+      "sha256": "618cb665fb6bb3a97774cdd53969492d888032cbc0eaea1d2b4c9f0dff3223e9",
+      "category": "source"
+    },
+    "environments/phasenet_plus.installed.json": {
+      "sha256": "7683d12cbc1a24fc8f740170bfc5144093931f9e0c53b108caa724885f6d5650",
+      "category": "source"
+    },
+    "environments/plam.environment.yml": {
+      "sha256": "4dffdd02d6f118a16172a30e991ebd16758a283620f8dda2f69690d4a4a4cd70",
+      "category": "source"
+    },
+    "environments/plam.explicit.txt": {
+      "sha256": "7e3319608ad4c7a4cf97f9e0f43e117e6791e65e8a42499ed743eba7a551e1d5",
+      "category": "source"
+    },
+    "environments/plam.installed.json": {
+      "sha256": "f98884b13bb2bf7ee95bab470afda67356fe3bcfcf539b61fd9d6972179d5b22",
+      "category": "source"
+    },
+    "environments/runtime-manifest.json": {
+      "sha256": "af2c49f61e74146d5ce5e441fee8a4bd64fe641a34c235594d28fe12e8a627df",
+      "category": "source"
+    },
+    "environments/licenses/gcc-10-base-copyright": {
+      "sha256": "719dd73912334e65a64c63fb1f7ccdacf70c27258570de0fb123b33d490eddf5",
+      "category": "source"
+    },
+    "environments/licenses/gcc-3.4-base-copyright": {
+      "sha256": "54282dc1faae45c7946fe424a93e918b42b6a2ac392d5289bf8ea36a35e24ef6",
+      "category": "source"
+    },
+    "environments/licenses/gcc-8-base-copyright": {
+      "sha256": "9865be517c31de50eb2b36a8957ccd97942807974afad2515578101d1168887a",
+      "category": "source"
+    },
+    "environments/licenses/gcc-9-base-copyright": {
+      "sha256": "0122839ddca455eb169542587ae16197e41ed70618bb7f0f6a5dd9b16fa27035",
+      "category": "source"
+    },
+    "examples/build_synthetic_archive.py": {
+      "sha256": "3ae0255b15c776914da6d57399bdf3e9b9f4598a8c19f8d564a676b9f45bfbb5",
+      "category": "source"
+    },
+    "knowledge/README.md": {
+      "sha256": "323bb1cb86f16c375a1c15944e7ca987e45d1b10c6f2de164bf0738983a8aa6c",
+      "category": "source"
+    },
+    "knowledge/knowledge-manifest.json": {
+      "sha256": "5e7f76699fc3d06e0ab7910b7181d5754ddfa27fc55ae6e8dfe6346d1615583f",
+      "category": "source"
+    },
+    "knowledge/stage-routes.json": {
+      "sha256": "2281bfcbf909bd530675c3fce886e5b00ac0ac7917846cd35ff5f7e47b241f8a",
+      "category": "source"
+    },
+    "knowledge/bindings/association.md": {
+      "sha256": "2855387306b72fc9aa09efc263789aaca5a50465f52943ff2d74ce6cc7b471c6",
+      "category": "source"
+    },
+    "knowledge/bindings/detection.md": {
+      "sha256": "3d01adf860d867c3a5bf8ac3909d8f0ef60ad569b4ea196c6acd99afdca011e3",
+      "category": "source"
+    },
+    "knowledge/bindings/location.md": {
+      "sha256": "0d8a3214af9caebdd57739733f1cceb541c535480ca6724477d4cb9fa9a90b14",
+      "category": "source"
+    },
+    "knowledge/bindings/picking.md": {
+      "sha256": "434a6693117be9a0dd0053ceff3830fd4abb922d393d2436c5765376ba899dc5",
+      "category": "source"
+    },
+    "knowledge/bindings/post_detection_relocation.md": {
+      "sha256": "6b2ce76f0af2b3429ee7be4243ec5b35aea7d57fd32e8e87ef0128824aeb75e0",
+      "category": "source"
+    },
+    "knowledge/bindings/preprocess.md": {
+      "sha256": "48adee5658619e463459bbf4ba0ad80caef6a53a31c95e96f25d8056f50ea734",
+      "category": "source"
+    },
+    "knowledge/bindings/relocation.md": {
+      "sha256": "cb5d606a1d2f1795e1e89106cc060cb44e077b0338347f2c82837b44cd204a47",
+      "category": "source"
+    },
+    "knowledge/library/corpus-manifest.json": {
+      "sha256": "e5c13204a59ec6b7a19e3f69caa62ebaf3853957ec0e4dbebba0abdcb670bd38",
+      "category": "source"
+    },
+    "knowledge/library/export.json": {
+      "sha256": "5a0bf2aa08a55371c0820a0a0243163b8d9015024218e480cdaccda792e6f7cf",
+      "category": "source"
+    },
+    "knowledge/library/pages.json": {
+      "sha256": "1d7955b75285946cd67926c2a864e6e30acd2477f73eb9baadafd592cd728070",
+      "category": "source"
+    },
+    "knowledge/library/purpose.md": {
+      "sha256": "73fb31a937160e7aab4e064421ed45ebd37365bf7a00ae834d1c15e810f1e6b6",
+      "category": "source"
+    },
+    "knowledge/library/schema.md": {
+      "sha256": "2ac52db4bcc064170d38d7e39504dcf5be4544fb326f70b155b9421215ade202",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/klein-2002-hypoinverse.md": {
+      "sha256": "8e48256f689cbb5612158061683a12b3fa824d398f6328bb95384fb4cc4b8d84",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/ren-2025-seismology-modeling-agent.md": {
+      "sha256": "b88f0f9cce2ac30fdfa27943fff253ffbe21871e836dad6b4cad68f6febd9c26",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/waldhauser-2001-hypodd.md": {
+      "sha256": "059df2f77d9ef4e01a9ff3f53166364719a4645d1a86feb4afc780caf398f011",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/zhang-2025-geoscience-workflow.md": {
+      "sha256": "1505cada51d0b2bbc4aae098b72ed2d5577a61e888e1aca4f1d896b08ade250f",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/zhou-2022-palm.md": {
+      "sha256": "7b4ed92e085e31e85c32d1c8679490ceb28abfc3c0fe91b0cca4f825906e8174",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/zhou-2024-autoba.md": {
+      "sha256": "60f0c786d625472a0f20bf2782d57bf2310e005679cf84007a4686d4f9db526a",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/zhu-2019-phasenet.md": {
+      "sha256": "5be2fec7cae4a30583526c7710f6d7b07f212bedb92291fbdd85ab57a0c3e755",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/zhu-2022-gamma.md": {
+      "sha256": "78607c80b20e56d5da831770b22bf9972cec71462d9e9b51d67ef8ea98e9b5d7",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/klein-2002-hypoinverse.pdf": {
+      "sha256": "110fc27a60bca8ccdb4e9e23535738491ad1ee6ffe094b94db355beb12c22d3e",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/ren-2025-seismology-modeling-agent.pdf": {
+      "sha256": "0beec0304a6260eee801bc50f03529623966109145e9cab96684bca608ce1c21",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/waldhauser-2001-hypodd.pdf": {
+      "sha256": "e8d76e912939efcf2bc9239635a696ab834acd66b0ae5d93bb0dfe55867eac58",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/zhang-2025-geoscience-workflow.pdf": {
+      "sha256": "2961eb98efd4ddcfba90ef1ad7679a5bb7a913900ce8c72666f0459703aa5475",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/zhou-2022-palm.pdf": {
+      "sha256": "5e7f4f643776a742ea9661f2d3b142a96b2164b1c3ab8608ce0b32fd654b7855",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/zhou-2024-autoba.pdf": {
+      "sha256": "10aa60d7b633c1dc44e6c09c96faf496e64b4e67a5966ea2bef80f61f61663e1",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/zhu-2019-phasenet.pdf": {
+      "sha256": "9201653cb88ef70ab180d6134613222343e4ee3481e404f59010b1df0310f679",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/zhu-2022-gamma.pdf": {
+      "sha256": "c0f936beaca2af117e90e67eaf305500af8d088d51e79e02a8c3d3515cfc4c74",
+      "category": "source"
+    },
+    "knowledge/library/wiki/index.md": {
+      "sha256": "6d6a5b525374f160a7b3f644ac5387bbdcd403942778d65364af493806962697",
+      "category": "source"
+    },
+    "knowledge/library/wiki/log.md": {
+      "sha256": "7d139f823017de1a53af22056f24362df8f5fb1ec95a7c46d1a4f0e83566aeb9",
+      "category": "source"
+    },
+    "knowledge/library/wiki/overview.md": {
+      "sha256": "9d717ac3225e8fa9141764380d5ae7be2e5549b0c1b907697f67f7ff5fc04e5f",
+      "category": "source"
+    },
+    "knowledge/library/wiki/comparisons/scientific-agent-comparison.md": {
+      "sha256": "ec1da28fd2c93de65c711ff82fff53d2d4db5d5db9c61131033abb5bf1d4bce0",
+      "category": "source"
+    },
+    "knowledge/library/wiki/comparisons/seismic-method-comparison.md": {
+      "sha256": "e2feb4dad5cbd0c1ce7021cfe6757be2754522665555ba2c94140594d825975d",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/absolute-location.md": {
+      "sha256": "aa3505a38c9c258581413b82edb5f39bb95f9ba4108a94b40cbb3a7eac2e5831",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/agent-orchestration.md": {
+      "sha256": "22d22d8eb50a4f7ef0f461b382f2ca71d43cb7b57ed6683f630c86e2b55221b6",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/automated-code-repair.md": {
+      "sha256": "632de60de898f8c72cb485dcdca68fbd0c63c072f049fa1fbf94837481224ab9",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/double-difference-relocation.md": {
+      "sha256": "2d240ce7d2b99b6b333afc0f9c7f60dedc305dbbb10e9a8d8a1fa9adfce080a4",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/matched-filter-detection.md": {
+      "sha256": "78f6f7a3f17e338b3b420edef4b676b00f16af03246c6fdcf4f3f61c4794bdc1",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/phase-association.md": {
+      "sha256": "f7457fe34a190c2d4d7e6a74d5451ec3719298a5a729a3b20fc5980d52f3b2ce",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/phase-picking.md": {
+      "sha256": "c294191bf624760f2da666ab126ba4fceaea16b0ffacf9609d8985f501c06f09",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/tool-contracts-and-provenance.md": {
+      "sha256": "e3c84c0609171172fc0b65a33686e33395aa84c1b0939d26d371168200e4351c",
+      "category": "source"
+    },
+    "knowledge/library/wiki/concepts/uncertainty-and-quality-control.md": {
+      "sha256": "73cdf5be570a8f50e0ff308df6429b56f2f19a39212c8e4f7531351a8102abc4",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/autoba.md": {
+      "sha256": "7395c404e6228d4b574293085b1d567ccad85957efd63913d116b172f8451660",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/gamma.md": {
+      "sha256": "346f4f6e143fb998b0678c0335bca6537b865b4a012f7a9c9c1b5b49e3025a82",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/hypodd.md": {
+      "sha256": "f9d7fb08b7db049c240ba7275a14d07751bbb64a09bb932eec87f5e2d7dd6297",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/hypoinverse.md": {
+      "sha256": "0c24e588ecd9e2a43df88dea6b455b41700c7cb5b0ba2f63f3d35702d4e9ece7",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/mindat-agent-workflow.md": {
+      "sha256": "0ed30bd4d83fd7c7cf958b9e141a2ffcd65b19ecb3f713985a42220d47701d4a",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/palm-mess.md": {
+      "sha256": "fcfce318ce2b77e49c37e839ec86f81cc7aaca345afe331532b57f2830127ee4",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/phasenet.md": {
+      "sha256": "f8e64948f194073d12418458d7a9d008e70d3fc3df2ce9826892a1d6e9fc730c",
+      "category": "source"
+    },
+    "knowledge/library/wiki/entities/specfem-mcp.md": {
+      "sha256": "061b01effe405a0783dbf9a3f96be83b84b39a83dd72e391c2e488c75fc64f6b",
+      "category": "source"
+    },
+    "knowledge/library/wiki/queries/agent-evaluation-questions.md": {
+      "sha256": "e6d9ee6f3a27bbc4b01e05112fef77e3d357382a6f4c0b4bed56592c999ca7a3",
+      "category": "source"
+    },
+    "knowledge/library/wiki/queries/version-and-evidence-gaps.md": {
+      "sha256": "450e9b179b1a8d665f0530eed0abf35da79d423000719f87014d849197e321cf",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/klein-2002-hypoinverse.md": {
+      "sha256": "f852abec22e1a7450c43af9aabd33c1d3a264da5e4cff180247ac40075804d36",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/ren-2025-seismology-modeling-agent.md": {
+      "sha256": "15aaa2350b8dcd98fa8c036806d58cb28c8029d171ee590e8251879aa3965948",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/waldhauser-2001-hypodd.md": {
+      "sha256": "837af3ef3e72970662679092714aa5804eb34a0bf108ff4774eadb41fa5710cc",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/zhang-2025-geoscience-workflow.md": {
+      "sha256": "e72d6425fb5d91818a36400c96707a8f4099f74cf018c8b4ea08282fe5c08514",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/zhou-2022-palm.md": {
+      "sha256": "2379dc45cf74f4280fd6c39083b2037046767af1af8a7e297541902cfb0709d1",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/zhou-2024-autoba.md": {
+      "sha256": "4b99c50ceeb5c4d594db9d0d1265222b9decf2aba20684837389d254c647e502",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/zhu-2019-phasenet.md": {
+      "sha256": "d42863cc703d8dc20851dd42887ba9624743bb3bd10ba4eadcd639a067bad306",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/zhu-2022-gamma.md": {
+      "sha256": "461fefc81e6b23a7b965d434ce3f47671810fd1dc6067aa5f431a78ad9f1093e",
+      "category": "source"
+    },
+    "knowledge/library/wiki/synthesis/catalog-construction.md": {
+      "sha256": "08d2538f3920004fd95ec5db527eb76837d640d2c9e0a7da9231e515ce19f343",
+      "category": "source"
+    },
+    "knowledge/library/wiki/synthesis/research-agent-design-lessons.md": {
+      "sha256": "37e28eb59dafa75593ac9594ada211a1720054b453b4a6940bf4c3a9975cf12b",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/.gitignore": {
+      "sha256": "0c913edc9de9869ff396fa590131fae6b09811559636bb4d5611c8c7468751b4",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/LICENSE": {
+      "sha256": "98e641f0e6646825b16d5ab61b6304066e47bfbfa7388a170aca90a46b71c642",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/SOURCE_MANIFEST.json": {
+      "sha256": "443a3b2384ade99b018b2c9c423be286e888471ec26d6a508acd839b71133465",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/app.py": {
+      "sha256": "1fb5933dcc005553ba0639699f62cbafa5ff7acb0ca5de3b986d52fa0896e77a",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/mkdocs.yml": {
+      "sha256": "eea99f08d3371be853a5840d078083757575df6b8db9ab502474aec5a271adcd",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/predict.py": {
+      "sha256": "0d84360a906f39a9f11759ffc3c34a2b3afeb454c0e73b1035664a81c800ca48",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/requirements.txt": {
+      "sha256": "80fcd6857350000f8567eb0fdba65222a281d360c40cfb89e8217a620db905d5",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/setup.py": {
+      "sha256": "508e3e110b2ac8805dba963435b221f68eddb6b5a438d850a90c18eb152cff36",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/train.py": {
+      "sha256": "b2b995fd2fff25d9903cdb4fdb1e8e6b62f1fa57fdefb9fc0c3ba14f4514ea3c",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/train.yaml": {
+      "sha256": "14eee0a9ff4411a4fed60d9aee34480a41046a1fbf432883340671e2976d0ed4",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/utils.py": {
+      "sha256": "39e8a09d676ac39051e7f01b57eea94af6ba5e4a3c4617d0812b1751ea5e72d2",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/.github/workflows/docs.yml": {
+      "sha256": "bee42de214c56c530761a8573bf50e155e3c2e8d770e671ec9d04f82e7c7f162",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/.github/workflows/pypi.yml": {
+      "sha256": "64e485abf0cfa1b3d27a712757f04c6531a60d43c1f0200352ded62bd7ce57b8",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/DAS/noisy_label.py": {
+      "sha256": "e40188ab33ce8bf3f5ca9d5b058dbb33911020f794a2070fa08c2055363ce624",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/build_datasets.py": {
+      "sha256": "84dc7c0b28bea7a3d27d5cd8d2d28bdde0dad114d89e61fae9608365f586c432",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/build_datasets2.py": {
+      "sha256": "4ce0a5bc1493136970e82682998402b8c1f4ed1ef48bcc3f4d882b5f3cf532ff",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/clean_datasets.py": {
+      "sha256": "b5f62776d847b8e63cb1eb5bc5997402ffffb62a55de03b9276641861d53de2c",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/correct_dataset.py": {
+      "sha256": "2c21af191f272be64b54804d516094ecb25dce26746261ce0c4d0eeb7352052c",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/filt_3c.py": {
+      "sha256": "2b5418154cf8134dcc40915cf7b18cbfb6f945ce0b9901d7753338c4e298b61c",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/reformat_ncedc.py": {
+      "sha256": "ef682c1b04270cf75abb88c453aece124e776f41aa210dd24889eaca19a3a356",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/split_dataset.py": {
+      "sha256": "652f6ceb9d6b587b74ca1ee0d39cb8b31fedfb053779c2387395f38aec8af420",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/datasets/NCEDC/temp.ipynb": {
+      "sha256": "bd335c6a4422099d172808c3c4c14ac9aebb611e695bad8dd6fabe98ed810e0f",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/docs/README.md": {
+      "sha256": "e2d98db6c962ad6be3d2e927036cde8cc4ee700165bee75b366beb2aaed940da",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/docs/phasenet_das.ipynb": {
+      "sha256": "0bd6bf07969d4ccf65d6b95db37d09e427f5d21208cdc9ae2a7a136632f0badc",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/docs/phasenet_plus.ipynb": {
+      "sha256": "0d409b511014e39e4d749f023a576dd7ae842146fd28404029907257e2c6b2ca",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/__init__.py": {
+      "sha256": "9d143dca42248f83d36ab2a7365799533d40e5d795ccc1ae8eac15276bd6af3f",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/data/ForgeSegyReader.py": {
+      "sha256": "b4a657cdcfcbe985cffd486ddc3002f048633c81f8319cce05d51a31bb0add45",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/data/__init__.py": {
+      "sha256": "1599a74ad0f6f4eb09a2216d85f44c6194660023576b6b56a788d32e3e65b15c",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/data/das.py": {
+      "sha256": "8efcba1fe453ebf98fee2bf6340fead2a1d1a507b30aa1cb8c82a24422bc0ba5",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/data/quakeflow_nc.py": {
+      "sha256": "50ad359253ece8cde3126e005267b844d5b31f8ee613ee675e0bf0901bef1b93",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/data/seismic_network.py": {
+      "sha256": "eb2f90238b86416a7f5b907a0dbaded5a3c2d4f3503207ded2af4e26e1d79878",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/data/seismic_trace.py": {
+      "sha256": "38b24c87955e5eb0f6bfdb2624606028af7b08a9b5b97ec6a4c83d9595a169de",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/data/transforms.py": {
+      "sha256": "5eee70f3b9369c0e3c714acce27d07b740cd099f6e0cdc557210b08fe512d9da",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/__init__.py": {
+      "sha256": "fa10f23a59b61ffe646de14ce4f7461b279bf2b98b8cc91fda4dc5f3e207beb0",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/_utils.py": {
+      "sha256": "d1c2ce4fd4dc8ba9ab7a3dc53116ed2cb0dd8eea71a5973bfb40192c321f610b",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/autoencoder.py": {
+      "sha256": "d2837fb39e4122d26183e858603233c327886330938f232332c425b56236a992",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/eqnet.py": {
+      "sha256": "cd04fd37a973a1b81f836229142cb5d4094c644de097eb98fa447ad189935f5b",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/phasenet.py": {
+      "sha256": "dabd6f366a000740a663e7aafa1e6c359180f749e1cf220c81345574324d3367",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/phasenet_das.py": {
+      "sha256": "20fd79d48b0e7403664ffe577bbd66d4bdc8217f1c832e73bf072caa9ac814da",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/phasenet_plus.py": {
+      "sha256": "4dce048f0469cf6fb7118d75654e21fe9fef7dfd908f69934f7aa703522c4974",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/resnet1d.py": {
+      "sha256": "e07e56954ea1c0def86d03f5f404a4febc1579f6dfb9b704c43b43d8eb7f7000",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/swin_transformer.py": {
+      "sha256": "086d00d8272f588a780a188a4b8e2f62586d4c7c5f27d3b520f827c248879753",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/swin_transformer_v2.py": {
+      "sha256": "9c173a760e860223a5d4cc1d2ff5ff0237499759b336a85f0b0b38ce6a4de0d5",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/unet.py": {
+      "sha256": "ef96f3183f81df97fa21c37da0e2155db635335cde855c1650910af542a612dc",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/models/vae.py": {
+      "sha256": "abd8fd8931461151103d9578278426acf127205ce9147668c67c692005bea055",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/utils/__init__.py": {
+      "sha256": "477cfed8fba3f8786a19d7cdf1a55e2446c04e4bf53c7f478b92c7217383198b",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/utils/postprocess.py": {
+      "sha256": "896bdd6f6978233f846c08f48fd00649e39af68d4d434f60947136c49b311183",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/utils/station_sampler.py": {
+      "sha256": "fca6fe11f82a00a371d605898fcbe72e710fe3c2e42e9c5e13c45150fbeebed6",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/eqnet/utils/visualization.py": {
+      "sha256": "1b8ff2df3e9f42013e82414b17ef1bf854aa463cc7bf2842155477cf3d23b1b8",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/.gitignore": {
+      "sha256": "b7856de53e15be47a8cd2505e1d99429fb454f15827bedb88605928cbc595d24",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/build_training.py": {
+      "sha256": "4092cdf65333073ef6e3926552c582d5c96c0e8aac02b5b8550f2387301df4e7",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/ncedc.py": {
+      "sha256": "adff6549b99f789dcbbcdbc709d0dd67577359ca15018d9cbc84d781b6617d7d",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/run_gamma.py": {
+      "sha256": "3abf40f716891fa5fb6b27cc38a83f8c1b46ecf0c73c74aafd5629fa3061eb46",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/run_phasenet.py": {
+      "sha256": "533e8b3a03c9d085a75927f6b1852506f72dc5615754e38ef303ba5ead281b77",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/run_phasenet_continous.py": {
+      "sha256": "328722694c899ad09e1fa3b42f21a01bb411a274fee363d3c92d54f9088bda72",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/run_phasenet_das.py": {
+      "sha256": "a1e367ad55f5dd1517784b3abba8b9153675d9ce082e65a2fad2677b8929ac77",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/run_phasenet_das_continous.py": {
+      "sha256": "5faaeef529f0a1e35f25f3b16aec22f60341ceb2b7428a50f5b6d874c9dd6bd8",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/run_workflow.sh": {
+      "sha256": "502467a6b9785d91eb146968ba7320e356a23ae81cf0ae7b3ff7359f6e36665f",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/train_phasenet_das.py": {
+      "sha256": "4e7f7599e9bc4a58f9cd8543a0e0bacbe6d7ecc7a541eb979d429c437e414483",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/calc_snr.py": {
+      "sha256": "3a47ee66166907914878d32c0d016fde68564061717a446fd1ca49c8aa1747dc",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/correct_gcs.py": {
+      "sha256": "3ca251084f3c5d95a9cde257fb23196b8ae2c28b286687c567a5ea4f5dcd003b",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/deposit_data.py": {
+      "sha256": "eda4fbe309997a32e3553ce2d6fafed476c64706ca817fa08b2bd3b47831cd11",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/deposite_data.py": {
+      "sha256": "41f98c4660704d80f5f5fcc2963c69d62c439d4dec1e774068c9b68a4991f95b",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/filter_training.py": {
+      "sha256": "d9d787264e690fa9b80ec0879cb53ac368a445709dbd00d31d11800abe389ab7",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/gridsearch_location.py": {
+      "sha256": "bc384fa092685153e64f875ec256cfc0643a19c656d52d41762cbb616a06ae17",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/location.py": {
+      "sha256": "f740057b8437223787680da1ab122f9b5d10fa66eb4d237d5c806499ae20a349",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/merge_mammoth_north_south.py": {
+      "sha256": "b23a86d4ebbe35536ad7861cb88eeafad198f010d49a6b92523ae8a0ceee60e4",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/merge_mammoth_north_south_continous.py": {
+      "sha256": "c322c0822de458cfe7c2d2759fbd7213430096ad44548072449db7d56aaade28",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/plot_catalog.py": {
+      "sha256": "8a2aee7acd3b70f3fea7c4a0dd8d20d9f461059a1b4cfcf6318d16068c2a813e",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/plot_example.py": {
+      "sha256": "9b9deca602a26f084f53e9931a8e7669a4ecb0fc23c6f016d0f703ced8be0710",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/plot_stats.py": {
+      "sha256": "7c2172af7f97d4cfad13c4b6c19edc95c5ba91e06379e13f220ba976a223686d",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/plot_topo.py": {
+      "sha256": "65167d6d6e5b1a58b0bbc785a70d9f16e91130fe35794dcde0568e48098bdca1",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/reformat_ridgecrest.py": {
+      "sha256": "8cc339fdd46fcead47302e2954116ef50ed1fcd30552c434b30ad8de3e019124",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/run_gamma.py": {
+      "sha256": "d77a2604b3dc235c08cb928a21fe46239137713ef30974a96fbe6b59f7cb3712",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/scripts/utils/stats.py": {
+      "sha256": "badc02b88a51e0d625f68db9bcf31f5bf4c6d0af570b582eac820edac58397a7",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/seismic_network.py": {
+      "sha256": "d115d4f99ed2324e4cc22ca050109271983f605875e2b36fa8aed5d040f065f6",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/LAX/merge_gamma_picks.py": {
+      "sha256": "d4ff06f43fdf7a6d96cf630d071a7b8884c8d368c6a63a19ac147670effc6a06",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/LAX/run_gamma.py": {
+      "sha256": "6e2ce4a42865270e24e9dbe215bb70adeb1fedcdf9ebc141751fde36bc6ca4fd",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/LAX/visulization.ipynb": {
+      "sha256": "5b346cba2a3a937827fc640609bc81d58fcd01a54c11b5f25f9b26037a738c90",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/fastapi/test_fastapi.py": {
+      "sha256": "c6d4da11f917892e2a21327f74791d3816fce7c7fb5a264a4ec0a5369d820968",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/forge/ForgeSegyReader.py": {
+      "sha256": "b4a657cdcfcbe985cffd486ddc3002f048633c81f8319cce05d51a31bb0add45",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/forge/data.lst": {
+      "sha256": "43b67cb9848e2be45a59095c8805783f271022da008bdad75cfcb2e78212abaa",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/forge/forge.py": {
+      "sha256": "c3b590c358373687bf5a216d289d0a1f3f01983b0511132eadd5eeade2875095",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/forge/read_display_das_data_forge.ipynb": {
+      "sha256": "c5d2fd3ddf80b5526703e8f8fae70535aad552cc473a3e2b444b519412acc397",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/hawaii/analysis.ipynb": {
+      "sha256": "1d7bd74c0ff579c2ceae5c6a0b4716548dcbf36bb3f4ca247e66b2e1833d1016",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/hawaii/run_gamma.py": {
+      "sha256": "4cb8d3e5909b5e51d2ba8de9862be72c66603bb69a07359483b78a0257b239cd",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/hawaii/visulization.ipynb": {
+      "sha256": "87c454a8d44bd137124996712f1c689a43d4e756e7fb2590c11828ba8406d031",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/huggingface_dataset_test/test_for_station_sampler": {
+      "sha256": "116d90b14f1565fde9bc928c9ecb7974d70b6bc54f31b45d556d870e324a2a50",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/association/debug_association.ipynb": {
+      "sha256": "3f7ecb41a0e55a40b9fe442fe14a4e9f9842ea9664a188db8de80ab4bec46ada",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/association/merge_mammoth_north_south.py": {
+      "sha256": "c23755e1af02458875a610c0db1a85159b4a0435745089ba01cab248fa1a0df6",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/association/run_gamma.py": {
+      "sha256": "5c4cf31131200431e773bd9ffed4907dd04aef4c3fb55c1d90641a2b255828d7",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/continous_data/check_picks.ipynb": {
+      "sha256": "60248392a51e01c2552ebe377f6d54d0ad126bf7fbd0159c89645ee3eaa6c11f",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/continous_data/merge_mammoth_north_south.py": {
+      "sha256": "152958488f9881dc456067421ca6b17c955e8bd530e63b42c8b38439fd7e6e33",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/continous_data/merge_patch.py": {
+      "sha256": "d8ae06fdcd21d8497009034aa7dea9aa8d8d2a595c563d89d673bd71c8e78a05",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/continous_data/merge_picks.py": {
+      "sha256": "ec5b6252ed413bef1871017fcf3ceb314af0ac80476fc0d65ffc592efd439c14",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/continous_data/paper_figures.ipynb": {
+      "sha256": "1eff92fe75d36aef1a37e1de65c33b027a0c296827cdf2a3bf902f8d6e158eb8",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/continous_data/run_gamma.py": {
+      "sha256": "b95b9eff7e3bb0f94da45153821a8829d96c046aa0ec6c8daf35dc93c509d89d",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/paper/paper_ statistics.ipynb": {
+      "sha256": "099969daa1c618d172e7346162437beec40a61878ae1165ea09ed2bc8c9d0a37",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/paper/paper_figures.ipynb": {
+      "sha256": "246e7725517f2905273ccdee611856c2c44f71f610912ca9bd8b2f7250c2bed1",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_das/paper/paper_figures_updated.ipynb": {
+      "sha256": "a3c15ee07b239c59c4a271e429b34e112bf006cfa4366a144241ba11e137c7be",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_plus/paper_figures.py": {
+      "sha256": "c64646570c93039b792a0852bfed313b08f3e99f6b9f37254a3122519bda9f68",
+      "category": "source"
+    },
+    "knowledge/repos/EQNet/tests/phasenet_plus/plot_errors.py": {
+      "sha256": "3964abd7f8978c492b04a421a7db944ef69a7dc6501f6c37ab569abe981370b4",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/.gitignore": {
+      "sha256": "ec177dba66b80e63a8ef0b961e354f1d5960edf6a8b70c8cbeb2609b11aa653e",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/Dockerfile": {
+      "sha256": "ab3addc684ba3d2a995b43f53f12d63d444fbe7403d4d183ba5f0b1aeb18c982",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/LICENSE": {
+      "sha256": "bc22d0493e82950f822459151ade0f11fa45c0f58dcb39dcfa2d7b0185972533",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/SOURCE_MANIFEST.json": {
+      "sha256": "bd4b06b2c8f2ec93c4d28d49c9aa19075d89df4c85977e6443505555c1a7e6ef",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/app.py": {
+      "sha256": "bc1b0dfb19e0995976c7d67e7bd0dcb944feb29b7447bac8fd6b06fd5805c25e",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/env.yml": {
+      "sha256": "8bc7315a9d28f8eeba5ae10a3b32308f7105447a4554a275c2714e733a67a6f5",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/mkdocs.yml": {
+      "sha256": "22e5da182dd0214b4ddbd08a2bb1cc90c0aada7d05d37833ceff6975bad28e4d",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/requirements.txt": {
+      "sha256": "a162148b2dda85ef8cb303ebc8907870021d3259ecd6c875d8affb049fc7de82",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/setup.py": {
+      "sha256": "ccc7bc2c579dd6d95586b23521cc7b3c1f8ad8a7cfe0a0532c08719312fee477",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/.devcontainer/devcontainer.json": {
+      "sha256": "28a548c171955f017e6c5fc4ad892cee5783da73dd56c4da22f340c6e94c259a",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/.github/workflows/docker.yaml": {
+      "sha256": "d4ff7dec8a0a2c628cf47d060db79ed4a984a9e00832fcacea123d81b120a771",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/.github/workflows/docs.yml": {
+      "sha256": "4cef0b23b0d4365e247c94ea5daf447a470ef8af1530ed35aa5475ef38aebb3c",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/.github/workflows/pypi.yml": {
+      "sha256": "23520c1cade0a3eedefdc75addddf4c0f88dd6a3b47ba2befd48c6be77b89b77",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/README.md": {
+      "sha256": "2593a3169a7b19605d6cbcb8aa50dea5a2883f4ce03a2addefe2d3e0c92704eb",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/app.py": {
+      "sha256": "bc1b0dfb19e0995976c7d67e7bd0dcb944feb29b7447bac8fd6b06fd5805c25e",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/example_fastapi.ipynb": {
+      "sha256": "6158a3c1e4145603ccd866bf8f8319f51167b72cf7ea0a471e04ac38a3c3814a",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/example_phasenet.ipynb": {
+      "sha256": "528045bd069be14035bc79955b83fcf7539aff0e6fd3403ab1a3bab93977cdd2",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/example_phasenet_ncedc.ipynb": {
+      "sha256": "6dab84591bfb0ccddb49d8d88567657ab25c073b21361d09cb3c1f3c240cbea4",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/example_phasenet_ransac.ipynb": {
+      "sha256": "238f835123f60658d31fa4bea6a8661a8d188ab35275c09cc120b39e394aa819",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/example_seisbench.ipynb": {
+      "sha256": "c36be572ff299ad95747a127d1fc038a21a3190c1dc065da0a3bc9f03b8bd166",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/example_synthetic.ipynb": {
+      "sha256": "720d339c4e18690f6c99bcb8a321251508c88c1fa0c82a42148686f0b5ee2038",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/assets/2019-07-04T18-02-01.074.png": {
+      "sha256": "644569333c2f3645b08193c4a2f7ec9561fc72a415a04e15aef37d924b61e0a5",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/assets/diagram_gamma_annotated.png": {
+      "sha256": "0efcc6c33b4aadc7a7a5aac0a3980954f21c6d39a6a8cb73bb3927ad883114ea",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/docs/assets/result_eq05_err0.0_fp0.0_amp1.png": {
+      "sha256": "8cdcda27f7b860ea5d62bacc6e050967acd53df965ec6053c4dfa6304011daab",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/gamma/__init__.py": {
+      "sha256": "7c180d8f370eab2027037fa88a80b3811c4e94a3eafeafd0941977826701d97c",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/gamma/_base.py": {
+      "sha256": "ebf7f4c1da68272923daa672367a7d86c570bd566e00a4cfb1a6b807e85dd652",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/gamma/_bayesian_mixture.py": {
+      "sha256": "1026e9617c39c385a207c5182397547a48bf68f58259d7e333f6bb036d793f9e",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/gamma/_gaussian_mixture.py": {
+      "sha256": "ee2830a50a55cdf99c7eaded150f1fab6cdc402c7ec81fbbd8db61867b3871b7",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/gamma/seismic_ops.py": {
+      "sha256": "4120e8111751553dbec8b03b8039fa72e21bfe4894d44b28c1b6b75e7c7e8612",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/gamma/utils.py": {
+      "sha256": "05b059be24616e057e4b31e410ac283a5eaa51e48678a4976fe576073d53f67e",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/.gitignore": {
+      "sha256": "d7d5a93d7bf8d896116445380ea2c05b80b7e99ea5aefe0c01645fa53f7caeac",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/GaMMA.ipynb": {
+      "sha256": "8170003e806fa34b6d467c3399ea50b5ab76f1efa1b0282b4831789daa9235dc",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/catalog_gamma.csv": {
+      "sha256": "d2423f4a2d06295fcd963e514b97b8affa39ced538c8e3c8b7238238b71c7aee",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/catalog_scsn.csv": {
+      "sha256": "75fc2450a3bc34cd050fef75414d68defdf1b6a22963fc8f7eaa48f812f9dd6b",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison.ipynb": {
+      "sha256": "3e511414143de4b4859eb615317f129ddd8d49e86ca59b89dc32a47c56aa328b",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/diagram_gamma.ipynb": {
+      "sha256": "3486419089d47f1a9db0e888fddef8d5aebfdbf6860d46199735732bef8cfd42",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/example_phasenet.ipynb": {
+      "sha256": "f46fcab5e29bf1d8b5c3a73d5e80078dccb89415bf2ce18c2373264a5cd7c6dc",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/example_phasenet_neuma.ipynb": {
+      "sha256": "145c2e5325d30fec06743b454902c3e4912fd77255c750c8d5df401617b8eee0",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/picks.json": {
+      "sha256": "3692653148da1bc7284ab1087137655ac55669676ac66f66feceafc092f5b822",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/picks_gamma.csv": {
+      "sha256": "bc93f4a32b183b7144b14811087d8f5115a033661f0586c44c51f508a6494aa5",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/stations.csv": {
+      "sha256": "c8a448443d44036cd3a566c12e56cb83c1bcfb846a83bef72a86738fb523d580",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/stations_hawaii.csv": {
+      "sha256": "a0995a4c83da2f44a8aeedb3ab948f30ae8f354578b4ae2947ac40c1d333c966",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/statistics.ipynb": {
+      "sha256": "82d8fabe150a4dec24a6bd7c1faf4eb51241f64f458257b90586162be578589e",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/synthetic_example.py": {
+      "sha256": "ada753d021418e3a82b6dca3f5d7875d3002504d8b41098939bc702e04767a96",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/test_seismoc_ops.py": {
+      "sha256": "8d4ca953f24a2fd811a4bc7def82b6f697abab38612686867d02a86cf6746570",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/util.py": {
+      "sha256": "5ac244b4f08486eb60e08d13b2dd053f18ffae11107926f46039a372ac25e931",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/compare_eikogamma.ipynb": {
+      "sha256": "378ffc912cf08a7089a8331e6eac2267a00b281ecf4de1d181839c57a6c224a1",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/stations_ridgecrest.csv": {
+      "sha256": "c8a448443d44036cd3a566c12e56cb83c1bcfb846a83bef72a86738fb523d580",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/statistics.ipynb": {
+      "sha256": "291040af784ef428475f8d0693140d9e913c6533edf890513cd98e2a3c021c75",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/synthetic_ridgecrest_data.ipynb": {
+      "sha256": "dc4d120e5cede7fa89367cacf014b7cd49c29bc47216b8dab519e7420939407e",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/synthetic_ridgecrest_gamma.ipynb": {
+      "sha256": "2be24f26016d345437fc1eea4b99a7f30d64960c68dfb263beb242200578513d",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/real/REAL": {
+      "sha256": "31b40089a32912bf19369e1290b6a0dd4666e745f130ec52bc3e558e70300814",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/real/run.py": {
+      "sha256": "6ed484bf62098a50e75bed3b4e479734e1464dcce8aca52ca1e3158001c715bc",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/real/tt_db/itvel.nd": {
+      "sha256": "676eda4c928709fc2ca0dfe8d97051ca6ad457d7268dc76c60d7a24f3dbbe153",
+      "category": "source"
+    },
+    "knowledge/repos/GAMMA/tests/comparison/real/tt_db/taup_tt.py": {
+      "sha256": "08b980e0021c42f287a594df953cdbe3e0a049c3da5dcb5ff61b80448102e733",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/README.md": {
+      "sha256": "b783d75f428a4375b519d92ec7180ad88ed63fbc8bd3a770f716969bc7b80df7",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/SOURCE_MANIFEST.json": {
+      "sha256": "71043ec25b4e349efe1c5abbfa44be705f2d3c00cdbe3e3fcc4e1aa52fb3b1d6",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/README.md": {
+      "sha256": "d626681a9d6791d7fbdd77933bcddacc89d035678a72abfb7512c1536932cb93",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/1_run_pal_pick_aws_eg.py": {
+      "sha256": "737f2965e3f4844aabb91106f99e1542b1b53852e40a87720a2870d4d809e17c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/2_run_pal_assoc_aws_eg.py": {
+      "sha256": "55baa97de03dd078934410ea66f2b310e8f33c45dd365cd9908e12a1964caaff",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/config_aws_eg.py": {
+      "sha256": "c7114af297e3683be89a14e009c45f32cfb3ea44d25e7e19a250d6fa764d1041",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/input/station_scedc_aws_selected_20200101_20260701_pal.csv": {
+      "sha256": "111d800eb4cf03af2b6ba0ba2f95a41084bb6b5d070fcbd2f3057baa8ef2dd83",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/input/station_scedc_aws_selected_r1_final.csv": {
+      "sha256": "b3c90af7fa13a70c0640a493952c59d6ec57de06d31334aeaaeb55dd55e0198b",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/input/station_scedc_aws_selected_r2_final.csv": {
+      "sha256": "149c66f27a8bfce9c7db3bf7f73c154a0db201bbfda502a2280c2fe531a1f005",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/input/station_scedc_aws_selected_r3_final.csv": {
+      "sha256": "70482f51ef8b81253f345cdacd4f0df776ccae955257b224591909929d6ad1b3",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/input/station_scedc_aws_selected_r4_final.csv": {
+      "sha256": "4e6341244ea31e2e502a3a80649a23bfef1b4f4753e04876fc8b591537ea91b5",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/input/station_scedc_aws_selected_r5_final.csv": {
+      "sha256": "3447e8c914c8e82026b0ded3bf3578c2266b8d7e6955023277c97cb7da6d4fb4",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/input/station_scedc_aws_selected_r6_final.csv": {
+      "sha256": "698dd0bca4e3d50c4d911b06a9a990339b5807531f39ac69a9a0adea0b084e88",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/processing_job/job_common.py": {
+      "sha256": "8f8f6c6eb6aa2722c3b42025b3f9727e82b071e5f51bb8ede0e67b40a0eb5d37",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/processing_job/monitor_assoc_job.py": {
+      "sha256": "e41779f7384a25b5c1cfe9c2a16c1771871be4da7022762aca3bb5fdb21ba575",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/processing_job/monitor_pick_job.py": {
+      "sha256": "77ce67110c01fcd581b74cbc41111f523e755bdee95bdb85cbba0b22df14eba6",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/processing_job/processing_entry_assoc.py": {
+      "sha256": "0d3c35db94a571478f8aed28140ff4f2ecf53b69faaa1a28b7218f955c3105bb",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/processing_job/processing_entry_pick.py": {
+      "sha256": "3c4a7f5fa0be995f60261f26969e075ea70b218060f2de4cbf189d974706ea26",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_aws/processing_job/requirements.txt": {
+      "sha256": "c88fe864ad7d0bbcac8f4cfa1745d4a6906a56582cfe5bd08a1dcd8d257a33af",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/1_run_pal_pick_assoc_eg.py": {
+      "sha256": "5593b8d8020409ebfbcbdad223c69f2b0f1f75bf0cb9f8dd9771ca4c4293148d",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/2.1_run_pal_pick_eg.py": {
+      "sha256": "629fe2f8dcd58e34d292bd00fb63fd07321db283e0e16f0025781c35e19cda18",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/2.2_run_pal_assoc_eg.py": {
+      "sha256": "f6924ea38fdede930932fec33daf2ecbed60d39bea5a6e6ad06014007d3fc5f5",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/config_eg.py": {
+      "sha256": "6702c23ff739c23f3802358f0783d0ebac1a27539a8682e6236213af23bc40cf",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/input/example_pal_format1.sta": {
+      "sha256": "678fdb937e6fd82c0fcaf699a689653e845b98bb667d5f437f9907b315e2701f",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/input/example_pal_format2.sta": {
+      "sha256": "c0927de0fc56ebbfedcd012ac3cb0387263074da09ea5c2b2f2b43cd1263a127",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/input/example_pal_format3.sta": {
+      "sha256": "4bc9e12b10c54ae8b5b398b67042e94d3cdbfe47d2c568bd0e45ed509c81fe7c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/config.py": {
+      "sha256": "4503ce37d8ee161d45facbf5b12265d414a5c45da739dcf8ec1c11f8ea8f5323",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/hypoDD.inp": {
+      "sha256": "a97439a798ecba9b372c7ee94c92c456aa39bccb8fa069cabf9eceb03a3d5ff8",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/mk_pha.py": {
+      "sha256": "d7f88271d98b7a9e57cbcdab11999e5999708430ec7f7bb8c6418d28be1d08e8",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/mk_sta.py": {
+      "sha256": "76e47aab4121e2e954133188a4afe161e092b5f747166d1816f213f1d9e61577",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/ph2dt.inp": {
+      "sha256": "955cc595df278703e73d856fbf93038d15dff6f86b705f9974c4d694ece005c5",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/run_hypoDD.py": {
+      "sha256": "7db524f597240fefd4cbba6846ee2a24eec279087b87d422ccc100dd8d7c561b",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/input/eg_pal_hyp_full.pha": {
+      "sha256": "97c1ef6cf19a186b0e02eebc71d672a023525ee8656a63dc93546c4560080c6d",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypodd/input/example_pal.sta": {
+      "sha256": "84a22f9690d0be3b23773d68ae1de35cb455d642ae93913c32969601a9e36cd8",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/config.py": {
+      "sha256": "183891d85ff11b0ff84c487abd0fb8fbbe69d2ef083885b9300a6bb37b88fe0a",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/mk_pha.py": {
+      "sha256": "870e6ce8ad00002ca0190d2355ed7f41d65f9c0968a4b0157f908b6835750c0b",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/mk_sta.py": {
+      "sha256": "026746f3d780d0ee145a237c4710510a10d61d7ba689bfe0189eed6cf814be8b",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/run_hyp.py": {
+      "sha256": "3633a3fc0fb7d3d0d187cefbc54436c7a4ff8271cbc5b7ceee9b56b4c4c62b72",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/sum2csv.py": {
+      "sha256": "e4d1405c065ea64bb2cf53f4760c0d32299edf36e2b5ba94c9b995efea8a819c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/input/eg_pal.pha": {
+      "sha256": "be4cc8279705f1f0342f6f828dc52838645e29c1c2d7f27692709b6356338d94",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/input/example_pal_format1.sta": {
+      "sha256": "84a22f9690d0be3b23773d68ae1de35cb455d642ae93913c32969601a9e36cd8",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/input/velo_p_eg.cre": {
+      "sha256": "c1cb24a726f261211b8f0f5f2685b3df231f9293e398b7c535394d84bbf50bb7",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/temp_hyp/temp_vp-pos.hyp": {
+      "sha256": "690f4f4c1551900602dd21041e08b14f57e1b6864bd781c74151308e014103dc",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/1_run_pal/run_pal_local/optional_location/hypoinverse/temp_hyp/temp_vp-vs.hyp": {
+      "sha256": "b4a648420de5b4a37d4d38e2cc4486babf9c49ea049dc063d30724a0f2a836f5",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/0.1_download_data_stp_eg.py": {
+      "sha256": "4a9138396e5b801c8e1a7bfeb872c936eb94fa1ead4f321e8d4d0f5a481fd93c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/0.2_download_data_obspy_eg.py": {
+      "sha256": "f035cea75899fd1d07a7e7e2522429b7322608c35998c659fce714926d1f6383",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/1_select_templates_eg.py": {
+      "sha256": "6176deb1cd542aebcf2ace51c7bbcd532bc9ae8af75b18eb8992f6769c195e1f",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/2_cut_templates_eg.py": {
+      "sha256": "0b1840954a8ab75fb6263550851ae085c0ca5371c8299279e2b3abf5310342e1",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/3.1_run_mft_gpu_eg.py": {
+      "sha256": "6c409ea3f01c3d547be2dc8cf4f3a6e54fc6af5612c3ef98d459d87e8511ccd4",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/3.2_run_mft_cpu_eg.py": {
+      "sha256": "7e9ef3c6e910a8b9fbf7f78e9e45dfa2be402d815e09c3095f94e44264b05a1d",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/README.md": {
+      "sha256": "f4ec84f710fb2241302e75ef9b3f3098332359873d460dcb1296c0a8021fdfb3",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/config_eg.py": {
+      "sha256": "32d36391cc25c1be91d82fb3ee17e7e9531a69f01c9290516125742d0b4bee70",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/input/eg_pal.pha": {
+      "sha256": "be4cc8279705f1f0342f6f828dc52838645e29c1c2d7f27692709b6356338d94",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/input/eg_pal_hyp_full.pha": {
+      "sha256": "97c1ef6cf19a186b0e02eebc71d672a023525ee8656a63dc93546c4560080c6d",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/input/example_pal_format1.sta": {
+      "sha256": "678fdb937e6fd82c0fcaf699a689653e845b98bb667d5f437f9907b315e2701f",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/input/example_pal_format2.sta": {
+      "sha256": "c0927de0fc56ebbfedcd012ac3cb0387263074da09ea5c2b2f2b43cd1263a127",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/2_run_mft/input/example_pal_format3.sta": {
+      "sha256": "4bc9e12b10c54ae8b5b398b67042e94d3cdbfe47d2c568bd0e45ed509c81fe7c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/README.md": {
+      "sha256": "60ea953645be3cae1a4cf7f078c34e2168c294ca258497fddcdfb2c4940eedd2",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/config.py": {
+      "sha256": "3f19c77ac1e2c8d705dc4b597ce104e7855072ff9b5c7c2cb3cc503260060302",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/hypoDD.inp": {
+      "sha256": "35e00d85d688ccdcdd57ab3860785c986b19d63906edd5c04aed88def790e766",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/mk_event.py": {
+      "sha256": "347a4f53749a3feaa3fb22fafd604458a710bcee960f75475d8729296d7bdc71",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/mk_sta.py": {
+      "sha256": "b986a6d3e0232124465b6293d588b59718d6462f40ccc14c9bf9377758e1bab5",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/run_hypoDD.py": {
+      "sha256": "03ec042c7a444d5b8376ccf3a3bdea9922a6d8b4a58665725be784565c1d2aa4",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/input/eg_mft.pha": {
+      "sha256": "1045c4ef2c01bfad4c88be96bb39374f4fb2e54776528bd9670bf41bf0ef0f65",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/input/eg_pal_ct_full.pha": {
+      "sha256": "61f48ebd1018eadc9cec0efefc4bea68781f445e68b2bc26d8b4e9a4b923b028",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/3_location/hypodd/input/example_pal_format1.sta": {
+      "sha256": "84a22f9690d0be3b23773d68ae1de35cb455d642ae93913c32969601a9e36cd8",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/README.md": {
+      "sha256": "c52ad4621b54e0a76d7eb251bf7135067989d278e86513d5acbcf7572be39f3a",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/associate_mft.py": {
+      "sha256": "47afdf7707f0bc54186c3562ca7525b3c0753de9e62baa75f6c5d225004fe75b",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/config.py": {
+      "sha256": "c8f9902fbc414ec3638da8ed76a2f486bcfd0a2c6b49c0a503b15ff21f0fefc3",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/cut_template.py": {
+      "sha256": "453d2326ee024bfa84223181e694dc034436b8cfce0032acf182e3f444d91028",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/dataset.py": {
+      "sha256": "36fa69e1f69ce26db51f809e2d88aa709eceba3a9710e4a853aa1fbca775f647",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/dataset_gpu.py": {
+      "sha256": "80f7ceec3d6e961195f5c58b01dc0409c03d92097e73729638d28750508ebb28",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/mft_lib.py": {
+      "sha256": "e3f9335cb98c2df877cc3e8880e028605bac542b8599fd5bd56e62d1613daa64",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/mft_lib_gpu.py": {
+      "sha256": "e8aba27c70dc3d33e45170684b1458459563ffaa0b2e0597e3b349e99a9cb0db",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/run_mft.py": {
+      "sha256": "933cf366dd50e320684995d375a7db35d9e840819ab2edc3f6ab3a51c32cca1b",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/run_mft_gpu.py": {
+      "sha256": "98dcb1e5dd6364c54de4e8f1903bfc108e0f30a6859e971f198460a3e019a0e1",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/template_store.py": {
+      "sha256": "772d4edfb4e8b7aad06afc27591479ac3667e86e733060592c8d3ceebb94954c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/MFT_src/workflow.py": {
+      "sha256": "5dfb6280cee06d84b589ca13e6c36dba7485c8d00f50c4752486de5c7cbf5a60",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/README.md": {
+      "sha256": "141f3736c27a160d4ac4493ed43251929f7f9ffd940cdc083e9be1571325678f",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/association_runner.py": {
+      "sha256": "54bb8aaade7c848dc71442b88858050c61f62829ea22505650dc8c671bd67d93",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/associator_pal.py": {
+      "sha256": "c0eae5202248248f76af322ea3d696606a9213f416591716fafa981aa175a66a",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/config_pal.py": {
+      "sha256": "92e902ccf1902b224451a7192ae1380e9eac363aad6e87fa6d869f2a281d8690",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/data_pipeline.py": {
+      "sha256": "130905c49a0d70766dba28fdbbd5595a7fb0800795de52262338e97cb3afda70",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/data_pipeline_aws.py": {
+      "sha256": "e96fa1278668f2d2fc5f9a9ba87d29076655a905448c62c362f34a91cf1084c3",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/phase_merge.py": {
+      "sha256": "99b77c565f72732e228c388205dd752f2646e4ae036547009c29f0c9341b7e7a",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/pick_ensemble.py": {
+      "sha256": "1d0cb2478902c1f0b10e4e56bdc1d2a29bef388d35cfc0f3ed9579216e288096",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/pick_runner.py": {
+      "sha256": "dfa4aa7a7f91cc302b9e3faa48fa935accc8fe0c7b0a4a12c8ac346990016f39",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/pick_to_assoc_rate.py": {
+      "sha256": "02b13283ed7b38ae34fde8ccaa61802d2cd3ee4d70a517df155c4b44c3876e86",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/picker_pal.py": {
+      "sha256": "b707c80046194e26a2a59f6291328854b40cc22f43ba85cee780aa90f615efd8",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/run_assoc.py": {
+      "sha256": "a663561d402713adda789115b4899a67488906e3653b259b5a1c3c1969551834",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/run_assoc_aws.py": {
+      "sha256": "118c86e664fb582332ef39b99e7434df0eca9af9066d98e5f5fc2511b1503a1e",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/run_pick.py": {
+      "sha256": "06fb2f614bdf6bd31adcc886fb7a9c98d4be7f6af5336db614704a2c2dd2604f",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/run_pick_assoc.py": {
+      "sha256": "0fcd8fb532e964a51796cd45dac5a60b85758baec2b292c026811216311ce2f0",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/run_pick_aws.py": {
+      "sha256": "2d9c0410f074c1b43800ea038d94cbdef8077c5509bbeae9362dbff074aadfb5",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/station_sets.py": {
+      "sha256": "6c1baa18af18e081a15d22f9ab1e7af31c3f94aa8c6c744a9bc984bdf1fa4190",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/PAL_src/trigger_counts.py": {
+      "sha256": "be1800d7afc6d227442e005fb0013a78893693c333222a6a19185a62fdbc38c3",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/References/Optimal hypoDD parameters.txt": {
+      "sha256": "ca2f8a2ceb0ec49c69911870f1d66ccd19d79deb9389c38e5381e7f23f303e3a",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/References/PALM_workflow.jpg": {
+      "sha256": "163d0614476eed818186ecf8c3773f8fa33fbae6d05c939497bbb74704a68c81",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/References/Zhou_2021-10_PALM_doc.pdf": {
+      "sha256": "735c4aeb36fa64ea3f1b6437dbc0828e5dd258d143876fb4fd6dbfb634f1a9de",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/References/Zhou_202308_Construct-Seismic-Catalog - share.pdf": {
+      "sha256": "c1ba385d04efbf3ea2787d921a7cd192788b173a6954ee3cbff5be302d9d6bf2",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/References/Zhou_\u79d1\u5927-202208_PALM.pdf": {
+      "sha256": "467965c79098ff253dea3d795756f7dbabb271db7afddafb3782a42f311a52a4",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/0.1_download_station_metadata_eg.py": {
+      "sha256": "8917d812353dedb6d1ff756f69df937fbd9ba343999b95f402c5b4a464800d1c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/0.2_format_station_file_eg.py": {
+      "sha256": "59fc1c305e80074f74ad5b20b9b9ef29b07fa2a1c915c28257edd8da699bc94c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/1.1_download_continuous_data_eg.py": {
+      "sha256": "34d72a023669e994532ca1911564c21e24ce425e6af63e528927cd6c69fa0960",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/1.2_reconcile_station_file_eg.py": {
+      "sha256": "44d9511ea847b267aaa15578537d6bfdbbdde4400b30148d9626ebd30db6d81e",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/2_merge_raw_data_eg.py": {
+      "sha256": "312e2e20b1f845090010f4e86e130c59bbceaeccc7681a1196381bdb55fb26a1",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/3_check_data_continuity_eg.py": {
+      "sha256": "504fbd8acf9f24fa3b4cdf79dc9f1208505babbdf71fe54fedd2dcb04f6d8df7",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/4_plot_station_distribution_eg.py": {
+      "sha256": "4679053797fcc52b921d7d5085f5aa907884f629848c84da5ead916ba082dadc",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/README.md": {
+      "sha256": "259125a5c08e01cd57d54b62db600d5f64cd39d66fbb969fcc7eb6c8dcd4e61c",
+      "category": "source"
+    },
+    "knowledge/repos/PALM/preprocess/preprocess_common.py": {
+      "sha256": "1590f57140893e4f9de2a32e80b5cbc24fa7bfbe95c3e3b47fe686b71043cdf0",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/build_and_verify.sh": {
+      "sha256": "adc8f80512d91de8dcb58c8facb18007584abb22ff311afbdb8130bc4049c01c",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/hyp1.40-release-notes.pdf": {
+      "sha256": "9c30c5a8bd1225972763c94a92854e9c17da1301ea5edb30f65ba869f9ac1302",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/hyp1.40-release-notes.txt": {
+      "sha256": "77b49c0133c6500811db9a721778255e437000d331a565506ecfa4121cf56cc3",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/doc/hyp1.40.doc": {
+      "sha256": "0d6cba2fe9984ec8cb7ddf9ba8deba307ff2993c9c87e884edf5cafc9e947738",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/doc/hyp1.40.pdf": {
+      "sha256": "7906ac7ea9fe7e1f3011fd169a1c2b755cfc7a992bc00a9d9625c367a5b91a66",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/allsubs.f": {
+      "sha256": "2ccfdfb9e9558bfd34abbe595c38c58fa3b279fdfbdceb9b6423119314c374d5",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/box2.inc": {
+      "sha256": "7c482263744daae4bd87d23070d3bfbab2cd11dd23d5556dc3cfd736f708266b",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/box3.inc": {
+      "sha256": "b16b51708a4404661b062f1a7dd8dd5a8711cf8206db82bcc5d45bb1a3a6e4e2",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/common.inc": {
+      "sha256": "84f099d026b84ba1c646a43ca73119cda0f03e9261b458d14d185f0b7c81e2b2",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyate.for": {
+      "sha256": "1ae5ddd6ed88a6653a408edd804454d2b77c4e5fc8d3fa884c6e5f8d1e9105ff",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hybda.for": {
+      "sha256": "2bc450f7d740c89be3bebf722be30606bef4353637b98227818345e9621f6458",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hybeg.f": {
+      "sha256": "326f3cd9b8eabf7d8463c2d415d166df6f46c3b38e332dd65e2904aacf0a8de4",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hycal.for": {
+      "sha256": "17e1db33a3dcf42f3d3f15772c227ed84bfcc5e2abf4df75423c07416fe79068",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hycmd.for": {
+      "sha256": "5c6daca3e89d019db764750b17f7980a599f02a662f08f599264618a18ed121c",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hycre.for": {
+      "sha256": "bbcc80eedb09227ffa92610ddda38fb6047d8547aea8d6aea855d677ed299655",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hycrh.for": {
+      "sha256": "64636eff874af35a67c5f10f9bcff73438c24e856d49ccc96e9057bc0924d0bf",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hycrt.for": {
+      "sha256": "4c85090d03c530585035b588b8b2b96012cb9594a5e235b17f7373d5efed4cc9",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hydatum.for": {
+      "sha256": "cc3d3910393b6d4c419092cb5f17e5d7172115366698dc83fb60dbf7f62e5b2f",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hydel.for": {
+      "sha256": "3fc2e1b86831fb1ea98eb01537ea96bda0eef8202fee78733bc4c85bb81fb152",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hydelt.f": {
+      "sha256": "1c7fa944ef375cc451de324f2fdf5f2024cfc15106e29cc71c0f230761a19874",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyedit.f": {
+      "sha256": "f80d320b9868ead6876f10d44154790511939dab3a0eb0f7b5a540fff50171e2",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyfile.for": {
+      "sha256": "708ccec877fa3af9ede38f34e2dd9c144f2e0b96afdb2d4b3a6c0e97cb9e7e34",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyfmc.for": {
+      "sha256": "85b7cb5d6e8f737c159e7842691626ba606c99c1497f6cf4b999c3397aacf918",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyinit.for": {
+      "sha256": "8cf8a9fe51a878cbad917fb3f469981c96172d980592598ec001039b5cdc4e27",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyinp.for": {
+      "sha256": "80dce48115e1752eba081c7d9ec2baaebb72d12f04abbc48e69c4d0bf7a536c8",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hylin.for": {
+      "sha256": "25874fd872f71ba614e37f8ef7748afbf1346abe39dc378f2a358b5ff1389250",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hylinv.for": {
+      "sha256": "1b43e1111556f6c6df64bff29b1ea3947afada03a09c34f5fecc664ae2d89e05",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyloc.for": {
+      "sha256": "92cc8176f0595a2366df669f64e1d0934909d502ea471709b3d002218fb0813d",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hylst.for": {
+      "sha256": "4512cd3c233f0366317e7a7a83bd7a9482f6d74a9e03b6679949d78f24fb847c",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hymag.for": {
+      "sha256": "427c9cb4b4d5bf3b2d2fe9543eb650ff7ebf58dd9babbfccc72a1951aa8155b2",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hymagp.for": {
+      "sha256": "e94ffd30815e5b3fb019bdb25c05d0a1187e1c0f21d30b31eae0cbd2736509aa",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyopen.for": {
+      "sha256": "4d6f78eba0455942efe6c423a903df9ccc29edd9f1a654394a0d329ae57e3c8e",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyp.for": {
+      "sha256": "4a31b369743de58fc143ac5471f376f75ed6b9e98ae9bb8e0a11ea1c0f7c8d2e",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyphs.for": {
+      "sha256": "5ecb9ec1a36f49095edd2d84276feb63c2066ff81f2e60785a7de488bc926ff7",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hypref.for": {
+      "sha256": "c9837106f1d3fa3da64c12a437b1f00e7138be7fa029bfb821e0357578d99cc4",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hypro.for": {
+      "sha256": "c29d93ad0ac84a522b49c2dab0df8b8c691238724e75b4127731ecfa9fd03706",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyrep.for": {
+      "sha256": "1ea346cdad2e647ae50a092f6c2ff3c82d41ccc3ad8eab48b6886ee67cf1bcb9",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hysol.for": {
+      "sha256": "91c20cdf575ee898b681ed39860a1750433340e8e3d66fe69638f9fc8ee8b4a1",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hysou.for": {
+      "sha256": "2d47814fe62013005e8047d81702a10920bc9f29e8d2a997e949ecb559a8dfba",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hysta.for": {
+      "sha256": "bb0ee1fec24b4c73ddaa8bec82adae304ea301ae5c8d9426ba07567be2e4c37f",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hystl.for": {
+      "sha256": "a2424429359f0f7b8d4564d8df73b06a079b29fab2de6eb8620a1c4ac2a26623",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hysum.for": {
+      "sha256": "1e950fc6ee0ad202882fef58b2bff912be4bb5196e51ae72634c8233571722cf",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hysvd.f": {
+      "sha256": "e0e662f457518d517b69c0fe512ae2e4f879e6d04474b0d3edb2c40e573fc427",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hytime.f": {
+      "sha256": "295389ddae0104ecc56e99af98d9e49f1b5a8119ea52b2c7b1979298a211763c",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hytra.for": {
+      "sha256": "b6ee1868611ec47dd5a7e56cac1c737e0c3df055605f757cacf7fb85f3e0b697",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hytre.for": {
+      "sha256": "9de7a47837cdd8a52932122ab1c48bf7f9af9b68222e63b4b0135c805b44f477",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hytrh.for": {
+      "sha256": "c3445555eb0752471e55c766364a804373d73fd139014a39a3a3ff9e37b31598",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hytrl.for": {
+      "sha256": "f658ed11687827f795312f1d10bce8f17766b890aa850d0e325cb9798bd9f7a0",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hytrt.for": {
+      "sha256": "bd09080a7c3910b1cf0d284ab6effdf2a8e0a1d7fe5db2bec3fdbee5a85f81fa",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/hyxmc.for": {
+      "sha256": "e8db7ef593b775968d17823d4e90b33d4c48490a9bbd703cd75a9b0f75e46b8b",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/integer.for": {
+      "sha256": "bfcfc9d0689226a4cb1c77a8e2486e579b3388710edbf7080a9c498fb3ba782c",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/linv.for": {
+      "sha256": "2e39d6ece86de5c76adde22ad85b613f89329a513d9db0f85b7898710c2e4dd6",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/linvol.for": {
+      "sha256": "9fbb830dd0048c25d0a2a8baeb8b8416f77560d4579e2b93a3e9df68037aa272",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/makefile": {
+      "sha256": "9af345c84dddd763ea085bf1a02de24aa44be7baf13e6dba15794cccd9b4c661",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/medwt.for": {
+      "sha256": "6627fab2969234d346c18af25a25bd08a43b4282f3ec92067f8d50aec6900f60",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/trvcon.for": {
+      "sha256": "8394b99c4b50971567982d208aa7fdff1cfbcb8ea6e555f42a97b54eb2ed62e6",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/source/utmcal.for": {
+      "sha256": "7f525e607bd64e3a1eb8bf5775c12afa298fc8769a33b86ff3705f2fdd1f3e52",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/all2000seed.cal": {
+      "sha256": "3f16461bacb48ef8b0f7af434b544e5e7f69a101144f8819dfb19f6f3fbc788c",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/all2000seed.fmc": {
+      "sha256": "fdda9957f2750e246e9248af84c12d7b91757ad37acdb0eb594814d18b1cd2ff",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/allseed.sta": {
+      "sha256": "99c92f177cac40984199863596a545e337c3cdffde79339ce090d439c22d1797",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/gey.crh": {
+      "sha256": "6005ebcca12a0773d72ceb1e7885f507df438a2b8c9dfd28897e11b6b8aaffc4",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/gey4.del": {
+      "sha256": "1a9291254c5620b1182fe2b2217b1d74ffa01e322ed7afebcbb9630dad9f34eb",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/readme": {
+      "sha256": "931bf5c944414b63b924b98a8e59d16af159c28314a0fd74464a4e2da130a03f",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/testone.arc": {
+      "sha256": "bdc50975f88e89e2848888a7a541802e0ebfe5f4e141ef7238c210f997dd5346",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/testone.hyp": {
+      "sha256": "1549b8fc0f5fe6bfbcfa5cc7d77d4245ee921dc6e8c8a04ecd9d00fdacb91949",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/testone.phs": {
+      "sha256": "509bb9e75aa6a19e7fb054969193a7f88c1978a1433b0b7b30cab4022c412f88",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/testone.prt": {
+      "sha256": "34e2519f7cd43e0052aae515771bd7337c2ad5f3c8396a632a5afd54e5eb54a5",
+      "category": "source"
+    },
+    "knowledge/repos/hyp2000-1.40/testone/testone.sum": {
+      "sha256": "8e76fd997c364b420c9bc4c4e8c24b498bb1708d0b0ed10133a2729aefb4b9eb",
+      "category": "source"
+    },
+    "knowledge/runtime-sources/hypoinverse-1.40.md": {
+      "sha256": "328c4c7a1d9f9430b5008e611b578f014cfec5031e82cdb053661644865dd351",
+      "category": "source"
+    },
+    "scripts/build_knowledge_manifest.py": {
+      "sha256": "0e88ebd5a6a5fefe95785ed05abaf403a46a16c755a5dde5506f9f3d7c7b72fa",
+      "category": "source"
+    },
+    "scripts/build_release.py": {
+      "sha256": "e99707feca62c2ffc4574a708af5209d21c8675747ed2b64e4f67e8e40728a89",
+      "category": "source"
+    },
+    "scripts/deploy_runtime.py": {
+      "sha256": "c497add0374f34cecb9f491205a85f3bbb3d3dc969697fef494d416ca66f7ce1",
+      "category": "source"
+    },
+    "scripts/export_wiki.py": {
+      "sha256": "f271be583a155c2ed5788404b4b64cfc75d3205f289b2cf7b9025bf5bfefd278",
+      "category": "source"
+    },
+    "scripts/prepare_region.py": {
+      "sha256": "0ad3acdee905765902999931c517eef11f56f5688a3aaaa1830837ba413b92f4",
+      "category": "source"
+    },
+    "scripts/validate_archive.py": {
+      "sha256": "a3501471cb8ac53c1fc8e619008eefa0db60ff29490d2db1027c34ff35515f62",
+      "category": "source"
+    },
+    "scripts/verify_release.py": {
+      "sha256": "6e2305afd9c2f5a6092569872493986b96f89214dcba5c34d3e97fae0c314916",
+      "category": "source"
+    },
+    "skills/seismic-association/SKILL.md": {
+      "sha256": "8f40df9ad1c18cd3544e5eb6dbf53af3f0022473d05ad614321d8fbc92fed6ea",
+      "category": "source"
+    },
+    "skills/seismic-association/references/GAMMA_FACTS.md": {
+      "sha256": "cbdc4870096f5e40e62bae8dce0983b13a3b07a96b5b22872cceaf40d46f59a7",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/SHA256SUMS.txt": {
+      "sha256": "d012f8425c31e1d2da7952c3b0d78b722f36c6c6970b96df5598850c29bc943e",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/build_gamma_inputs.py": {
+      "sha256": "c1cab7b7f3ff74dfa22cd9b246e9431d441b0ffc863ab48e00a762de16d9fbd4",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/contract_io.py": {
+      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/gamma_outputs.py": {
+      "sha256": "b70792169e8cbfc662f4d3d95d80ae819d5cfe4c8d0a72dc0612ad6430d99691",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/prepare_dbscan_eps.py": {
+      "sha256": "77166e56dabd359e737c42d0192b900eb48388db38f25e4060cb308461098ce4",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/qc_and_contract.py": {
+      "sha256": "b0cd5f5dc4e4c73d00a9fb31fb9dc21b94f14db85f8cbedf7a2c05831b84777b",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/run_gamma.py": {
+      "sha256": "fedcc2b5fb9a3f8d36b6b68d9f1d6ae1a1497e073c0e3e9f75a36bf1674d42d3",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/verify_dbscan_eps.py": {
+      "sha256": "f3151c93bf725741d7d6f5aa888683e73289c4b842082ec1519a1e1a7725e4dd",
+      "category": "source"
+    },
+    "skills/seismic-association/scripts/verify_gamma_amplitude.py": {
+      "sha256": "bd98e2d3ea4a7945b2ddc633199dfc9653bfb8eee9f750eae606e6349c9ad57c",
+      "category": "source"
+    },
+    "skills/seismic-detection/SKILL.md": {
+      "sha256": "2a059fc1268dfbb6042c1eb5a92017e7dfae6b1151b4e618111b12aacc23dcba",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/SHA256SUMS.txt": {
+      "sha256": "d18f94a97c7853dbafdc6389db3d07d6e6cc0b42c657d34010993eda99d583c2",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/adapt_to_palm.py": {
+      "sha256": "e8b232a623394ae45a0f5ec7a16cb3893310c214c428c6efc78dc26dcca08c63",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/contract_io.py": {
+      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/derive_params.py": {
+      "sha256": "2b1451c6a02dbbb478f0d3a2b6f69dce774d38d945b3dd078f47df1884b2f31f",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/export_cc_catalogs.py": {
+      "sha256": "79d11ead1d17ccb210c14aa04d29a99025a742e3b27f1e0bf78db710677370e8",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/mess_contracts.py": {
+      "sha256": "cfc68dcdd568a32e0f4807e93f48de8a7ce2d7d9304d2d99e38f5f306ca88f5e",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/run_mess.py": {
+      "sha256": "2df589aa40e93ec148b6a56713c37f5f0fcb4fb2ec2af191134824a8b638f732",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/template_inputs.py": {
+      "sha256": "4e60d81f9aa9500e936de153cdeedaa85fed8b52364e246ae0e3b1a226745f68",
+      "category": "source"
+    },
+    "skills/seismic-detection/scripts/verify_mess_inputs.py": {
+      "sha256": "9f907b45e60d6b227965b12b81c6c65d5b0c06c91a91229f67ef795b790d584d",
+      "category": "source"
+    },
+    "skills/seismic-location/SKILL.md": {
+      "sha256": "a8e47ee81593f7fb2f065556e224887e10fd41e1ae19c0a30d1856f6c20ce133",
+      "category": "source"
+    },
+    "skills/seismic-location/scripts/SHA256SUMS.txt": {
+      "sha256": "a688a6ebf7938e53039d57ff1130f8938258e2a2a43badc6796ea1dae7ffb877",
+      "category": "source"
+    },
+    "skills/seismic-location/scripts/contract_io.py": {
+      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "category": "source"
+    },
+    "skills/seismic-location/scripts/make_hypoinverse_inputs.py": {
+      "sha256": "c393ddadd36ddc1cf4ea1b388ece0727246184c2c7345f112571274f719e6a02",
+      "category": "source"
+    },
+    "skills/seismic-location/scripts/qc_and_contract.py": {
+      "sha256": "1c773932e0bf5f3fee2d67c3fc94609d2d81a40959d5b91811cb6ddb2ba06995",
+      "category": "source"
+    },
+    "skills/seismic-location/scripts/run_hypoinverse.py": {
+      "sha256": "8a31d2efdeac7fd21a2f25d81a8963e871b53b5eb938c656392990e441e1ae23",
+      "category": "source"
+    },
+    "skills/seismic-location/scripts/verify_phase_dat.py": {
+      "sha256": "0547ffa2dcb59ae633c417b8bf89956cdd6f95f1332d0765fab32511a64c5da8",
+      "category": "source"
+    },
+    "skills/seismic-location/scripts/wadati_pos.py": {
+      "sha256": "52484887859de88a97a775469cfe7c1c9e31bf00b8d56e3250e3fab1ffbe3f3f",
+      "category": "source"
+    },
+    "skills/seismic-picking/SKILL.md": {
+      "sha256": "30c769804e98b73daf1b9c7f7ea834739b77ee0e3d65a236685b7d116d8fcbcc",
+      "category": "source"
+    },
+    "skills/seismic-picking/assets/picking.example.json": {
+      "sha256": "ea77801d1423778703ea2c56184e9b838fb042da141a5355b0762de3bcd17466",
+      "category": "source"
+    },
+    "skills/seismic-picking/references/EQNET_FACTS.md": {
+      "sha256": "10097e5f987608d926cb6efeb2f4c1ecc5b8d34a88d08a622a20d923f45a1946",
+      "category": "source"
+    },
+    "skills/seismic-picking/references/TROUBLESHOOTING.md": {
+      "sha256": "b0014f77e8c0880672104c081d2fcb74ea62358153a29c32b48434b0b30f83a8",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/SHA256SUMS.txt": {
+      "sha256": "7e802b084cae9506060ac3408d68cc4d29d5595a7c570d79b9eabae683658576",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/build_data_list.py": {
+      "sha256": "31b859611e195e86be235bb9243065c398edfabd1ea8c41f8340aacf07b89330",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/contract_io.py": {
+      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/eqnet_pick.py": {
+      "sha256": "d1e9e4e526764cbf31659c47390b50bf82976786dc030f2d0061246229184acb",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/gen_picking_contract.py": {
+      "sha256": "df1368f743e64860fc081330f08a07eac3c325d59c0be232bf29865ce1780282",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/normalize_picks.py": {
+      "sha256": "ce23b96f8e8398faa473a53c7f9c40a2c24917173197b0115350ba43181e157c",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/qc_picks.py": {
+      "sha256": "045dc192cc031a4e970e6997f288476c37c4ec30fc14b43bebc46a6e56558288",
+      "category": "source"
+    },
+    "skills/seismic-picking/scripts/verify_input_roundtrip.py": {
+      "sha256": "6fc8241ac6c36c4328e91f9d1d18697607f321154f37f53ede3a52232ddc11e9",
+      "category": "source"
+    },
+    "skills/seismic-post-detection-relocation/SKILL.md": {
+      "sha256": "58f03451c1004fe9fd43b6d4baf1bf8d745d11144345491a1fbff93104d4c655",
+      "category": "source"
+    },
+    "skills/seismic-post-detection-relocation/scripts/SHA256SUMS.txt": {
+      "sha256": "756bf2119587df9eae411633217eb0d239a9fbd5796f0d5ff39cdb9795c05868",
+      "category": "source"
+    },
+    "skills/seismic-post-detection-relocation/scripts/bootstrap.py": {
+      "sha256": "95bfc9c08981b70130cfd8d5bc397c7d2b68ce1008ed7b8801b387d976f8a27b",
+      "category": "source"
+    },
+    "skills/seismic-post-detection-relocation/scripts/prepare_inputs.py": {
+      "sha256": "955888daac2929c5288660f36449876187b6ce447d36304321879f3dfc6faf53",
+      "category": "source"
+    },
+    "skills/seismic-post-detection-relocation/scripts/publish_results.py": {
+      "sha256": "c02d42c3bd217c15f760c75d2f57aa524a30eae5beb0f317648d274830a4bfb1",
+      "category": "source"
+    },
+    "skills/seismic-post-detection-relocation/scripts/run_stage.py": {
+      "sha256": "06446de54f65c1d638678d823e1fbb215cc35e5c17024a5b4c8041f3826f8251",
+      "category": "source"
+    },
+    "skills/seismic-post-detection-relocation/scripts/verify_inputs.py": {
+      "sha256": "e8e01df886b884d8350ccb711e8c92dd39eae73aab46c85ec4451bbd9cdb6c75",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/SKILL.md": {
+      "sha256": "e87cb3209679f5664d9110daf9627891e33f15f46c64bbaff508a4faf46ec861",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/assets/downstream_contract.example.json": {
+      "sha256": "b96cb6b4f17ff00f6636abd649beed9cf46e6d5f7511abb6b59cb0eee938a21a",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/assets/preprocess.example.json": {
+      "sha256": "42552e13a4fcf7f856bfdc0f8cadf91b78cf1304cd2467e7ab05629a9cf51f30",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/assets/qc_report.template.md": {
+      "sha256": "d540d545fea636cc817395b39b8cb372de7a7e8c64aea4b44243d7ae9b37514f",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/assets/qc_summary.example.json": {
+      "sha256": "41ccd5f89fd492de758970a412fd77fc871fad35e4fc0288653b592e94be5c19",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/assets/qc_table_columns.json": {
+      "sha256": "00b192dbdc8cf4d2f73258cb5d5671a8138517d87aa0e8d7b827af6e9c650f0b",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/references/DOWNSTREAM_HANDOFF.md": {
+      "sha256": "8422c78f32660c1309047060c0fb43e702139bdde7b71a54f98886aad8838be8",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/references/IMPLEMENTATION_CHECKLIST.md": {
+      "sha256": "d9d5ae2dac70bcbd2b410315a1b10901df331a37f0f5286bbec689f3b4312af6",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/references/QC_OUTPUTS.md": {
+      "sha256": "188bad112c8392a902fb59b5540644fa034b0c7684f2a10413c4def5b1f6ec76",
+      "category": "source"
+    },
+    "skills/seismic-preprocess/references/TECHNICAL_NOTES.md": {
+      "sha256": "d19f3f536121152b6d411227f11eb72ce268425552affbc3c146adfdc968c015",
+      "category": "source"
+    },
+    "skills/seismic-relocation/SKILL.md": {
+      "sha256": "4dba5b96baaddcaf2d2acb9d989f87312f48eef1933560a569902aefa8eef24c",
+      "category": "source"
+    },
+    "skills/seismic-relocation/references/damping.md": {
+      "sha256": "e55a2d88f61e318f6437673709ff89aac2e9287e2e82ad0347608650ffc1b6ba",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/SHA256SUMS.txt": {
+      "sha256": "e012de13046cfb7b87461a633e84ba98b3cc75aefc6b93198349b036524c73ed",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/contract_io.py": {
+      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/damping_metrics.py": {
+      "sha256": "f4db57cf1d0f6338e1afadf9ef84c728d6023b5bae28b33f80dc0b7b203e5209",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/make_ph2dt_inputs.py": {
+      "sha256": "f786de6a9854990cdce2d832df0b945d62ac503aea3a62816790dee7d4cd174b",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/qc_and_contract.py": {
+      "sha256": "ae21700aaf6bfa8e4d3c6f09ce7c6eaf75631b4be954115861039b61d0cc1317",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/run_hypodd.py": {
+      "sha256": "371ac2befd49c147b2d1d79300f3413a4ae58acac7c7d0e052a91a8c4b53ba43",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/run_ph2dt.py": {
+      "sha256": "858ea89f78d906e76ffde1e0683e47b0d32c275f8386eefbf91b6dc6888dc2cf",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/tier_outcomes.py": {
+      "sha256": "c33ae59d2eb3344ca2ecc507fbb60d76b76b43217f3f2304676d1f8ef5e08d8b",
+      "category": "source"
+    },
+    "skills/seismic-relocation/scripts/verify_ph2dt_inputs.py": {
+      "sha256": "9b8f60228b1fdd49a3b3e5c47a94746db3629fa5024e3aa47ae99d346565f5a3",
+      "category": "source"
+    },
+    "tests/native_smoke.py": {
+      "sha256": "f739df69a5dc783864a09503bf3f52df180e30c95c7a50a41b64870d55428720",
+      "category": "source"
+    },
+    "tests/test_knowledge.py": {
+      "sha256": "133da4f83987e1c7f34d4c66fa7ed91e87f57ce28f482bfacba933cdf3a34e0a",
+      "category": "source"
+    },
+    "tests/test_portability.py": {
+      "sha256": "24399f41b95e2b3024891832686a81d8b7bc0bf37643c08b42c3969d0d4c828b",
+      "category": "source"
+    },
+    "tests/test_post_detection_relocation.py": {
+      "sha256": "310754f90e31ad628b8489634ab064309decb67ae2704edec7e88430516705f1",
+      "category": "source"
+    }
+  }
+}

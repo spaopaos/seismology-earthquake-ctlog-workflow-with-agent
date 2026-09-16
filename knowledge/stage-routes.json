@@ -1,0 +1,271 @@
+{
+  "format_version": "1.0",
+  "stages": {
+    "preprocess": {
+      "wiki_pages": [
+        "phase-picking",
+        "uncertainty-and-quality-control"
+      ],
+      "runtime_evidence": [
+        {
+          "path": "skills/seismic-preprocess/SKILL.md",
+          "role": "workflow_policy"
+        },
+        {
+          "path": "docs/ARCHIVE_INTERFACE.md",
+          "role": "output_protocol"
+        },
+        {
+          "path": "skills/seismic-preprocess/references/TECHNICAL_NOTES.md",
+          "role": "processing_rules"
+        }
+      ],
+      "scope_note": "The Wiki has no complete version-matched preprocessing implementation. Preserve the maintained preprocessing rules and current response/orientation evidence; the agent writes data-specific code.",
+      "knowledge_binding": "knowledge/bindings/preprocess.md"
+    },
+    "picking": {
+      "wiki_pages": [
+        "phasenet",
+        "zhu-2019-phasenet",
+        "phase-picking",
+        "version-and-evidence-gaps"
+      ],
+      "runtime_evidence": [
+        {
+          "path": "skills/seismic-picking/SKILL.md",
+          "role": "workflow_policy"
+        },
+        {
+          "path": "knowledge/repos/EQNet/predict.py",
+          "role": "pinned_implementation"
+        },
+        {
+          "path": "skills/seismic-picking/scripts/eqnet_pick.py",
+          "role": "checked_reader_and_local_checkpoint"
+        },
+        {
+          "path": "skills/seismic-picking/references/EQNET_FACTS.md",
+          "role": "implementation_notes"
+        }
+      ],
+      "scope_note": "The 2019 source describes original PhaseNet. PhaseNet+ polarity outputs, reader behavior and checkpoint identity must use the pinned EQNet implementation and release wrapper.",
+      "knowledge_binding": "knowledge/bindings/picking.md"
+    },
+    "association": {
+      "wiki_pages": [
+        "gamma",
+        "zhu-2022-gamma",
+        "phase-association",
+        "uncertainty-and-quality-control"
+      ],
+      "runtime_evidence": [
+        {
+          "path": "skills/seismic-association/SKILL.md",
+          "role": "workflow_policy"
+        },
+        {
+          "path": "knowledge/repos/GAMMA/gamma/utils.py",
+          "role": "pinned_implementation"
+        },
+        {
+          "path": "skills/seismic-association/scripts/prepare_dbscan_eps.py",
+          "role": "parameter_calculation"
+        },
+        {
+          "path": "skills/seismic-association/scripts/run_gamma.py",
+          "role": "actual_configuration"
+        },
+        {
+          "path": "skills/seismic-association/references/GAMMA_FACTS.md",
+          "role": "implementation_notes"
+        }
+      ],
+      "scope_note": "The paper explains association assumptions. The current code establishes linear m/s amplitude input and estimate_eps behavior; project rules recommend 10 seconds and preserve the user choice. Search depth and projected margins are explicit regional configuration.",
+      "knowledge_binding": "knowledge/bindings/association.md"
+    },
+    "location": {
+      "wiki_pages": [
+        "hypoinverse",
+        "klein-2002-hypoinverse",
+        "absolute-location",
+        "uncertainty-and-quality-control",
+        "version-and-evidence-gaps"
+      ],
+      "runtime_evidence": [
+        {
+          "path": "skills/seismic-location/SKILL.md",
+          "role": "workflow_policy"
+        },
+        {
+          "path": "knowledge/repos/hyp2000-1.40/doc/hyp1.40.pdf",
+          "role": "version_matched_manual"
+        },
+        {
+          "path": "knowledge/runtime-sources/hypoinverse-1.40.md",
+          "role": "page_numbered_manual_text"
+        },
+        {
+          "path": "skills/seismic-location/scripts/make_hypoinverse_inputs.py",
+          "role": "native_format_converter"
+        },
+        {
+          "path": "skills/seismic-location/scripts/run_hypoinverse.py",
+          "role": "actual_commands"
+        }
+      ],
+      "scope_note": "The Wiki 2002 manual is historical background. Use the supplied 1.40 manual and tested converters for current command/format semantics. This binding supplies a version-matched manual without rewriting the original Wiki gap statement.",
+      "knowledge_binding": "knowledge/bindings/location.md"
+    },
+    "relocation": {
+      "wiki_pages": [
+        "hypodd",
+        "waldhauser-2001-hypodd",
+        "double-difference-relocation",
+        "uncertainty-and-quality-control",
+        "version-and-evidence-gaps"
+      ],
+      "runtime_evidence": [
+        {
+          "path": "skills/seismic-relocation/SKILL.md",
+          "role": "workflow_policy"
+        },
+        {
+          "path": "skills/seismic-relocation/references/damping.md",
+          "role": "project_decision_rule"
+        },
+        {
+          "path": "skills/seismic-relocation/scripts/run_hypodd.py",
+          "role": "actual_trials_and_solver"
+        },
+        {
+          "path": "skills/seismic-relocation/scripts/make_ph2dt_inputs.py",
+          "role": "native_format_converter"
+        }
+      ],
+      "scope_note": "The 2001 manual provides method and empirical guidance, not proof of the exact production binary version. Matching HypoDD source/build provenance remains unresolved. CND is diagnostic; DAMP uses measured spatial evidence under the maintained project rule. The first round remains catalog-only IDAT=2; post_detection_relocation adds independently measured CT plus MESS CC in IDAT=3.",
+      "knowledge_binding": "knowledge/bindings/relocation.md"
+    },
+    "detection": {
+      "wiki_pages": [
+        "palm-mess",
+        "zhou-2022-palm",
+        "matched-filter-detection",
+        "catalog-construction",
+        "version-and-evidence-gaps"
+      ],
+      "runtime_evidence": [
+        {
+          "path": "skills/seismic-detection/SKILL.md",
+          "role": "workflow_policy"
+        },
+        {
+          "path": "knowledge/repos/PALM/MFT_src/associate_mft.py",
+          "role": "pinned_implementation"
+        },
+        {
+          "path": "skills/seismic-detection/scripts/run_mess.py",
+          "role": "actual_scan_workflow"
+        },
+        {
+          "path": "skills/seismic-detection/scripts/export_cc_catalogs.py",
+          "role": "actual_threshold_products"
+        }
+      ],
+      "scope_note": "The PALM paper is method background. Current execution uses the pinned integrated PALM implementation, medium-only templates, one scan/global association and CC>=0.4/0.6/0.8 independent products. These are project choices, not universal thresholds derived from the paper.",
+      "knowledge_binding": "knowledge/bindings/detection.md"
+    },
+    "post_detection_relocation": {
+      "wiki_pages": [
+        "hypodd",
+        "waldhauser-2001-hypodd",
+        "double-difference-relocation",
+        "matched-filter-detection",
+        "uncertainty-and-quality-control",
+        "version-and-evidence-gaps"
+      ],
+      "runtime_evidence": [
+        {
+          "path": "skills/seismic-post-detection-relocation/SKILL.md",
+          "role": "workflow_policy"
+        },
+        {
+          "path": "skills/seismic-post-detection-relocation/scripts/prepare_inputs.py",
+          "role": "independent_arrival_and_cc_converter"
+        },
+        {
+          "path": "skills/seismic-post-detection-relocation/scripts/verify_inputs.py",
+          "role": "independent_source_validation"
+        },
+        {
+          "path": "skills/seismic-post-detection-relocation/scripts/run_stage.py",
+          "role": "joint_stage_orchestration"
+        },
+        {
+          "path": "skills/seismic-post-detection-relocation/scripts/publish_results.py",
+          "role": "three_catalog_publication"
+        },
+        {
+          "path": "contracts/hypodd_inputs.py",
+          "role": "native_input_and_schedule_validation"
+        },
+        {
+          "path": "skills/seismic-relocation/references/damping.md",
+          "role": "shared_damping_rule"
+        },
+        {
+          "path": "skills/seismic-relocation/scripts/damping_metrics.py",
+          "role": "shared_spatial_metrics"
+        },
+        {
+          "path": "skills/seismic-relocation/scripts/run_hypodd.py",
+          "role": "joint_trials_and_solver"
+        },
+        {
+          "path": "configs/pipeline.example.json",
+          "role": "explicit_initial_joint_settings"
+        },
+        {
+          "path": "contracts/post_detection_relocation.contract.schema.json",
+          "role": "joint_output_contract"
+        },
+        {
+          "path": "contracts/common.schema.json",
+          "role": "shared_contract_types"
+        },
+        {
+          "path": "contracts/pipeline_contracts.py",
+          "role": "contract_validation_and_lineage"
+        }
+      ],
+      "scope_note": "Post-MESS independent PhaseNet+ CT and MESS CC, joint IDAT=3, exactly three independently solved CC tiers. Re-evaluate DAMP with shared spatial evidence. Template-guided matching does not establish statistical independence; inherited ERH is only a comparison scale. Native source/build provenance limitations remain.",
+      "knowledge_binding": "knowledge/bindings/post_detection_relocation.md"
+    }
+  },
+  "runtime_sources": {
+    "klein-2014-hypoinverse140": {
+      "id": "klein-2014-hypoinverse140",
+      "title": "HYPOINVERSE-2000 version 1.40 manual",
+      "path_base": ".",
+      "source_path": "knowledge/repos/hyp2000-1.40/doc/hyp1.40.pdf",
+      "text_path": "knowledge/runtime-sources/hypoinverse-1.40.md",
+      "pdf_pages": 148,
+      "sha256": "7906ac7ea9fe7e1f3011fd169a1c2b755cfc7a992bc00a9d9625c367a5b91a66",
+      "version_note": "2014 manual supplied with the pinned 1.40 source package; supplements the original eight-document Wiki."
+    }
+  },
+  "query_aliases": {
+    "拾取": "phase picking phasenet",
+    "极性": "polarity phasenet",
+    "关联": "association gamma",
+    "振幅": "amplitude gamma",
+    "阻尼": "damping DAMP",
+    "条件数": "condition conditioning CND",
+    "定位": "location",
+    "重定位": "relocation hypodd",
+    "速度模型": "velocity model",
+    "模板": "template matched filter",
+    "检测": "detection",
+    "去响应": "response waveform",
+    "不确定性": "uncertainty quality control"
+  }
+}

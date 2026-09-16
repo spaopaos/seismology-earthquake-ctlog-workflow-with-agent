@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "title": "Pipeline contract common envelope",
+  "description": "所有环节 contract 共用的信封字段。各环节 schema 通过 allOf: [$ref: common.schema.json] 继承。",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "stage",
+    "software",
+    "run_id",
+    "created_at",
+    "upstream",
+    "status"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "description": "契约 schema 版本，字段结构变化时升版",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "stage": {
+      "type": "string",
+      "description": "环节标识，固定枚举",
+      "enum": [
+        "preprocess",
+        "picking",
+        "association",
+        "location",
+        "relocation",
+        "detection",
+        "mechanism"
+      ]
+    },
+    "software": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "weights_sha256": {"type": "string", "description": "模型权重校验和（如适用）"}
+      },
+      "additionalProperties": true
+    },
+    "run_id": {
+      "type": "string",
+      "description": "本次运行标识，如 20260910-picking-01"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC 时间"
+    },
+    "config_path": {
+      "type": "string",
+      "description": "本次实际生效配置的落盘路径"
+    },
+    "script_path": {
+      "type": "string",
+      "description": "实际执行脚本/工具的血缘路径"
+    },
+    "upstream": {
+      "type": "array",
+      "description": "消费的上游契约及输入验证状态",
+      "items": {
+        "type": "object",
+        "required": ["stage", "contract_path", "input_verification"],
+        "properties": {
+          "stage": {"type": "string"},
+          "contract_path": {"type": "string"},
+          "input_verification": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "NOT_TESTED"],
+            "description": "NOT_TESTED 时必须暂停或明确降级声明，不许静默当作 PASS"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["READY", "PARTIAL", "FAILED"],
+      "description": "NOT_RUN 只出现在占位状态，不出现在正式 contract"
+    },
+    "qc_path": {
+      "type": "string",
+      "description": "本环节 QC 入口目录；缺失则 status 不得为 READY"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}

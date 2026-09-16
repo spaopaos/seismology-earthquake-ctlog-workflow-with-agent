@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "association.contract.schema.json",
+  "title": "Association contract (GaMMA)",
+  "description": "拾取关联环节的产出契约：事件目录、拾取归属、区域模型与参数依据。事件 ID 自此签发，下游全程携带。",
+  "allOf": [
+    {
+      "$ref": "common.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "station_source",
+    "region",
+    "velocity_model",
+    "params",
+    "outputs",
+    "stats"
+  ],
+  "properties": {
+    "stage": {
+      "const": "association"
+    },
+    "station_source": {
+      "type": "object",
+      "required": [
+        "path",
+        "coordinates_verified"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "coordinates_verified": {
+          "type": "boolean",
+          "description": "坐标已核实；缺失保持缺失状态，拒绝以 -12345/0 伪造"
+        }
+      },
+      "additionalProperties": false
+    },
+    "region": {
+      "type": "object",
+      "required": [
+        "lat_range",
+        "lon_range",
+        "depth_range_km"
+      ],
+      "properties": {
+        "lat_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "lon_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "depth_range_km": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "velocity_model": {
+      "type": "object",
+      "required": [
+        "name",
+        "path",
+        "source"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "p_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "s_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "usage": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "params": {
+      "type": "object",
+      "required": [
+        "rationale_path"
+      ],
+      "properties": {
+        "min_picks": {
+          "type": "integer"
+        },
+        "min_p_picks": {
+          "type": "integer"
+        },
+        "rationale_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "dbscan_eps_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": true,
+      "not": {
+        "required": [
+          "dbscan_eps_km"
+        ]
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "required": [
+        "events_path",
+        "assignments_path",
+        "event_id_scheme"
+      ],
+      "properties": {
+        "events_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "assignments_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        },
+        "event_id_scheme": {
+          "type": "string",
+          "description": "事件 ID 签发规则；下游换 ID 必须记录映射"
+        },
+        "magnitude_usable": {
+          "type": "boolean"
+        },
+        "magnitude_note": {
+          "type": "string"
+        },
+        "assignment_layout": {
+          "enum": [
+            "all_picks",
+            "assigned_only"
+          ]
+        },
+        "unassociated_picks_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        }
+      },
+      "additionalProperties": false
+    },
+    "stats": {
+      "type": "object",
+      "required": [
+        "picks_in",
+        "picks_associated",
+        "n_events",
+        "unassociated_picks_path"
+      ],
+      "properties": {
+        "picks_in": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "picks_associated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "association_rate": {
+          "type": "number"
+        },
+        "n_events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unassociated_picks_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pure path relative to this contract's directory; no prose or glob placeholders."
+        }
+      },
+      "additionalProperties": true
+    },
+    "contract_version": {
+      "const": "2.0"
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "release": "0.1.0",
+  "scope": "Linux x86-64, CPU, local deployment and explicit existing-observation integration",
+  "runtime_archives_extracted_and_checked": true,
+  "package_copy_without_git_checked": true,
+  "regression_tests_passed": 8,
+  "native_hypoinverse_sum_arc_byte_identical": true,
+  "actual_phasenet_inference": {
+    "small_HH_HN_reader_inputs": true,
+    "full_UTC_day_synthetic_archive": true,
+    "normalized_handoff_validated": true,
+    "synthetic_picks": 0,
+    "scope": "model loading/inference and empty-result handling; not scientific picking accuracy"
+  },
+  "existing_observation_integration": {
+    "date": "2026-03-06",
+    "starts_from": "previously standardized picking product; raw preprocessing and observed-data inference not repeated",
+    "gamma_events": 85,
+    "gamma_picks_used": 3640,
+    "gamma_eps_s": 10.0,
+    "located": 85,
+    "location_scientific_status": "NOT_TESTED",
+    "relocation_tiers": {
+      "loose": {
+        "status": "UNAVAILABLE",
+        "events": null,
+        "damp": null
+      },
+      "medium": {
+        "status": "READY",
+        "events": 24,
+        "damp": 100.0
+      },
+      "strict": {
+        "status": "UNAVAILABLE",
+        "events": null,
+        "damp": null
+      }
+    },
+    "mess_catalog_counts": {
+      "cc_0p4": 48,
+      "cc_0p6": 22,
+      "cc_0p8": 14
+    },
+    "handoff_checks": {
+      "association": {
+        "status": "READY",
+        "validation": {
+          "schema_status": "PASS",
+          "artifact_status": "PASS",
+          "scientific_status": "NOT_TESTED",
+          "issues": []
+        }
+      },
+      "location": {
+        "status": "READY",
+        "validation": {
+          "schema_status": "PASS",
+          "artifact_status": "PASS",
+          "scientific_status": "NOT_TESTED",
+          "issues": []
+        }
+      },
+      "relocation": {
+        "status": "PARTIAL",
+        "validation": {
+          "schema_status": "PASS",
+          "artifact_status": "PASS",
+          "scientific_status": "NOT_TESTED",
+          "issues": []
+        }
+      },
+      "cc_0p4": {
+        "status": "READY",
+        "validation": {
+          "schema_status": "PASS",
+          "artifact_status": "PASS",
+          "scientific_status": "NOT_TESTED",
+          "issues": []
+        },
+        "events": 48
+      },
+      "cc_0p6": {
+        "status": "READY",
+        "validation": {
+          "schema_status": "PASS",
+          "artifact_status": "PASS",
+          "scientific_status": "NOT_TESTED",
+          "issues": []
+        },
+        "events": 22
+      },
+      "cc_0p8": {
+        "status": "READY",
+        "validation": {
+          "schema_status": "PASS",
+          "artifact_status": "PASS",
+          "scientific_status": "NOT_TESTED",
+          "issues": []
+        },
+        "events": 14
+      }
+    }
+  },
+  "not_tested": [
+    "second physical machine",
+    "new observed geographic region from raw waveforms",
+    "independent agent without conversation history",
+    "GPU portability",
+    "absolute magnitude or new-event location accuracy"
+  ]
+}

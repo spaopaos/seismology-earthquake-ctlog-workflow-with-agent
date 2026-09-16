@@ -1,0 +1,72 @@
+{
+  "contract_schema_version": "1.1",
+  "template_only": true,
+  "archive_root": null,
+  "manifest_relative_path": "daily_manifest.csv",
+  "effective_config_relative_path": "effective_config.json",
+  "archive_validation_status": "NOT_RUN",
+  "data_contract": {
+    "format": "SAC",
+    "physical_quantity": "ground_velocity",
+    "units": "m/s",
+    "response_removed": true,
+    "processing_state": "response_corrected_band_limited",
+    "sampling_rate_hz": 100.0,
+    "archive_component_labels": [
+      "Z",
+      "N",
+      "E"
+    ],
+    "target_band_hz": [
+      1.0,
+      40.0
+    ],
+    "actual_band_source": "per_group_day_metadata",
+    "calib": 1.0,
+    "sac_scale": 1.0,
+    "sac_idep": "IUNKN",
+    "sac_kuser0": "VEL_M_S",
+    "original_sensor_channel_family_retained": true,
+    "interval_fields": [
+      "data_intervals",
+      "usable_intervals",
+      "usable_3c_intervals"
+    ],
+    "interval_encoding": "zero_based_half_open_sample_indices",
+    "time_grid": "UTC_day_start + sample_index / 100.0",
+    "missing_sample_fill_value": 0.0
+  },
+  "reader_requirements": {
+    "read_archive_with_apply_calib": false,
+    "reapply_response_removal": false,
+    "reapply_sensitivity": false,
+    "apply_acceleration_to_velocity_integration": false,
+    "allow_channel_name_to_override_physical_quantity": false,
+    "apply_undocumented_filtering": false,
+    "consume_valid_intervals": true,
+    "model_normalization_on_temporary_copy_only": true,
+    "verify_model_component_order": true,
+    "verify_input_format_for_installed_reader": true
+  },
+  "model_input_verification": {
+    "status": "NOT_TESTED",
+    "reader_name": null,
+    "reader_version_or_commit": null,
+    "model_checkpoint_identity": null,
+    "input_format": null,
+    "component_order": null,
+    "checked_before_model_normalization": null,
+    "evidence_paths": []
+  },
+  "quality_control_handoff": {
+    "generation_status": "NOT_RUN",
+    "summary_json_path": null,
+    "summary_markdown_path": null,
+    "artifact_manifest_path": null,
+    "visual_review_status": "NOT_REVIEWED",
+    "does_not_replace_valid_interval_masks": true,
+    "does_not_verify_model_input": true
+  },
+  "payload_role": "source_metadata_template_not_a_published_v2_contract",
+  "publication_instruction": "Complete with actual products, set template_only=false, then publish via contracts/pipeline_contracts.py --stage preprocess."
+}

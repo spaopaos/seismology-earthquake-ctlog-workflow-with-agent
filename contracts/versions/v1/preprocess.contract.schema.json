@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "preprocess.contract.schema.json",
+  "title": "Preprocess downstream contract",
+  "description": "预处理归档环节向下游声明的数据语义。对应 seismic-preprocess skill 的 downstream_contract.json。",
+  "allOf": [{"$ref": "common.schema.json"}],
+  "type": "object",
+  "required": [
+    "physical_quantity",
+    "units",
+    "response_removed",
+    "sampling_rate_hz",
+    "band_hz",
+    "components",
+    "forbidden_downstream_ops",
+    "intervals",
+    "archive_layout",
+    "manifest_path",
+    "archive_validation_status",
+    "model_input_verification"
+  ],
+  "properties": {
+    "stage": {"const": "preprocess"},
+    "physical_quantity": {"const": "ground_velocity"},
+    "units": {"const": "m/s"},
+    "response_removed": {"const": true},
+    "sampling_rate_hz": {"const": 100.0},
+    "band_hz": {
+      "type": "array",
+      "items": {"type": "number"},
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "名义目标频带；BAND_LIMITED 组在各组 metadata 中另记实际频带"
+    },
+    "band_limited_groups": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "实际频带低于目标频带的仪器组标识列表"
+    },
+    "components": {
+      "type": "array",
+      "const": ["Z", "N", "E"],
+      "description": "真实旋转结果；方向来源在各组 metadata.json"
+    },
+    "forbidden_downstream_ops": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["apply_calib", "remove_sensitivity", "remove_response", "integrate", "refilter"]
+      },
+      "description": "下游对本归档禁止执行的操作"
+    },
+    "intervals": {
+      "type": "object",
+      "required": ["source", "fields"],
+      "properties": {
+        "source": {"type": "string", "description": "有效区间的权威来源，如各组日 metadata.json"},
+        "fields": {
+          "type": "array",
+          "items": {"type": "string", "enum": ["data_intervals", "usable_intervals", "usable_3c_intervals"]}
+        }
+      },
+      "description": "切窗必须依据这些区间，不从波形值反推",
+      "additionalProperties": false
+    },
+    "archive_layout": {"type": "string"},
+    "manifest_path": {"type": "string"},
+    "archive_validation_status": {"type": "string", "enum": ["PASS", "FAIL", "PARTIAL"]},
+    "model_input_verification": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string", "enum": ["PASS", "FAIL", "NOT_TESTED"]},
+        "reader": {"type": "string"},
+        "method": {"type": "string"}
+      },
+      "description": "归档通过检查不等于模型读入已验证；未实测保持 NOT_TESTED",
+      "additionalProperties": true
+    }
+  }
+}
