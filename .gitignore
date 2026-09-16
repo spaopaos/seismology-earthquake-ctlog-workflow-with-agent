@@ -13,3 +13,6 @@ bin/hypoDD
 bin/ph2dt
 bin/hyp1.40
 bin/lib/
+
+# Split release parts downloaded from GitHub Releases
+*.part-*
