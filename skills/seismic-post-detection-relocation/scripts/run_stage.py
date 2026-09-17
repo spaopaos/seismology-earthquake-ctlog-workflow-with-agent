@@ -1,22 +1,20 @@
-"""Three independent post-MESS joint CC+CT relocations, with evidence-selected DAMP."""
+"""Three independent post-MESS joint relocations (lite: MESS CC + reused first-round CT, IDAT=3)."""
 import argparse
 import json
 import math
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 from statistics import median
 import bootstrap
 from bootstrap import ROOT
-from pipeline_contracts import load_contract, inspect_artifacts, lookup
+from pipeline_contracts import load_contract, inspect_artifacts
 from runtime_support import digest, runtime_path
-from hypodd_inputs import joint_schedule, verify_joint_receipt
-from tier_outcomes import pairing_result, outcome
+from tier_outcomes import outcome
 from run_hypodd import trial_context, validate_final_selection
 from prepare_inputs import LABELS, read_csv, write_json, build_master, prepare_tier
-from verify_inputs import verify_phases, verify_joint
+from verify_inputs import verify_joint_lite_inputs
 
 STAGE = 'post_detection_relocation'
 
@@ -63,15 +61,6 @@ def execute(script, args, log):
         raise ValueError('Native step failed; inspect ' + str(log))
 
 
-def copy_identical(source, target):
-    source, target = Path(source), Path(target)
-    if target.exists():
-        if digest(source) != digest(target):
-            raise ValueError('Existing input differs; use a new run: ' + str(target))
-    else:
-        shutil.copyfile(source, target)
-
-
 def solve_tier(directory, master, label, settings, vp, ratio, erh):
     directory = Path(directory)
     inputs = directory/'input'
@@ -81,35 +70,14 @@ def solve_tier(directory, master, label, settings, vp, ratio, erh):
         prepare_tier(master, label, inputs, settings)
     if not (inputs/'conversion_meta.json').is_file():
         raise ValueError('Incomplete preparation; preserve it and use a fresh run')
-    verify_phases(inputs)
-    meta = json.loads((inputs/'conversion_meta.json').read_text())
-    if meta['n_phase_lines'] == 0:
-        return {'status': 'UNAVAILABLE', 'reason': 'NO_INDEPENDENT_PHASES_FOR_CT', 'damp': None}
+    verify_joint_lite_inputs(inputs)
     if not (inputs/'dt.cc').read_text().strip():
         return {'status': 'UNAVAILABLE', 'reason': 'NO_CC_OBSERVATIONS', 'damp': None}
-    pairdir = directory/'ct_pairing'
-    (pairdir/'input').mkdir(parents=True, exist_ok=True)
-    for name in ('phase.dat', 'station.dat', 'conversion_meta.json', 'ph2dt_input_verification.json'):
-        copy_identical(inputs/name, pairdir/'input'/name)
-    receipt = pairing_result(pairdir)
-    if receipt is None:
-        args = ['--workdir', pairdir]
-        for key, value in settings['pairing'].items():
-            args += ['--'+key, value]
-        execute(ROOT/'skills/seismic-relocation/scripts/run_ph2dt.py', args, directory/'logs/ph2dt.log')
-        receipt = pairing_result(pairdir)
-    if receipt['status'] != 'PASS':
-        return {'status': 'UNAVAILABLE', 'reason': 'NO_VALID_CT_PAIRS_' + receipt['status'], 'damp': None}
-    # Keep original ph2dt outputs immutable; joint event union also contains CC-only nodes.
-    copy_identical(pairdir/'input/dt.ct', inputs/'dt.ct')
-    copy_identical(inputs/'events.native', inputs/'event.dat')
-    if (inputs/'joint_verification.json').exists():
-        verify_joint_receipt(inputs)
-    else:
-        verify_joint(inputs, pairdir/'qc/pairing_result.json')
+    if not (inputs/'dt.ct').read_text().strip():
+        return {'status': 'UNAVAILABLE', 'reason': 'NO_REUSED_CT_OBSERVATIONS', 'damp': None}
     base = ['--workdir', directory, '--vp-model', vp, '--ratio', ratio, '--initial-erh-km', erh,
-            '--joint-config', inputs/'joint_config.json', '--obsct', max(1, settings['obsct']),
-            '--dist', settings['pairing']['maxdist'], '--wdct-last', settings['iterations'][-1]['wdct']]
+            '--joint-config', inputs/'joint_config.json', '--obsct', settings['obsct'],
+            '--dist', settings['dist'], '--wdct-last', settings['iterations'][-1]['wdct']]
     selection_path = directory/'qc/damping_selection.json'
     solver = ROOT/'skills/seismic-relocation/scripts/run_hypodd.py'
     if not selection_path.exists():
@@ -122,8 +90,9 @@ def solve_tier(directory, master, label, settings, vp, ratio, erh):
         execute(solver, base+['--damp', selection['selected_damp']], directory/'logs/final.log')
     # Re-evaluate the saved selection even on resume/publication.
     args = argparse.Namespace(vp_model=vp, ratio=ratio, initial_erh_km=erh,
-                              joint_config=inputs/'joint_config.json', obsct=max(1, settings['obsct']),
-                              dist=settings['pairing']['maxdist'], wdct_last=settings['iterations'][-1]['wdct'])
+                              joint_config=inputs/'joint_config.json', cc_only=False,
+                              obsct=settings['obsct'], dist=settings['dist'],
+                              wdct_last=settings['iterations'][-1]['wdct'])
     validate_final_selection(directory/'qc', trial_context(directory, args), selection['selected_damp'])
     state = outcome(directory)
     if state['status'] == 'READY':
@@ -146,8 +115,19 @@ def main():
     settings = config.get(STAGE)
     if not settings:
         raise ValueError('Add explicit post_detection_relocation settings to a NEW run configuration')
-    if settings.get('ct_source') != 'independent_phasenet' or settings.get('idat') != 3:
-        raise ValueError('Post-MESS requires independent PhaseNet CT and joint IDAT=3')
+    if settings.get('method') != 'joint_lite_cc_ct' or settings.get('idat') != 3:
+        raise ValueError('Joint lite requires method=joint_lite_cc_ct and IDAT=3')
+    for key in ('obscc', 'obsct', 'dist', 'damping_trials', 'iterations'):
+        if key not in settings:
+            raise ValueError('Missing joint lite setting: ' + key)
+    if type(settings['obscc']) is not int or type(settings['obsct']) is not int \
+            or settings['obscc'] < 0 or settings['obsct'] < 1 or settings['obscc']+settings['obsct'] <= 0:
+        raise ValueError('obscc/obsct must be nonnegative integers with a positive sum')
+    if not settings['iterations'] or settings['iterations'][-1].get('wdct', -9) == -9:
+        raise ValueError('A joint iteration schedule with a final WDCT is required')
+    trials = sorted(float(x) for x in settings['damping_trials'])
+    if len(trials) < 2 or len(set(trials)) != len(trials) or any(x <= 0 for x in trials):
+        raise ValueError('Damping trials must be at least two distinct positive values')
     catalog_root = (cfgpath.parent/settings['detection_catalogs']).resolve()
     paths = {label: catalog_root/label/'contract.v2.json' for label in LABELS}
     print('Validating MESS and shared upstream contract graph', flush=True)
@@ -156,7 +136,6 @@ def main():
     for label, threshold in zip(LABELS, (.4, .6, .8)):
         if docs[label]['selection']['cc_min'] != threshold:
             raise ValueError('Incorrect CC tier threshold')
-    picking, pickdoc = unique_source(graph, 'picking')
     location, locdoc = unique_source(graph, 'location')
     relocation, relocdoc = unique_source(graph, 'relocation')
     upstream_model = (relocation.parent/relocdoc['solver']['velocity_model']['p_path']).resolve()
@@ -173,6 +152,13 @@ def main():
     erh = float(erh)
     if not math.isfinite(erh) or erh <= 0 or not math.isfinite(ratio) or ratio <= 1:
         raise ValueError('Invalid ERH scale or Vp/Vs')
+    ct_tier = settings.get('ct_reuse', {}).get('relocation_tier', 'medium')
+    if ct_tier not in ('loose', 'medium', 'strict'):
+        raise ValueError('ct_reuse.relocation_tier must be a first-round relocation tier')
+    tier_dir = (relocation.parent/ct_tier).resolve()
+    ct_reuse = {'dt_ct_path': tier_dir/'input/dt.ct', 'event_dat_path': tier_dir/'input/event.dat',
+                'station_dat_path': tier_dir/'input/station.dat',
+                'selection_path': tier_dir/'qc/damping_selection.json', 'tier_dir': tier_dir}
     source_files = list(Path(__file__).parent.glob('*.py'))
     source_files += list((ROOT/'skills/seismic-relocation/scripts').glob('*.py'))
     source_files += list((ROOT/'contracts').glob('*.py'))
@@ -183,37 +169,21 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     identity_path = out/'execution_identity.json'
     if identity_path.exists() and json.loads(identity_path.read_text()) != identity:
-        raise ValueError('Joint workflow/input/configuration identity changed; create a new run')
+        raise ValueError('Joint lite workflow/input/configuration identity changed; create a new run')
     if not identity_path.exists():
         write_json(identity_path, identity)
     write_json(out/'effective_parameters.json', {'settings': settings, 'vp_vs_ratio': ratio,
-               'ratio_basis': 'same validated upstream regional Wadati ratio; not estimated from MESS CC-derived arrivals',
+               'ratio_basis': 'same validated upstream regional Wadati ratio used by first-round relocation',
                'initial_erh_km': erh, 'erh_source': str(location),
                'erh_scope': 'upstream comparison scale, not measured uncertainty of new detections',
+               'method': 'joint_lite_cc_ct', 'ct_source': 'first_round_reuse', 'ct_reuse_tier': ct_tier,
+               'ct_reuse_note': 'First-round ph2dt dt.ct reused verbatim and hash-tied to the medium-tier solver evidence',
                'joint_effective_link_threshold': settings['obscc']+settings['obsct'],
                'depth_reference': 'sea_level', 'solver_depth_offset_km': 0})
-    master = build_master(catalog_root, docs, picking.parent/pickdoc['outputs']['picks_path'], args.stations, settings)
-    # A current diagnostic uses only independent matched P/S arrivals, never MESS CC times.
-    ps = {}
-    for obs in master['observations']:
-        ps.setdefault((obs['event_id'], obs['station']), {})[obs['phase']] = obs['travel_time_s']
-    pairs = [row for row in ps.values() if set(row) == {'P', 'S'} and row['S'] > row['P'] > 0]
-    diagnostic = {'n_independent_ps_pairs': len(pairs), 'configured_vp_vs': ratio,
-                  'source': 'independent matched PhaseNet arrivals relative to common solver origins',
-                  'scope': 'diagnostic of ratio applicability; inferred template origins introduce uncertainty'}
-    if len(pairs) >= 3:
-        import numpy as np
-        x = np.array([r['P'] for r in pairs]); y = np.array([r['S']-r['P'] for r in pairs])
-        fit = np.linalg.lstsq(np.column_stack((x, np.ones_like(x))), y, rcond=None)[0]
-        diagnostic.update(median_ts_tp=float(np.median(1+y/x)),
-                          wadati_slope_plus_one=float(fit[0]+1), intercept_s=float(fit[1]),
-                          residual_std_s=float(np.std(y-(fit[0]*x+fit[1]))))
-    else:
-        diagnostic['check_status'] = 'INSUFFICIENT_MATCHED_PAIRS'
-    write_json(out/'matched_ct_ratio_check.json', diagnostic)
+    master = build_master(catalog_root, docs, args.stations, ct_reuse)
     states = {}
     for label in LABELS:
-        print('Joint relocation: ' + label, flush=True)
+        print('Joint lite relocation: ' + label, flush=True)
         try:
             states[label] = solve_tier(out/label, master, label, settings, args.vp_model, ratio, erh)
         except (ValueError, OSError, KeyError, subprocess.SubprocessError) as exc:
@@ -221,7 +191,7 @@ def main():
         write_json(out/'tier_states.json', states)
         print(label + ': ' + states[label]['status'] + '; ' + states[label]['reason'], flush=True)
     from publish_results import publish
-    publish(out, master, states, paths, picking, location, args.vp_model, config['run_id'])
+    publish(out, master, states, paths, location, relocation, args.vp_model, config['run_id'])
 
 
 if __name__ == '__main__':

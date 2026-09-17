@@ -1,6 +1,6 @@
 # Relocation — execution binding
 
-The 2001 manual provides method and empirical guidance, not proof of the exact production binary version. Matching HypoDD source/build provenance remains unresolved. CND is diagnostic; DAMP uses measured spatial evidence under the maintained project rule. First-round execution remains catalog-only IDAT=2. The separate post_detection_relocation stage uses MESS CC and independent PhaseNet+ CT in joint IDAT=3, with new trials under the same spatial rule.
+The 2001 manual provides method and empirical guidance, not proof of the exact production binary version. Matching HypoDD source/build provenance remains unresolved. CND is diagnostic; DAMP uses measured spatial evidence under the maintained project rule. First-round execution remains catalog-only IDAT=2. The separate post_detection_relocation stage uses MESS CC plus the first-round dt.ct reused verbatim in joint IDAT=3 (lite), with new trials under the same spatial rule.
 
 ## Read in this order
 

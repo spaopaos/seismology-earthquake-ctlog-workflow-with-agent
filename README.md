@@ -21,7 +21,7 @@ Still hand-coding? Still doing research the old-fashioned way? So last season!
 - **QC at every stage.** Each stage ships data-driven visual checks and validity reports; a green contract is never silently treated as scientific truth, and empty or degraded products are reported rather than hidden. Until full AGI arrives, guided semi-automatic research is the practical optimum.
 The workflow executed accurately on GLM-5.3, Kimi K3 and GPT-5.6; a 1M-token context window gives the best experience.
 
-A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, and post-MESS joint CC+CT HypoDD. The final joint stage uses independent PhaseNet+ arrivals for CT and produces exactly three CC-threshold catalogs. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
+A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, and post-MESS joint CC+CT HypoDD. The final joint stage reuses the first-round catalog differential times verbatim alongside the MESS cross-correlation differential times and produces exactly three CC-threshold catalogs. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
 
 Project-authored code uses MIT; third-party software retains its own terms.
 

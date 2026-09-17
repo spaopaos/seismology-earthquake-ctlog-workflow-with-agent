@@ -295,7 +295,7 @@ def inspect_artifacts(doc, base):
                     issue('TIER_OUTCOME', 'Empty joint tier contains events', tier)
                 if state['status'] == 'READY' and not rows:
                     issue('TIER_OUTCOME', 'Ready joint tier contains no detected events', tier)
-                if any(r.get('location_method') != 'hypodd_cc_ct' or r.get('ct_source') != 'independent_phasenet'
+                if any(r.get('location_method') != 'hypodd_cc_ct' or r.get('ct_source') != 'first_round_reuse'
                        or r.get('role') != 'detection' for r in rows):
                     issue('JOINT_PROVENANCE', 'Joint output contains unsupported locations or references', tier)
                 parents = [base/u['contract_path'] for u in doc['upstream'] if u['stage'] == 'detection']

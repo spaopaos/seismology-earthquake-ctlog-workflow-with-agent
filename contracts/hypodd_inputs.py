@@ -120,8 +120,7 @@ def check_bundle(directory, require_both=True):
 def verify_joint_receipt(directory):
     directory = Path(directory)
     receipt = json.loads((directory / 'joint_verification.json').read_text())
-    required = {'dt.cc', 'dt.ct', 'event.dat', 'station.dat', 'joint_config.json',
-                'observations.json', 'events.json', 'station_aliases.json'}
+    required = {'dt.cc', 'dt.ct', 'event.dat', 'station.dat', 'joint_config.json'}
     if receipt.get('status') != 'PASS' or not required.issubset(receipt.get('input_sha256', {})):
         raise ValueError('Missing independent joint input verification')
     for name, expected in receipt['input_sha256'].items():
@@ -143,13 +142,15 @@ def verify_joint_receipt(directory):
 
 def joint_schedule(path):
     doc = json.loads(Path(path).read_text())
-    if doc.get('idat') != 3 or doc.get('ipha') != 3 or doc.get('ct_source') != 'independent_phasenet':
-        raise ValueError('Joint mode requires IDAT=3, IPHA=3 and independent PhaseNet CT')
-    if not .3 <= float(doc.get('min_pick_probability', 0)) <= 1:
-        raise ValueError('Independent picking probability must be in [0.3,1]')
-    if set(doc.get('match_window_s', {})) != {'P', 'S'} or any(
-            not 0 < float(v) <= 10 for v in doc['match_window_s'].values()):
-        raise ValueError('Explicit finite P/S matching windows in (0,10] seconds required')
+    if doc.get('idat') != 3 or doc.get('ipha') != 3 or doc.get('ct_source') not in (
+            'independent_phasenet', 'first_round_reuse'):
+        raise ValueError('Joint mode requires IDAT=3, IPHA=3 and a known CT source')
+    if doc['ct_source'] == 'independent_phasenet':
+        if not .3 <= float(doc.get('min_pick_probability', 0)) <= 1:
+            raise ValueError('Independent picking probability must be in [0.3,1]')
+        if set(doc.get('match_window_s', {})) != {'P', 'S'} or any(
+                not 0 < float(v) <= 10 for v in doc['match_window_s'].values()):
+            raise ValueError('Explicit finite P/S matching windows in (0,10] seconds required')
     for key in ('obscc', 'obsct'):
         if type(doc.get(key)) is not int or doc[key] < 0:
             raise ValueError('Invalid joint clustering threshold')

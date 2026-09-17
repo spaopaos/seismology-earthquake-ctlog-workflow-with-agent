@@ -10,7 +10,7 @@
     "times": {
       "type": "object", "required": ["catalog_dt", "cross_correlation", "ct_source"],
       "properties": {"catalog_dt": {"const": true}, "cross_correlation": {"const": true},
-        "ct_source": {"const": "independent_phasenet"}}
+        "ct_source": {"const": "first_round_reuse"}}
     },
     "solver": {
       "type": "object", "required": ["idat", "ipha", "damping_rule", "parameters_path"],

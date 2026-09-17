@@ -5,6 +5,11 @@ Modes:
   --damping-trials 20,50,100,200   save spatial evidence, CND, logged RMS and
                                    removals in qc/damping_trials.*
   --damp 50                        final run at the evidence-selected damping
+  --cc-only                        PALM 3_location mode: IDAT=1 with the MESS
+                                   dt.cc; no catalog differential times. Uses
+                                   the copied PALM single-block weighting
+                                   schedule (NSET=1, WTCCP=0.5, WTCCS=1.0,
+                                   WRCC=6, WDCC=4, catalog columns off).
 Parses the native log once; reports removals from "negative depth" messages.
 Verifies binary sha256 (R2), scientific inputs and final selection evidence.
 """
@@ -80,6 +85,13 @@ def iter_lines(damp, wdct_last=3):
         for n, a, b, c, d, e, f, g, h in rows)
 
 
+# v1.8: --cc-only copies the PALM 3_location hypoDD.inp weighting schedule
+# verbatim (NSET=1): NITER=4, WTCCP=0.5, WTCCS=1.0, WRCC=6, WDCC=4, catalog
+# columns off, DAMP from the trial machinery. IDAT=1, OBSCC=OBSCT=0.
+def cc_iter_lines(damp):
+    return f"  4    0.5   1.0    6    4    -9    -9    -9    -9   {damp}"
+
+
 def load_cre(path):
     rows = [l.split() for l in Path(path).read_text().splitlines()
             if l.strip() and l.strip()[0].isdigit()]
@@ -107,11 +119,14 @@ def parse_log(log):
     active = [r["cnd"] for r in rows if r["arnorm"] > 0.01]
     rms = re.findall(r"weighted ct rms \[s\] =\s*(" + number + r")", log)
     rms = [float(x.replace("D", "E").replace("d", "e")) for x in rms]
+    rms_cc = re.findall(r"weighted cc rms \[s\] =\s*(" + number + r")", log)
+    rms_cc = [float(x.replace("D", "E").replace("d", "e")) for x in rms_cc]
     return {
         "cnd": active[0] if active else None, "cnd_series": rows,
         "cnd_summary": "first logged record with arnorm > 0.01; diagnostic only",
         "airquakes_removed": len(re.findall(r"negative depth", log, re.I)),
         "rms_last": rms[-1] if rms else None,
+        "cc_rms_last": rms_cc[-1] if rms_cc else None,
         "rms_scope": "last logged weighted catalog RMS; not an all-cluster RMS reduction",
     }
 
@@ -122,12 +137,16 @@ def run_once(w, damp, args, top, vel):
     if any(output.iterdir()):
         raise ValueError(f"Run output is not empty: {output}; use a fresh run directory")
     joint = joint_schedule(args.joint_config) if getattr(args, 'joint_config', None) else None
+    cc_only = getattr(args, 'cc_only', False)
     schedule = iter_lines(damp, args.wdct_last)
     if joint:
         columns = ('niter', 'wtccp', 'wtccs', 'wrcc', 'wdcc', 'wtctp', 'wtcts', 'wrct', 'wdct')
         schedule = '\n'.join('  ' + ' '.join(str(row[k]) for k in columns) + ' ' + str(damp)
                              for row in joint['iterations'])
-    inp = INP_TEMPLATE.format(dist=args.dist, obsct=args.obsct, nset=len(joint['iterations']) if joint else 4,
+    if cc_only:
+        schedule = cc_iter_lines(damp)
+    inp = INP_TEMPLATE.format(dist=args.dist, obsct=args.obsct,
+                              nset=len(joint['iterations']) if joint else (1 if cc_only else 4),
                               iter_lines=schedule, nlay=len(vel),
                               ratio=args.ratio,
                               top=" ".join(f"{z:.2f}" for z in top),
@@ -137,6 +156,12 @@ def run_once(w, damp, args, top, vel):
         inp = inp.replace('  2     3     ', '  3     3     ')
         inp = inp.replace('  0     ' + str(args.obsct) + '\n',
                           f"  {joint['obscc']}     {joint['obsct']}\n")
+    if cc_only:
+        inp = inp.replace('* cross corr (not used, IDAT=2):\n\n', '* cross correlation:\ninput/dt.cc\n')
+        inp = inp.replace('* catalog diff times:\ninput/dt.ct\n',
+                          '* catalog diff times (not used, IDAT=1):\n\n')
+        inp = inp.replace('  2     3     ', '  1     3     ')
+        inp = inp.replace('  0     ' + str(args.obsct) + '\n', '  0     0\n')
     (w / "hypoDD.inp").write_text(inp)
     process = subprocess.run([BIN, "hypoDD.inp"], cwd=w, env=native_environment(), capture_output=True,
                              timeout=7200)
@@ -179,13 +204,37 @@ def run_once(w, damp, args, top, vel):
         if not counts['cc'] or not counts['ct']:
             result['error'] = 'Joint run did not retain both CC and CT constraints'
             return result
+    if cc_only:
+        counts = {'cc': 0}
+        by_cluster = {}
+        for line in paths['relocated'].read_text().splitlines():
+            f = line.split()
+            if not f:
+                continue
+            if len(f) != 24:
+                raise ValueError('CC-only solve needs native per-event CC counts')
+            cc = sum(map(int, f[17:19]))
+            counts['cc'] += cc
+            cluster = by_cluster.setdefault(f[-1], 0)
+            by_cluster[f[-1]] = cluster + cc
+        result.update(data_mode='cc', used_event_observation_counts=counts,
+                      counts_scope='sum of retained-event incidences, not unique differential observations',
+                      used_counts_by_cluster=by_cluster)
+        if not counts['cc']:
+            result['error'] = 'CC-only run did not retain CC constraints'
+            return result
+        if result.get('cc_rms_last') is not None:
+            result['rms_last'] = result['cc_rms_last']
+            result['rms_scope'] = 'last logged weighted cross-correlation RMS; not an all-cluster RMS reduction'
     result.update(displacement_metrics(initial, relocated), status="PASS")
     return result
 
 
 def trial_context(w, args):
-    paths = [w / "input" / name for name in ("dt.ct", "event.dat", "station.dat")]
     joint = getattr(args, 'joint_config', None)
+    cc_only = getattr(args, 'cc_only', False)
+    names = ("dt.cc", "event.dat", "station.dat") if cc_only else ("dt.ct", "event.dat", "station.dat")
+    paths = [w / "input" / name for name in names]
     if joint:
         if Path(joint).resolve() != (w / 'input/joint_config.json').resolve():
             raise ValueError('Joint configuration must be in the verified input bundle')
@@ -193,19 +242,21 @@ def trial_context(w, args):
         verify_joint_receipt(w / 'input')
         paths += [w / 'input' / name for name in ('dt.cc', 'joint_config.json', 'joint_verification.json')]
     if any(not p.is_file() or p.stat().st_size == 0 for p in paths):
-        raise ValueError("GATE: input/dt.ct, event.dat and station.dat must be nonempty")
+        raise ValueError("GATE: input/" + ", input/".join(names) + " must be nonempty")
     context = {
         "rule_version": RULE_VERSION, "binary_sha256": digest(BIN),
         "runner_sha256": digest(__file__),
         "metrics_sha256": digest(Path(__file__).with_name("damping_metrics.py")),
         "input_sha256": {p.name: digest(p) for p in paths},
         "vp_model_sha256": digest(args.vp_model),
-        "ratio": args.ratio, "dist": args.dist, "obsct": args.obsct,
+        "ratio": args.ratio, "dist": args.dist, "obsct": 0 if cc_only else args.obsct,
         "wdct_last": args.wdct_last, "initial_erh_km": args.initial_erh_km,
     }
     if joint:
         context['data_mode'] = 'cc_ct'
         context['joint_validator_sha256'] = digest(__import__('hypodd_inputs').__file__)
+    if cc_only:
+        context['data_mode'] = 'cc'
     return context
 
 
@@ -272,6 +323,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--workdir", required=True)
     ap.add_argument('--joint-config', help='Verified input/joint_config.json enables CC+CT IDAT=3')
+    ap.add_argument('--cc-only', action='store_true',
+                    help='PALM 3_location mode: IDAT=1 with input/dt.cc from MESS; no catalog data')
     ap.add_argument("--vp-model", required=True)
     ap.add_argument("--ratio", type=float, required=True, help="measured Wadati Vp/Vs")
     ap.add_argument("--dist", type=float, default=100)
@@ -287,8 +340,10 @@ def main():
     for name in ("ratio", "dist", "initial_erh_km", "wdct_last"):
         if not np.isfinite(getattr(args, name)) or getattr(args, name) <= 0:
             ap.error(f"--{name.replace('_', '-')} must be finite and positive")
-    if args.obsct < 1:
+    if args.obsct < 1 and not args.cc_only:
         ap.error("--obsct must be positive")
+    if args.joint_config and args.cc_only:
+        ap.error("--joint-config (IDAT=3) and --cc-only (IDAT=1) are mutually exclusive")
     if digest(BIN) != EXPECTED_SHA256:
         raise ValueError("hypoDD sha256 mismatch (R2)")
     w = Path(args.workdir).resolve()

@@ -39,23 +39,22 @@
   "detection": {"time_range": null},
   "post_detection_relocation": {
     "detection_catalogs": "detection/catalogs",
+    "method": "joint_lite_cc_ct",
     "idat": 3,
     "ipha": 3,
-    "ct_source": "independent_phasenet",
-    "min_pick_probability": 0.3,
-    "match_window_s": {"P": 0.6, "S": 1.0},
-    "initial_erh_km": null,
-    "damping_trials": [20, 50, 100, 200],
-    "pairing": {"minlnk": 4, "minobs": 4, "maxdist": 100, "maxsep": 10, "maxngh": 10},
+    "dist": 100.0,
     "obscc": 0,
     "obsct": 4,
+    "ct_reuse": {"relocation_tier": "medium"},
+    "damping_trials": [20, 50, 100, 200],
+    "initial_erh_km": null,
     "iterations": [
       {"niter": 4, "wtccp": 0.01, "wtccs": 0.005, "wrcc": -9, "wdcc": -9, "wtctp": 1.0, "wtcts": 0.5, "wrct": -9, "wdct": -9},
       {"niter": 8, "wtccp": 0.1, "wtccs": 0.05, "wrcc": 6, "wdcc": 5, "wtctp": 1.0, "wtcts": 0.5, "wrct": 6, "wdct": 5},
       {"niter": 12, "wtccp": 1.0, "wtccs": 0.5, "wrcc": 4, "wdcc": 3, "wtctp": 0.1, "wtcts": 0.04, "wrct": 4, "wdct": 4},
       {"niter": 16, "wtccp": 1.0, "wtccs": 0.5, "wrcc": 3, "wdcc": 2, "wtctp": 0.1, "wtcts": 0.03, "wrct": 3, "wdct": 3}
     ],
-    "parameter_rationale": "Initial joint working schedule: CT first constrains broad structure, CC later constrains nearby pairs. Effective joint link threshold OBSCC+OBSCT=4; independent-pick matching windows P=0.6 s/S=1.0 s are explicit starting settings, not fitted optima. Re-evaluate DAMP for each of the three CC tiers."
+    "parameter_rationale": "Joint lite: reuse the first-round medium-tier ph2dt dt.ct verbatim (hash-tied to its solver evidence) together with the MESS-native dt.cc, IDAT=3. Newly detected events connect to the catalog network only through MESS cross-correlation links to their templates; no independent re-picking and no new ph2dt run. Effective joint link threshold OBSCC+OBSCT=4. Each CC tier is solved independently and keeps the project DAMP trials (spatial-evidence rule); values are explicit starting settings, not fitted optima."
   },
   "parameter_rationale": {
     "profile": "Initial working configuration; inspect regional applicability. No case-specific optimum is implied.",

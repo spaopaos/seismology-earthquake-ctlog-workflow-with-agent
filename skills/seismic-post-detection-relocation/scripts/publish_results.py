@@ -1,11 +1,10 @@
-"""Publish exactly three post-MESS outcomes, retaining native counts and event lineage."""
+"""Publish exactly three post-MESS joint-lite outcomes, retaining native counts and event lineage."""
 import csv
 import json
 from pathlib import Path
 import bootstrap
 from pipeline_contracts import now, relative, write_v2
 from runtime_support import digest
-from hypodd_inputs import utc
 from damping_metrics import load_catalog, displacement_metrics
 from qc_and_contract import FIELDS
 from prepare_inputs import LABELS, write_json
@@ -17,7 +16,7 @@ def write_csv(path, rows, fields):
         writer.writeheader(); writer.writerows(rows)
 
 
-def publish(out, master, states, detection_contracts, picking, location, vp, run_id):
+def publish(out, master, states, detection_contracts, location, relocation, vp, run_id):
     out = Path(out)
     catalogs, native_paths, counts, metrics = {}, {}, {}, {}
     union = set()
@@ -47,7 +46,7 @@ def publish(out, master, states, detection_contracts, picking, location, vp, run
                           'latitude': float(row['lat']), 'longitude': float(row['lon']), 'depth_km': float(row['dep']),
                           'initial_latitude': initial['latitude'], 'initial_longitude': initial['longitude'],
                           'initial_depth_km': initial['depth_km'], 'location_method': 'hypodd_cc_ct',
-                          'depth_reference': 'sea_level', 'ct_source': 'independent_phasenet',
+                          'depth_reference': 'sea_level', 'method': 'joint_lite_cc_ct', 'ct_source': 'first_round_reuse',
                           'role': 'detection' if eid in selected else 'template_reference',
                           **{k: int(row[k]) for k in ('nccp', 'nccs', 'nctp', 'ncts', 'cid')},
                           'rcc_s': float(row['rcc']), 'rct_s': float(row['rct'])}
@@ -60,7 +59,7 @@ def publish(out, master, states, detection_contracts, picking, location, vp, run
         else:
             metrics[label] = None
         fields = list(dict.fromkeys(['event_id', 'origin_time', 'latitude', 'longitude', 'depth_km',
-                   'role', 'location_method', 'ct_source', 'depth_reference', 'status', 'known_match_method',
+                   'role', 'location_method', 'method', 'ct_source', 'depth_reference', 'status', 'known_match_method',
                    'best_detection_cc', 'initial_latitude', 'initial_longitude', 'initial_depth_km',
                    'nccp', 'nccs', 'nctp', 'ncts', 'cid', 'rcc_s', 'rct_s'] + [k for r in rows for k in r]))
         if state['status'] != 'UNAVAILABLE':
@@ -88,7 +87,7 @@ def publish(out, master, states, detection_contracts, picking, location, vp, run
                    'input_observations': observations, 'spatial_metrics': metrics[label],
                    'scientific_status': 'NOT_TESTED', 'rms_scope': 'per-event native final rcc/rct; not before-after comparable aggregate'})
     write_json(out/'qc_summary.json', {'tiers': states, 'counts': counts, 'spatial_metrics': metrics,
-               'ct_source': 'independent_phasenet', 'formal_catalog_count': len(catalogs),
+               'method': 'joint_lite_cc_ct', 'ct_source': 'first_round_reuse', 'formal_catalog_count': len(catalogs),
                'new_event_uncertainty': 'not measured by template inheritance or the upstream ERH comparison scale'})
     artifacts = {}
     def register(name, path):
@@ -100,7 +99,7 @@ def publish(out, master, states, detection_contracts, picking, location, vp, run
     for label, path in detection_contracts.items():
         upstream.append({'stage': 'detection', 'contract_path': register('upstream_'+label, path),
                          'input_verification': 'PASS', 'verification_basis': 'verified_shared_contract_graph'})
-    for stage, path in (('picking', picking), ('location', location)):
+    for stage, path in (('location', location), ('relocation', relocation)):
         upstream.append({'stage': stage, 'contract_path': register('upstream_'+stage, path),
                          'input_verification': 'PASS', 'verification_basis': 'verified_shared_contract_graph'})
     for path in sorted(out.rglob('*')):
@@ -112,20 +111,20 @@ def publish(out, master, states, detection_contracts, picking, location, vp, run
     write_json(out/'catalogs.json', index)
     register('catalog_index', out/'catalogs.json')
     doc = {'contract_version': '2.0', 'stage': 'post_detection_relocation', 'run_id': run_id+'-post-mess',
-           'created_at': now(), 'software': {'name': 'ph2dt + HypoDD CC+CT', 'version': 'pinned'},
+           'created_at': now(), 'software': {'name': 'ph2dt + HypoDD CC+CT (first-round CT reuse)', 'version': 'pinned'},
            'status': 'READY' if all(s['status'] == 'READY' for s in states.values()) else 'PARTIAL',
            'upstream': upstream, 'qc_path': relative(out/'qc_summary.json', out), 'artifacts': artifacts,
-           'times': {'catalog_dt': True, 'cross_correlation': True, 'ct_source': 'independent_phasenet'},
+           'times': {'catalog_dt': True, 'cross_correlation': True, 'ct_source': 'first_round_reuse'},
            'solver': {'idat': 3, 'ipha': 3, 'damping_rule': 'spatial-evidence-1.7',
                       'parameters_path': relative(out/'effective_parameters.json', out)},
            'tiers': states, 'outputs': {'catalogs': catalogs, 'reloc_paths': native_paths,
                       'event_mapping_paths': {label: label+'/event_lineage.csv' for label in LABELS}},
            'stats': {'tier_counts': counts, 'unique_relocated_detection_events': len(union)},
-           'warnings': ['Only independent PhaseNet+ arrival values enter CT; MESS hints guide selection, so errors need not be statistically independent.',
+           'warnings': ['CT differential times are the verbatim first-round ph2dt product; newly detected events connect to the catalog network only through MESS cross-correlation links to their templates.',
                         'Upstream ERH is a comparison scale, not measured uncertainty for newly detected events.',
                         'Reference events are separately labeled; no cross-CC-tier merge or absolute magnitude calibration.',
                         'Damping stability and solver completion do not independently establish physical location accuracy.']}
     written = write_v2(doc, out/'contract.v2.json')
     if written['validation']['artifact_status'] != 'PASS':
-        raise ValueError('Joint output contract failed artifact validation')
+        raise ValueError('Joint lite output contract failed artifact validation')
     print(json.dumps({'tier_counts': counts, 'status': written['status']}))

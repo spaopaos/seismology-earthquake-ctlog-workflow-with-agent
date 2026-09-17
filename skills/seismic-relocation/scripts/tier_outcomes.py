@@ -42,7 +42,13 @@ def outcome(directory):
         return {"status": "UNAVAILABLE", "reason": "DAMPING_EVIDENCE_MISSING", "damp": None}
     selection = json.loads(selection_path.read_text())
     context = selection.get("context", {})
-    if not {"dt.ct", "event.dat", "station.dat"}.issubset(context.get("input_sha256", {})):
+    inputs = context.get("input_sha256", {})
+    has_ct = {"dt.ct", "event.dat", "station.dat"}.issubset(inputs)
+    has_cc = {"dt.cc", "event.dat", "station.dat"}.issubset(inputs)
+    if not (has_ct or has_cc):
+        return {"status": "UNAVAILABLE", "reason": "INPUT_EVIDENCE_MISSING", "damp": None}
+    if has_ct and has_cc and context.get("data_mode") == "cc":
+        # A CC-only context must not carry catalog-differential evidence.
         return {"status": "UNAVAILABLE", "reason": "INPUT_EVIDENCE_MISSING", "damp": None}
     check_files(directory / "input", context.get("input_sha256", {}))
     if final_path.exists():
