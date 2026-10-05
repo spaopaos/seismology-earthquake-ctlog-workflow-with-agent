@@ -149,7 +149,7 @@ python 7_swarm_timeseries.py --action analyze --workdir-root insar_swarm
 8. **帧覆盖陷阱（洱源实证）**：按质量率择优选 stack 不保证帧 footprint 覆盖研究窗——p33_f507 东缘 99.931°E 差 0.007° 未及研究区西界 99.938°E，小图全空。**下载后必须跑 6_make_maps 的覆盖校验**；覆盖失败 → 取同方向次优候选对重提交（selected_pairs.json 记 revisions 审计）
 9. **S1 12 天重访**：震后窗要等首个震后景；两阈值事件同隔内不可分（如实标注）
 10. **植被/季节**：雨季（6–9 月）相干性差，质量评分 NDVI/降水权重高；concern 回退对（长基线/跨季）成图质量存疑，图上已带质量标记
-11. **产品符号约定**：d = −φ·λ/4π，正值=朝卫星位移（unw_phase 单位弧度）；产品为 UTM 投影 GeoTIFF zip，成图须 CRS 变换与震中窗裁剪
+11. **产品符号约定**：d = −φ·λ/4π，正值=朝卫星位移（unw_phase 单位弧度）；产品为 UTM 投影 GeoTIFF zip，成图须 CRS 变换与震中窗裁剪。**polar 色标下红端=正=朝卫星——图注文字必须与色标极性一致（副标题曾写反 blue=toward，实为 red=toward）**。绝对符号链可用地震学机制锚定：降轨（朝东看）红/蓝象限应与"右旋 NW 走滑"模板同号（洱源实证 331° 边界 +0.83）
 12. **insarhub_config.json 是状态文件**：改参数必须命令行显式传 flag
 13. **环境隔离**：启动器跟随 sys.executable 找 insarhub 可执行——必须用 insarhub 环境 python 运行；误用其他环境会失败（已加守卫报错）
 14. **WSL I/O**：workdir 放 WSL 文件系统（~/...），勿放 /mnt/d
