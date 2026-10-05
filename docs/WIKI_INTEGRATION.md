@@ -1,6 +1,6 @@
 # Wiki integration and migration from v0.1.0
 
-The 0.3.0-dev workflow revision adds a seventh execution binding, `post_detection_relocation`, for post-MESS CC+CT HypoDD. The 32 original Wiki pages and source PDFs remain unchanged. Its new execution identity requires a new run; do not rewrite old knowledge locks or append new provenance to completed analyses. The historical v0.2.0 migration notes below describe the original six-stage release.
+The 0.3.0-dev workflow revision adds a seventh execution binding, `post_detection_relocation`, for post-MESS CC+CT HypoDD, and an eighth, `focal_mechanism`, for SKHASH focal mechanisms. The 32 original Wiki pages and source PDFs remain unchanged; the focal-mechanism revision adds the SKHASH paper (Skoumal et al. 2024) and the version-matched v1.1 manual as sources 9–10, plus three new pages (35 total, 262 physical PDF pages). New runs pick up the new knowledge identity; do not rewrite old knowledge locks or append new provenance to completed analyses. The historical v0.2.0 migration notes below describe the original six-stage release.
 
 ## What happens to the two existing packages
 
@@ -20,7 +20,7 @@ A new run may consume valid existing upstream products with their original linea
 
 ## What knowledge is included
 
-The original collection has 32 knowledge pages, eight source PDFs and 239 physical PDF pages. Export changes only Wiki-link syntax into portable relative Markdown links; source PDFs and page-numbered texts retain their original hashes. `library/export.json` records the source snapshot and export transformation.
+The original collection has 32 knowledge pages, eight source PDFs and 239 physical PDF pages; the 2026-10-06 focal-mechanism revision adds two sources and three pages (35 pages, 10 PDFs, 262 physical pages). Export changes only Wiki-link syntax into portable relative Markdown links; source PDFs and page-numbered texts retain their original hashes. `library/export.json` records the source snapshot and export transformation.
 
 The 2002 HYPOINVERSE guide and original PhaseNet paper remain historical/method references. Execution bindings point to the current PhaseNet+ code/weights and the existing 1.40 manual, with an additional page-numbered extraction. HypoDD binary/source provenance remains unresolved and is labeled accordingly. The PALM paper does not establish the project's medium-template and CC-tier policy.
 

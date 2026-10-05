@@ -14,10 +14,10 @@ clearly below 50% AND the post-reversal mechanism agreement jumps above
 60%; remaining ~50% agreement stations are deep-learning polarity noise,
 and flipping them risks overfitting.
 
-The Wiki export has no SKHASH/HASH page; PhaseNet+ polarity background is
-on the phasenet page. Implementation-specific behavior comes from the
-vendored source (four numpy>=2/pandas3 compatibility patches applied — see
-VENDORED_PATCHES.md; do not substitute a pip-installed SKHASH).
+The paper is method background; the v1.1 manual is the version-matched
+operating reference (the vendored source carries four numpy>=2/pandas3
+compatibility patches — see VENDORED_PATCHES.md; do not substitute a
+pip-installed SKHASH).
 
 - [Stage policy](../../skills/seismic-focal-mechanism/SKILL.md)
 - [Vendored provenance + patches](../../knowledge/repos/SKHASH/VENDORED_PATCHES.md)
@@ -28,6 +28,14 @@ VENDORED_PATCHES.md; do not substitute a pip-installed SKHASH).
 - [Runner](../../skills/seismic-focal-mechanism/scripts/5_run_skhash.py)
 - [Catalog parser](../../skills/seismic-focal-mechanism/scripts/6_parse_mechanisms.py)
 - [Initial settings](../../../configs/pipeline.example.json)
+
+## Wiki reading route
+
+- [SKHASH](../library/wiki/entities/skhash.md)
+- [SKHASH paper (Skoumal et al. 2024)](../library/wiki/sources/skousmal-2024-skhash.md)
+- [SKHASH v1.1 manual](../library/wiki/sources/skhash-manual-v1.1.md)
+- [PhaseNet](../library/wiki/entities/phasenet.md)
+- [Uncertainty and quality control](../library/wiki/concepts/uncertainty-and-quality-control.md)
 
 Strong-motion events can lose polarity confidence at near stations
 (amplitudes 6–10× grade-A events) and be rejected on takeoff-angle gaps;

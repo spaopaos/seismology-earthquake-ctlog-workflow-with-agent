@@ -1,0 +1,32 @@
+Deposit SKHASH paper and v1.1 manual into the LLM Wiki knowledge base
+
+The focal-mechanism stage previously had no Wiki sources (stage-routes
+noted the gap). Following the established wiki deposit format:
+
+- raw/sources: skousmal-2024-skhash.pdf (SRL 95(4) paper, 8 pages) and
+  skhash-manual-v1.1.pdf (USGS v1.1 manual, 15 pages)
+- raw/assets/extracted: page-numbered texts (physical PDF pages, same
+  header convention as existing sources)
+- wiki pages: entities/skhash.md, sources/skousmal-2024-skhash.md,
+  sources/skhash-manual-v1.1.md (35 pages total, 10 sources, 262 PDF
+  pages), each with citation, scope/limitations and page-anchored
+  reading guides; the manual page is marked version-matched to the
+  vendored v1.1 (four compatibility patches recorded separately)
+- version-and-evidence-gaps gains an addendum: the focal-mechanism stage
+  is now the exception with BOTH paper and version-matched manual
+- corpus-manifest/pages.json/export.json registrations; toolchain.json
+  sources gains the vendored SKHASH entry (new knowledge identity, new
+  runs required)
+- stage-routes focal_mechanism wiki_pages now route skhash + paper +
+  manual (+ phasenet, uncertainty); binding gains the wiki reading route
+- knowledge CLI --stage choices are derived from stage-routes.json
+  instead of a hardcoded list (focal_mechanism was unreachable)
+- WIKI_INTEGRATION.md counts updated; knowledge tests expect 35/10
+
+Verified: knowledge verify PASS (35 pages / 10 sources); read/source/
+search smoke tests return the SKHASH pages, incl. manual PDF p.5
+($plfile polarity-reversal fields); test_knowledge 11/11 and
+test_portability pass; knowledge-manifest and release_manifest
+regenerated. Fixed en route: a one-character typo link
+(skousmal-v2024-skhash.md -> skousmal-2024-skhash.md) that verify()'s
+byte-level link check caught.

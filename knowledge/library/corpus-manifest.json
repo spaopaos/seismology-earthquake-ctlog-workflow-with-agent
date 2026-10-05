@@ -218,6 +218,56 @@
       "source_path": "raw/sources/ren-2025-seismology-modeling-agent.pdf",
       "text_path": "raw/assets/extracted/ren-2025-seismology-modeling-agent.md",
       "summary_path": "wiki/sources/ren-2025-seismology-modeling-agent.md"
+    },
+    {
+      "id": "skousmal-2024-skhash",
+      "original_filename": "skhash.pdf",
+      "filename": "skousmal-2024-skhash.pdf",
+      "title": "SKHASH: A Python Package for Computing Earthquake Focal Mechanisms",
+      "authors": [
+        "Robert J. Skoumal",
+        "Jeanne L. Hardebeck",
+        "Peter M. Shearer"
+      ],
+      "year": 2024,
+      "venue": "Seismological Research Letters 95(4), 2519–2526",
+      "doi": "10.1785/0220230329",
+      "topic": "seismic-processing",
+      "entity": "skhash",
+      "version_note": "Published version of record; received 2 October 2023, published online 10 April 2024.",
+      "pdf_pages": 8,
+      "bytes": 5286823,
+      "sha256": "4575c873c8ee751347658b3b07294e3cd397c9687e1286e7f56faf1401d90f25",
+      "text_sha256": "a1dd69e258fa5892f0976acc0a67f9c8e3139b355ed4e76ab79d8079a5adcf68",
+      "extracted_characters": 30519,
+      "source_path": "raw/sources/skousmal-2024-skhash.pdf",
+      "text_path": "raw/assets/extracted/skousmal-2024-skhash.md",
+      "summary_path": "wiki/sources/skousmal-2024-skhash.md"
+    },
+    {
+      "id": "skhash-manual-v1.1",
+      "original_filename": "SKHASH_manual.pdf",
+      "filename": "skhash-manual-v1.1.pdf",
+      "title": "SKHASH v1.1 Manual: A Python Package for Computing Earthquake Focal Mechanisms",
+      "authors": [
+        "Robert J. Skoumal",
+        "Jeanne L. Hardebeck",
+        "Peter M. Shearer"
+      ],
+      "year": 2025,
+      "venue": "U.S. Geological Survey software manual (last modified 20 May 2025)",
+      "doi": "",
+      "topic": "seismic-processing",
+      "entity": "skhash",
+      "version_note": "Version-matched to the vendored v1.1 source except four numpy>=2/pandas3 compatibility patches (knowledge/repos/SKHASH/VENDORED_PATCHES.md).",
+      "pdf_pages": 15,
+      "bytes": 263994,
+      "sha256": "1d074bef640a284ec6cae102acae016ab308b3b6e194b6b5595b46bd2590e4ca",
+      "text_sha256": "1a0c7973f3eb35e57e356121374b8874a814122f223dc3b3bd5357aa9eead783",
+      "extracted_characters": 27390,
+      "source_path": "raw/sources/skhash-manual-v1.1.pdf",
+      "text_path": "raw/assets/extracted/skhash-manual-v1.1.md",
+      "summary_path": "wiki/sources/skhash-manual-v1.1.md"
     }
   ]
 }

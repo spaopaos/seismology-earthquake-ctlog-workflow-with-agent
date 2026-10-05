@@ -28,8 +28,8 @@ class WikiIntegration(unittest.TestCase):
         self.work=tempfile.TemporaryDirectory(prefix='wiki-run-'); self.run=Path(self.work.name)
     def tearDown(self): self.work.cleanup()
     def test_copied_snapshot_and_links(self):
-        self.assertEqual(self.k.verify()['wiki_pages'],32)
-        self.assertEqual(self.k.verify()['wiki_sources'],8)
+        self.assertEqual(self.k.verify()['wiki_pages'],35)
+        self.assertEqual(self.k.verify()['wiki_sources'],10)
         self.assertFalse((self.package/'knowledge/library/.llm-wiki').exists())
     def test_chinese_query_and_stage_filter(self):
         hits=self.k.search('阻尼 条件数','relocation')['results']

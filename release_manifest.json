@@ -22,20 +22,12 @@
       "sha256": "89e970fa96b19406542777bc4fce1a08a198c63548b8f015b4a0ac5426750d7a",
       "category": "source"
     },
-    "_tmp_final.py": {
-      "sha256": "8ade54d365475a775fa45a262ce51dbafa69f2213fe34d098c3dc7d19353cc49",
-      "category": "source"
-    },
-    "_tmp_prep_smoke.py": {
-      "sha256": "7770a8e782e705e92b717d4e146998644d471829051ffd2f5901d994e9d92b51",
-      "category": "source"
-    },
     "seisflow.py": {
       "sha256": "f6be3871a91aeb630aa6e7668f7727c90bcbc2f8932a4ed1da3b4a5aef3efd3e",
       "category": "source"
     },
     "toolchain.json": {
-      "sha256": "6d9a005725e1bd3a40f1e38dd72e28cb9ab898f6c2387e83b5891b993b12c3cb",
+      "sha256": "66f95eb5652485bd0e315617e1363a82f474281b75f12bf81e7d1d79d3f1da69",
       "category": "source"
     },
     "configs/pipeline.example.json": {
@@ -71,7 +63,7 @@
       "category": "source"
     },
     "contracts/knowledge_access.py": {
-      "sha256": "db06e69e078b00c69b5945e0d2f10e5c5588e39fdd71e1e40f642e53e73058dd",
+      "sha256": "1749fe40c486c0f895bd1a74e9e1f71f665b139c90386228e6775e988ba64274",
       "category": "source"
     },
     "contracts/location.contract.schema.json": {
@@ -183,7 +175,7 @@
       "category": "source"
     },
     "docs/WIKI_INTEGRATION.md": {
-      "sha256": "c23e73706e6ec342b36082cdeda6f6cb5bae6071b3ae2edf5e9e78feec1ffe6d",
+      "sha256": "09db73a947b64c84eb5de1df5a483cdb20e63d2c1b5b172ba9216f4b71a55b37",
       "category": "source"
     },
     "docs/baseline_validation_0.1.0.json": {
@@ -275,11 +267,11 @@
       "category": "source"
     },
     "knowledge/knowledge-manifest.json": {
-      "sha256": "8ae4a1aa375fb02f5f490d98b82b8fb1e9914847fe200a45b0ce6a984e5dc794",
+      "sha256": "48a323c9cc81f8f3f379f97710323160ca867cf688d7263ba8ecf4670b1ed0ec",
       "category": "source"
     },
     "knowledge/stage-routes.json": {
-      "sha256": "eb7bc63fd438aa224182388a80e599f1d57c8ba471691b54a6243c778bf734ed",
+      "sha256": "c53ffc46bec45ae1a8e7291d8dab036c8340b8dee51140f0b948c7be34d90f58",
       "category": "source"
     },
     "knowledge/bindings/association.md": {
@@ -291,7 +283,7 @@
       "category": "source"
     },
     "knowledge/bindings/focal_mechanism.md": {
-      "sha256": "bc2f777571994f388db2a63e0bc4d3ae1dd26189e38b1b8eaaca91f2d4d916f2",
+      "sha256": "d739ff12f61cb575bcb254b0455b5a8dae5c770209a8d3027fe713d4b201888f",
       "category": "source"
     },
     "knowledge/bindings/location.md": {
@@ -315,15 +307,15 @@
       "category": "source"
     },
     "knowledge/library/corpus-manifest.json": {
-      "sha256": "e5c13204a59ec6b7a19e3f69caa62ebaf3853957ec0e4dbebba0abdcb670bd38",
+      "sha256": "beb3f224bf77f43e385c405f2c9dd42c087a163415fc5f3fb62cfd135cf3ac8c",
       "category": "source"
     },
     "knowledge/library/export.json": {
-      "sha256": "5a0bf2aa08a55371c0820a0a0243163b8d9015024218e480cdaccda792e6f7cf",
+      "sha256": "e77f0788a87f9691bcc8e6430cf4a3fb041ca224e77f672a3483975fcedfb514",
       "category": "source"
     },
     "knowledge/library/pages.json": {
-      "sha256": "1d7955b75285946cd67926c2a864e6e30acd2477f73eb9baadafd592cd728070",
+      "sha256": "9adbebcdd938e31e0a025df2e237514c3fcb6c0c56288411c51a7b145f70b6ef",
       "category": "source"
     },
     "knowledge/library/purpose.md": {
@@ -340,6 +332,14 @@
     },
     "knowledge/library/raw/assets/extracted/ren-2025-seismology-modeling-agent.md": {
       "sha256": "b88f0f9cce2ac30fdfa27943fff253ffbe21871e836dad6b4cad68f6febd9c26",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/skhash-manual-v1.1.md": {
+      "sha256": "1a0c7973f3eb35e57e356121374b8874a814122f223dc3b3bd5357aa9eead783",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/skousmal-2024-skhash.md": {
+      "sha256": "a1dd69e258fa5892f0976acc0a67f9c8e3139b355ed4e76ab79d8079a5adcf68",
       "category": "source"
     },
     "knowledge/library/raw/assets/extracted/waldhauser-2001-hypodd.md": {
@@ -372,6 +372,14 @@
     },
     "knowledge/library/raw/sources/ren-2025-seismology-modeling-agent.pdf": {
       "sha256": "0beec0304a6260eee801bc50f03529623966109145e9cab96684bca608ce1c21",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/skhash-manual-v1.1.pdf": {
+      "sha256": "1d074bef640a284ec6cae102acae016ab308b3b6e194b6b5595b46bd2590e4ca",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/skousmal-2024-skhash.pdf": {
+      "sha256": "4575c873c8ee751347658b3b07294e3cd397c9687e1286e7f56faf1401d90f25",
       "category": "source"
     },
     "knowledge/library/raw/sources/waldhauser-2001-hypodd.pdf": {
@@ -482,6 +490,10 @@
       "sha256": "f8e64948f194073d12418458d7a9d008e70d3fc3df2ce9826892a1d6e9fc730c",
       "category": "source"
     },
+    "knowledge/library/wiki/entities/skhash.md": {
+      "sha256": "1b5885f743c2b78b722de59de3f4e92d1997e708fafca052470210e3ad0acbe0",
+      "category": "source"
+    },
     "knowledge/library/wiki/entities/specfem-mcp.md": {
       "sha256": "061b01effe405a0783dbf9a3f96be83b84b39a83dd72e391c2e488c75fc64f6b",
       "category": "source"
@@ -491,7 +503,7 @@
       "category": "source"
     },
     "knowledge/library/wiki/queries/version-and-evidence-gaps.md": {
-      "sha256": "450e9b179b1a8d665f0530eed0abf35da79d423000719f87014d849197e321cf",
+      "sha256": "d5ea26808efa079431ecf47850633f367d43c5c007681359907290be54ef3775",
       "category": "source"
     },
     "knowledge/library/wiki/sources/klein-2002-hypoinverse.md": {
@@ -500,6 +512,14 @@
     },
     "knowledge/library/wiki/sources/ren-2025-seismology-modeling-agent.md": {
       "sha256": "15aaa2350b8dcd98fa8c036806d58cb28c8029d171ee590e8251879aa3965948",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/skhash-manual-v1.1.md": {
+      "sha256": "0fcd358534a2ea07a9a376b55bc5e001a246aa71dfd0decd77ecbacc93644280",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/skousmal-2024-skhash.md": {
+      "sha256": "ccc03eb6bbcb0abf9905b1d4903f855fbb5306d202454b52628b69ff56fdb282",
       "category": "source"
     },
     "knowledge/library/wiki/sources/waldhauser-2001-hypodd.md": {
@@ -2519,7 +2539,7 @@
       "category": "source"
     },
     "tests/test_knowledge.py": {
-      "sha256": "9118dd40c2dc0108aa95ef7c242f1e3afed8fdb7ff79acd50d8411837f152fb6",
+      "sha256": "4e2bbc4a7250a50d14d618e15ea8464348dff771fed6e3c71a1375ae2b7e3d55",
       "category": "source"
     },
     "tests/test_portability.py": {

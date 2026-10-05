@@ -226,6 +226,9 @@
   },
   "focal_mechanism": {
    "wiki_pages": [
+    "skhash",
+    "skousmal-2024-skhash",
+    "skhash-manual-v1.1",
     "phasenet",
     "uncertainty-and-quality-control"
    ],
@@ -271,7 +274,7 @@
      "role": "explicit_initial_settings"
     }
    ],
-   "scope_note": "The Wiki export has no SKHASH/HASH page; PhaseNet+ polarity background is on the phasenet page. SKHASH v1.1 is vendored with four numpy>=2/pandas3 compatibility patches (see VENDORED_PATCHES.md); polarity threshold 0.3 maps HASH impulsive-only picks onto the continuous PhaseNet+ score, and the reversal-list gate is a project rule validated on the Eryuan sequence. A/B/C/D quality criteria are the original HASH criteria and must not be tuned to inflate grade A.",
+   "scope_note": "Method background: the SKHASH paper; version-matched operating detail: the v1.1 manual. SKHASH v1.1 is vendored with four numpy>=2/pandas3 compatibility patches (VENDORED_PATCHES.md); do not substitute a pip install. The polarity threshold 0.3 maps HASH impulsive-only picks onto the continuous PhaseNet+ score, and the reversal-list gate is a project rule validated on the Eryuan sequence. A/B/C/D quality criteria are the original HASH criteria and must not be tuned to inflate grade A.",
    "knowledge_binding": "knowledge/bindings/focal_mechanism.md"
   }
  },

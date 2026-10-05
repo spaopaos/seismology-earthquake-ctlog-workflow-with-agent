@@ -149,7 +149,7 @@ class Knowledge:
 
 def add_cli(parser):
     parser.add_argument('operation',choices=['verify','stage','search','read','source','cite'])
-    parser.add_argument('--stage',choices=['preprocess','picking','association','location','relocation','detection','post_detection_relocation'])
+    parser.add_argument('--stage',choices=sorted(json.loads((ROOT/'knowledge'/'stage-routes.json').read_text())['stages']))
     parser.add_argument('--query'); parser.add_argument('--id'); parser.add_argument('--page',type=int)
     parser.add_argument('--limit',type=int,default=5); parser.add_argument('--run-dir')
     parser.add_argument('--parameter'); parser.add_argument('--rationale')

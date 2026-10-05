@@ -416,9 +416,9 @@
       "palm-mess",
       "specfem-mcp"
     ],
-    "original_sha256": "450e9b179b1a8d665f0530eed0abf35da79d423000719f87014d849197e321cf",
+    "original_sha256": "d5ea26808efa079431ecf47850633f367d43c5c007681359907290be54ef3775",
     "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
-    "sha256": "450e9b179b1a8d665f0530eed0abf35da79d423000719f87014d849197e321cf"
+    "sha256": "d5ea26808efa079431ecf47850633f367d43c5c007681359907290be54ef3775"
   },
   "klein-2002-hypoinverse": {
     "id": "klein-2002-hypoinverse",
@@ -610,5 +610,61 @@
     "original_sha256": "ac14bf0cf5228e1e5700aa3fe731ba796a69429918d3bfea46ad3f158c2300eb",
     "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
     "sha256": "37e28eb59dafa75593ac9594ada211a1720054b453b4a6940bf4c3a9975cf12b"
+  },
+  "skhash": {
+    "id": "skhash",
+    "title": "SKHASH",
+    "type": "entity",
+    "path": "wiki/entities/skhash.md",
+    "source_ids": [
+      "skousmal-2024-skhash",
+      "skhash-manual-v1.1"
+    ],
+    "related": [
+      "skousmal-2024-skhash",
+      "skhash-manual-v1.1",
+      "phasenet",
+      "uncertainty-and-quality-control",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "1b5885f743c2b78b722de59de3f4e92d1997e708fafca052470210e3ad0acbe0",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "1b5885f743c2b78b722de59de3f4e92d1997e708fafca052470210e3ad0acbe0"
+  },
+  "skousmal-2024-skhash": {
+    "id": "skousmal-2024-skhash",
+    "title": "SKHASH: A Python Package for Computing Earthquake Focal Mechanisms",
+    "type": "source",
+    "path": "wiki/sources/skousmal-2024-skhash.md",
+    "source_ids": [
+      "skousmal-2024-skhash"
+    ],
+    "related": [
+      "skhash",
+      "skhash-manual-v1.1",
+      "phasenet",
+      "uncertainty-and-quality-control"
+    ],
+    "original_sha256": "ccc03eb6bbcb0abf9905b1d4903f855fbb5306d202454b52628b69ff56fdb282",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "ccc03eb6bbcb0abf9905b1d4903f855fbb5306d202454b52628b69ff56fdb282"
+  },
+  "skhash-manual-v1.1": {
+    "id": "skhash-manual-v1.1",
+    "title": "SKHASH v1.1 Manual: A Python Package for Computing Earthquake Focal Mechanisms",
+    "type": "source",
+    "path": "wiki/sources/skhash-manual-v1.1.md",
+    "source_ids": [
+      "skhash-manual-v1.1"
+    ],
+    "related": [
+      "skhash",
+      "skousmal-2024-skhash",
+      "uncertainty-and-quality-control",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "0fcd358534a2ea07a9a376b55bc5e001a246aa71dfd0decd77ecbacc93644280",
+    "evidence_scope": "version-matched manual for the vendored v1.1 source; four compatibility patches recorded separately",
+    "sha256": "0fcd358534a2ea07a9a376b55bc5e001a246aa71dfd0decd77ecbacc93644280"
   }
 }
