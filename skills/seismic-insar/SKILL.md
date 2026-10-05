@@ -63,11 +63,23 @@ insarhub processor -N Hyp3_S1 -w <workdir>/<job>/<stack> submit --pairs REF,SEC
 
 GUNW NetCDF → LOS 位移（d = −φ·λ/4π，正值朝卫星，C 波段 λ=0.0554658 m）+ 相干性掩膜（<0.3 默认）→ GeoTIFF(mm) + 阴影地形底图 PNG（虚线=相干性等值线，星=震中，标题含事件/stack/日期/质量标记）。
 
-### 6. 产品清单（`4_collect_products.py`）
+### 6. 交付前 QA 门（`8_qa_products.py`）— **agent 责任，用户只审科学**
+
+用户目视发现的每个缺陷都是 agent 的 QA 空洞。交付任何图件前必跑本门禁（exit 1 即拦截）：
+
+| 检查 | FAIL 阈值 | WARN 阈值 |
+|---|---|---|
+| 研究窗覆盖（相干性有效像素占比）| < 0.05（帧未覆盖/全失相干，即 p33_f507 陷阱）| < 0.30 |
+| 震中最近有效像素距离 | > 10 km | — |
+| 近场信号 vs 远场噪声 SNR | — | < 2（可能是真未检出，如实报告不拦截）|
+
+FAIL → 修复动作（重选次优对重提交/换 stack）；WARN 必须在交付说明中写明。**原则：任何"用户本可目视发现"的问题（空图、错位、缺层）都必须先被这道门拦下。**
+
+### 7. 产品清单（`4_collect_products.py`）
 
 事件 ↔ 干涉对 ↔ 产品路径映射表 `insar_products.csv`。
 
-### 7. 震群长周期时序（`7_swarm_timeseries.py`）— 第二类产品
+### 8. 震群长周期时序（`7_swarm_timeseries.py`）— 第二类产品
 
 ```bash
 # prepare: 合并窗搜索 + 选定 stack（整数 PATH:FRAME 形如 33:502）的质量网络

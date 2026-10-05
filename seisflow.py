@@ -413,6 +413,11 @@ class Runner:
                     self.native(stage,'6_make_maps.py',
                         ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work',
                          '--selected',out/'selected_pairs.json','--outdir',out/'maps'],())
+                    self.native(stage,'8_qa_products.py',
+                        ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work',
+                         '--selected',out/'selected_pairs.json',
+                         '--qa-json',out/'insar_products_qa.json'],
+                        [out/'insar_products_qa.json'])
                 self.native(stage,'4_collect_products.py',
                     ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work',
                      '--out',out/'insar_products.csv'],[out/'insar_products.csv'])
