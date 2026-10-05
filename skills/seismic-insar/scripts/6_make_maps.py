@@ -74,6 +74,28 @@ def shade(h):
                         + gy * np.sin(np.deg2rad(315))) / (g + 1e-6) * 0.5, 0, 1)
 
 
+def farfield_offset(disp_mm, coh, t, shape, ex, ey, coh_min=0.3,
+                    r_in_m=15e3, r_out_m=40e3):
+    """Scene-wide reference offset: median LOS of the coherent far-field
+    annulus (r_in..r_out metres from the event, in product CRS metres).
+
+    GAMMA unwrapped products carry an arbitrary constant reference; without
+    removing it whole scenes sit tens of mm off zero and saturate any
+    symmetric colour scale. Returns (offset_mm, n_farfield_px).
+    """
+    h, w = shape
+    px = abs(t.a)
+    rr, cc = np.mgrid[0:h, 0:w]
+    xpix = t.c + t.a * (cc + 0.5)
+    ypix = t.f + t.e * (rr + 0.5)
+    dist = np.hypot(xpix - ex, ypix - ey)
+    m = (dist >= r_in_m) & (dist <= r_out_m) & (coh >= coh_min)
+    if m.sum() < 200:
+        return 0.0, int(m.sum())
+    vals = disp_mm[m & np.isfinite(disp_mm)]
+    return (float(np.median(vals)) if vals.size else 0.0), int(m.sum())
+
+
 def process_pair(sel, root, outdir, coh_min, crop_km):
     stack_dir = root / sel['job_id'] / sel['stack']
     pdir = find_product_dir(stack_dir, sel['granules'])
@@ -89,6 +111,11 @@ def process_pair(sel, root, outdir, coh_min, crop_km):
     ex, ey = warp_transform('EPSG:4326', d['crs'],
                             [sel_event_lon(sel)], [sel_event_lat(sel)])
     ex, ey = ex[0], ey[0]
+    # remove the scene-wide unwrapped-phase reference offset before any
+    # display or QA: median of the coherent 15-40 km far-field annulus
+    offset, n_far = farfield_offset(disp_mm, d['coh'], d['transform'],
+                                    d['shape'], ex, ey, coh_min)
+    disp_mm = disp_mm - offset
     # coverage verification: a frame that only clips the AOI corner
     # produces empty study-area maps (Eryuan case: p33_f507 east edge
     # stopped 0.007 deg west of the study window)
@@ -140,6 +167,8 @@ def process_pair(sel, root, outdir, coh_min, crop_km):
     ax.set_title(f"{sel['event_id']} ML{sel['ml']:.2f} {sel['event_time'][:10]}  "
                  f"{sel['stack']} {sel['direction']}  "
                  f"{sel['d1']}->{sel['d2']} ({sel['dt_days']}d)  [{sel['quality']}]\n"
+                 f"far-field reference offset {offset:+.1f} mm removed "
+                 f"({n_far} px, 15-40 km annulus)\n"
                  f"axes: km from epicenter ({sel_event_lon(sel):.3f}, "
                  f"{sel_event_lat(sel):.3f}); CRS {d['crs']}")
     ax.set_xlabel('Easting (km)')
@@ -165,6 +194,12 @@ def process_pair(sel, root, outdir, coh_min, crop_km):
             dst.write(disp.astype('float32'), 1)
     except Exception as ex:
         return png, f'geotiff failed ({ex}); png ok'
+    png.with_suffix('.json').write_text(json.dumps(dict(
+        event_id=sel['event_id'], stack=sel['stack'],
+        reference_offset_mm=round(offset, 1), farfield_px=n_far)) + '\n')
+    if n_far < 200:
+        return png, ('ok; WARNING: far-field annulus <200 px, reference '
+                     'offset unreliable (kept 0.0)')
     return png, 'ok'
 
 

@@ -61,7 +61,7 @@ insarhub processor -N Hyp3_S1 -w <workdir>/<job>/<stack> submit --pairs REF,SEC
 
 ### 5. 形变图（`6_make_maps.py`）
 
-GUNW NetCDF → LOS 位移（d = −φ·λ/4π，正值朝卫星，C 波段 λ=0.0554658 m）+ 相干性掩膜（<0.3 默认）→ GeoTIFF(mm) + 阴影地形底图 PNG（虚线=相干性等值线，星=震中，标题含事件/stack/日期/质量标记）。
+GUNW NetCDF → LOS 位移（d = −φ·λ/4π，正值朝卫星，C 波段 λ=0.0554658 m）+ 相干性掩膜（<0.3 默认）→ **远场参考化（扣除 15–40 km 环带中位数，GAMMA unw 带整景常数偏移）** → GeoTIFF(mm) + 阴影地形底图 PNG（虚线=相干性等值线，星=震中，标题含事件/stack/日期/质量标记/参考偏移量）+ sidecar `<name>.json`（reference_offset_mm、farfield_px）。
 
 ### 6. 交付前 QA 门（`8_qa_products.py`）— **agent 责任，用户只审科学**
 
@@ -71,9 +71,10 @@ GUNW NetCDF → LOS 位移（d = −φ·λ/4π，正值朝卫星，C 波段 λ=0
 |---|---|---|
 | 研究窗覆盖（相干性有效像素占比）| < 0.05（帧未覆盖/全失相干，即 p33_f507 陷阱）| < 0.30 |
 | 震中最近有效像素距离 | > 10 km | — |
-| 近场信号 vs 远场噪声 SNR | — | < 2（可能是真未检出，如实报告不拦截）|
+| 近场信号 vs 远场噪声 SNR（参考化后计算）| — | < 2（可能是真未检出，如实报告不拦截）|
+| 远场参考化环带像元数 | — | < 200（offset 不可靠，绝对值存疑）|
 
-FAIL → 修复动作（重选次优对重提交/换 stack）；WARN 必须在交付说明中写明。**原则：任何"用户本可目视发现"的问题（空图、错位、缺层）都必须先被这道门拦下。**
+FAIL → 修复动作（重选次优对重提交/换 stack）；WARN 必须在交付说明中写明。**原则：任何"用户本可目视发现"的问题（空图、错位、缺层、大片饱和黑块）都必须先被这道门拦下。**
 
 ### 7. 产品清单（`4_collect_products.py`）
 
@@ -152,3 +153,5 @@ python 7_swarm_timeseries.py --action analyze --workdir-root insar_swarm
 12. **insarhub_config.json 是状态文件**：改参数必须命令行显式传 flag
 13. **环境隔离**：启动器跟随 sys.executable 找 insarhub 可执行——必须用 insarhub 环境 python 运行；误用其他环境会失败（已加守卫报错）
 14. **WSL I/O**：workdir 放 WSL 文件系统（~/...），勿放 /mnt/d
+15. **整景参考偏移（洱源实证）**：GAMMA 解缠产品携带任意常数参考，整景可偏离零点数十 mm（实测远场环带中位数 −49/−29/+38 mm）——不扣除会把大半像元推出对称色标且污染 QA 的 sig/SNR。**标准步骤：成图与 QA 前一律扣除远场环带（15–40 km、相干≥阈）中位数**（`6_make_maps.farfield_offset()`，QA 记录 `reference_offset_mm`；环带 <200 px 时 WARN）
+16. **GMT polar 主色标越界=黑/白**：polar 母 cpt 自带 `B black / F white`——超出对称量程的像元会画成纯黑/纯白，看起来像数据空洞（洱源实证：黑色区域实为超 ±40mm 的像元）。**修复：生成 cpt 后把 B/F 改写为切片端点色（蓝/红）再制图，并在脚本内断言 `B\tblack` 不存在**（clamp_cpt；pygmt 0.17 makecpt 无 overrule_bgfg 参数）

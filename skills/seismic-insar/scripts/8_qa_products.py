@@ -109,6 +109,13 @@ def main():
         else:
             dist_km = float('inf')
 
+        # remove the scene-wide reference offset first: GAMMA unwrapped
+        # phase carries an arbitrary constant; unreferenced grids sit tens
+        # of mm off zero, saturate colour scales and corrupt sig/SNR
+        offset, n_far = m6.farfield_offset(
+            disp, d['coh'], t, (h, wpx), ex, ey, args.coh_min)
+        disp = disp - offset
+
         # signal: max |LOS| within 10 km; noise: 20-40 km ring
         rr, cc = np.mgrid[0:h:1, 0:wpx:1]
         dist_pix = np.sqrt((rr - er) ** 2 + (cc - ec) ** 2) * px_size / 1000.0
@@ -130,6 +137,9 @@ def main():
         if np.isfinite(snr) and snr < 2:
             warns.append(f'SNR {snr:.1f}: no significant anomaly near '
                          'epicenter (possible genuine non-detection)')
+        if n_far < 200:
+            warns.append(f'far-field annulus only {n_far} px: reference '
+                         'offset unreliable, absolute LOS values suspect')
 
         status = 'FAIL' if fails else ('WARN' if warns else 'PASS')
         n_fail += status == 'FAIL'
@@ -138,6 +148,7 @@ def main():
             event_id=s['event_id'], direction=s['direction'],
             stack=s['stack'], pair=f"{s['d1']}->{s['d2']}",
             status=status, fails=fails, warns=warns,
+            reference_offset_mm=round(offset, 1), farfield_px=n_far,
             coverage_fraction=round(coverage, 3),
             nearest_valid_km=round(dist_km, 1) if np.isfinite(dist_km) else None,
             signal_mm=round(sig, 1), farfield_noise_mm=round(noise, 1)
