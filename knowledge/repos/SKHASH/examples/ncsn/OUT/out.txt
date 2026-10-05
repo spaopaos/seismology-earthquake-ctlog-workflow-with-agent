@@ -1,0 +1,2 @@
+event_id,strike,dip,rake,quality,fault_plane_uncertainty,aux_plane_uncertainty,num_p_pol,num_sp_ratios,azimuthal_gap,takeoff_gap,polarity_misfit,prob_mech,sta_distribution_ratio,sp_misfit,mult_solution_flag,time,magnitude,origin_lat,origin_lon,origin_depth_km,horz_uncert_km,vert_uncert_km
+72490826,1.5,67.9,155.9,A,16.6,18.3,45,0,25.8,19.8,6.1,98.5,68.5,0.0,False,2015-07-21 09:41:14,3.98,37.577667,-121.974,8.37,0.08,0.12

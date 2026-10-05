@@ -13,14 +13,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / 'contracts'))
-from runtime_support import runtime_path, verify_vendor, digest, native_environment
+from runtime_support import runtime_path, verify_vendor, digest, native_environment, binary
 from pipeline_contracts import load_contract
 from knowledge_access import Knowledge, add_cli as add_knowledge_cli, cli as knowledge_cli
 
-STAGES = ['preprocess','picking','association','location','relocation','detection','post_detection_relocation']
+STAGES = ['preprocess','picking','association','location','relocation','detection','post_detection_relocation','focal_mechanism']
 ENVKEY = {'preprocess':'science_python', 'picking':'science_python','association':'science_python',
           'location':'science_python','relocation':'science_python','detection':'mess_python',
-          'post_detection_relocation':'science_python'}
+          'post_detection_relocation':'science_python','focal_mechanism':'science_python'}
 
 def write_json(path, value):
     path = Path(path)
@@ -28,6 +28,18 @@ def write_json(path, value):
     tmp = path.with_suffix(path.suffix + '.pending')
     tmp.write_text(json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + '\n')
     tmp.replace(path)
+
+def write_reverse_csv(path, rows):
+    """SKHASH polarity-reversal table; start/end times must be timezone-aware
+    (e.g. 2025-03-01T00:00:00+00:00) — see the focal-mechanism skill pitfalls."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    keys = ['network','station','location','channel','start_time','end_time']
+    with path.open('w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=keys)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, '') for k in keys})
 
 def configure(args):
     values = {k: str(Path(getattr(args,k)).expanduser().resolve()) for k in ['science_python','validator_python','mess_python']}
@@ -271,8 +283,30 @@ class Runner:
                     return self.mark_empty(stage, 'NO_MESS_DETECTIONS')
                 if not cfg.get(stage):
                     raise ValueError('Post-MESS joint settings are required; use a NEW run with the current example configuration')
-                self.native(stage, 'run_stage.py', ['--config', self.path, '--out', out,
-                    '--vp-model', self.vp, '--stations', self.stations], [out/'contract.v2.json', out/'catalogs.json'])
+                reloc = self.base/'relocation'
+                rdoc,_ = load_contract(reloc,'relocation')
+                tier = cfg[stage]['ct_reuse']['relocation_tier']
+                if rdoc['tiers'].get('statuses',{}).get(tier,{}).get('status') != 'READY':
+                    return self.mark_empty(stage, 'CT_REUSE_TIER_UNAVAILABLE')
+                strict_cat = reloc/rdoc['outputs']['catalogs'][tier]
+                det = self.base/'detection'
+                joint = out/'joint'
+                self.native(stage,'4_build_joint_inputs.py',
+                    ['--strict-catalog',strict_cat,'--mess-catalog',det/'output/mess/catalog.csv',
+                     '--mess-event-dat',det/'output/mess/event.dat','--mess-dt-cc',det/'output/mess/dt.cc',
+                     '--strict-dt-ct',reloc/tier/'input/dt.ct',
+                     '--station-aliases',self.base/'location/input/station_aliases.json',
+                     '--new-cc-min',cfg[stage].get('new_cc_min',0.4),'--outdir',joint],
+                    [joint/'input/event.dat',joint/'input/dt.ct',joint/'input/dt.cc'])
+                self.native(stage,'5_run_hypodd_joint.py',
+                    ['--indir',joint/'input','--outdir',joint/'output','--hypodd-bin',binary('hypoDD'),
+                     '--vp-model',self.vp,'--vs-model',self.vs,'--ratio',cfg['relocation']['vp_vs_ratio'],
+                     '--damp',cfg[stage].get('damp',400)],
+                    [joint/'output/hypoDD.reloc'])
+                self.native(stage,'6_parse_joint.py',
+                    ['--reloc',joint/'output/hypoDD.reloc','--strict-catalog',strict_cat,
+                     '--mess-catalog',det/'output/mess/catalog.csv','--out',out/'joint_relocated_catalog.csv'],
+                    [out/'joint_relocated_catalog.csv'])
             elif stage=='detection':
                 if self.state['stages'].get('relocation',{}).get('status')=='EMPTY': return self.mark_empty(stage,'NO_TEMPLATES')
                 doc,_=load_contract(self.base/'relocation','relocation')
@@ -286,22 +320,70 @@ class Runner:
                     if not list(csv.DictReader(f)): return self.mark_empty(stage,'NO_MEDIUM_TEMPLATES')
                 if not cfg['detection']['time_range']:
                     raise ValueError('Set detection.time_range to YYYYMMDD-YYYYMMDD (end exclusive)')
-                args=['--archive',archive,'--relocation-dir',self.base/'relocation','--association-dir',self.base/'association',
-                      '--location-dir',self.base/'location','--stations',self.stations,'--out',out,*common,
-                      '--time-range',cfg['detection']['time_range'],'--python',runtime_path('mess_python'),
-                      '--device',cfg['resources']['mess_device'],'--workers',ncpu]
-                if cfg['resources']['mess_device']=='gpu': args += ['--gpu-index',cfg['resources']['gpu_index']]
-                self.native(stage,'run_mess.py',args,[out/'catalogs/cc_0p4/contract.v2.json',out/'catalogs/cc_0p6/contract.v2.json',out/'catalogs/cc_0p8/contract.v2.json'])
-        if stage=='detection':
-            for cc in ['0p4','0p6','0p8']: doc,_=load_contract(out/'catalogs'/('cc_'+cc),'detection')
+                catalog = self.base/'relocation'/doc['outputs']['catalogs']['medium']
+                self.native(stage,'1_prepare_inputs.py',
+                    ['--catalog',catalog,'--assignments',self.base/'association/gamma_assignments.csv',
+                     '--stations',self.base/'association_inputs/gamma_stations.csv','--archive',archive,
+                     '--data-root',out/'mess_data','--out-dir',out],
+                    [out/'mess.temp',out/'mess.sta'])
+                cfg_file = out/('config_%s.py' % cfg['run_id'])
+                if not cfg_file.is_file():
+                    cfg_file.write_text(self.script(stage,'config_mess.py').read_text())
+                scan = ['--data-root',out/'mess_data','--config-dir',out,'--palm-root',ROOT/'knowledge/repos/PALM',
+                        '--time-range',cfg['detection']['time_range'],
+                        '--segment-days',cfg['detection'].get('segment_days',7)]
+                if cfg['resources']['mess_device']=='gpu': scan += ['--gpu-index',cfg['resources']['gpu_index']]
+                self.native(stage,'2_run_mess_scan.py',scan,
+                    [out/'output/mess/catalog.csv',out/'output/mess/dt.cc'])
+                self.native(stage,'3_export_tiers.py',
+                    ['--catalog',out/'output/mess/catalog.csv','--event-dat',out/'output/mess/event.dat',
+                     '--outdir',out/'output/mess'],
+                    [out/'output/mess/catalog_cc08.csv'])
+            elif stage=='focal_mechanism':
+                if self.state['stages'].get('relocation',{}).get('status')=='EMPTY':
+                    return self.mark_empty(stage,'NO_RELOCATED_EVENTS')
+                if not cfg.get(stage):
+                    raise ValueError('Focal-mechanism settings are required; use a NEW run with the current example configuration')
+                rdoc,_=load_contract(self.base/'relocation','relocation')
+                tier=cfg[stage].get('relocation_tier','strict')
+                if rdoc['tiers'].get('statuses',{}).get(tier,{}).get('status')!='READY':
+                    return self.mark_empty(stage,'RELOCATION_TIER_'+tier.upper()+'_UNAVAILABLE')
+                catalog=self.base/'relocation'/rdoc['outputs']['catalogs'][tier]
+                assoc=self.base/'association/gamma_assignments.csv'
+                self.native(stage,'1_build_inputs.py',
+                    ['--assignments',assoc,'--catalog',catalog,
+                     '--stations',self.base/'association_inputs/gamma_stations.csv',
+                     '--vmodel',self.vp,'--out',out/'IN'],
+                    [out/'IN/pol_dl.csv',out/'IN/catalog.csv',out/'IN/stations.csv',out/'IN/vmodel_layers.txt'])
+                self.native(stage,'2_cut_event_waveforms.py',
+                    ['--archive',archive,'--assignments',assoc,'--catalog',catalog,
+                     '--out',out/'event_wf','--workers',ncpu],
+                    [out/'event_wf/event_station_manifest.csv'])
+                self.native(stage,'3_measure_sp_amplitudes.py',
+                    ['--wf-root',out/'event_wf','--out',out/'IN/amp.csv'],[out/'IN/amp.csv'])
+                fargs=['--in-dir',out/'IN','--out-dir',out/'OUT',
+                       '--threshold',cfg[stage].get('polarity_threshold',0.3),
+                       '--delmax',cfg[stage].get('delmax_km',120),
+                       '--num-cpus',cfg[stage].get('num_cpus',min(ncpu,8))]
+                reversals=cfg[stage].get('reversal_stations') or []
+                if reversals:
+                    rev=out/'IN'/'reverse.csv'
+                    if not rev.is_file(): write_reverse_csv(rev,reversals)
+                    fargs += ['--reverse-file',rev]
+                self.native(stage,'5_run_skhash.py',fargs,[out/'OUT/out.csv'])
+                self.native(stage,'6_parse_mechanisms.py',
+                    ['--out-dir',out/'OUT','--catalog-out',out/'mechanisms_catalog.csv',
+                     '--qc-out',out/'qc_summary.json'],[out/'mechanisms_catalog.csv'])
+        if stage in ('detection','post_detection_relocation','focal_mechanism'):
+            primary = {'detection': [out/'output/mess/catalog.csv',out/'output/mess/catalog_cc08.csv'],
+                       'post_detection_relocation': [out/'joint_relocated_catalog.csv'],
+                       'focal_mechanism': [out/'mechanisms_catalog.csv']}[stage]
+            if any(not p.is_file() or p.stat().st_size == 0 for p in primary):
+                return self.mark_empty(stage,'NO_PRIMARY_OUTPUT')
+            self.state['stages'][stage]={'status':'COMPLETE','contract_status':'LAUNCHER_OUTPUTS_VERIFIED','scientific_status':'NOT_TESTED'}
         else:
             doc,_=load_contract(archive if stage=='preprocess' else out,stage)
-        stage_status = 'COMPLETE'
-        if stage == 'post_detection_relocation' and doc.get('status') != 'READY':
-            stage_status = 'PARTIAL'
-        self.state['stages'][stage]={'status':stage_status,'contract_status':doc.get('status'),'scientific_status':'NOT_TESTED'}
-        if stage == 'post_detection_relocation':
-            self.state['stages'][stage]['tiers'] = doc['tiers']
+            self.state['stages'][stage]={'status':'COMPLETE','contract_status':doc.get('status'),'scientific_status':'NOT_TESTED'}
         write_json(self.state_path,self.state)
     def mark_empty(self,stage,reason):
         self.state['stages'][stage]={'status':'EMPTY','reason':reason,'scientific_status':'NOT_TESTED'}

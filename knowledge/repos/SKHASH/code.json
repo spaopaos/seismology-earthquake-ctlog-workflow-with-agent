@@ -1,0 +1,113 @@
+[
+	{
+		"name": "SKHASH",
+		"organization": "U.S. Geological Survey",
+		"description": "Python package for focal mechanims inversion",
+		"version": "1.1",
+		"status": "Development",
+		"permissions": {
+			"usageType": "openSource",
+			"licenses": [
+				{
+					"name": "Public Domain, CC0-1.0",
+					"URL": "https://code.usgs.gov/esc/skhash/-/raw/1.1/LICENSE.md"
+				}
+			]
+		},
+		"homepageURL": "https://code.usgs.gov/esc/skhash/",
+		"downloadURL": "https://code.usgs.gov/esc/skhash/-/archive/1.1/skhash-1.1.zip",
+		"disclaimerURL": "https://code.usgs.gov/esc/skhash/-/raw/1.1/DISCLAIMER.md",
+		"repositoryURL": "https://code.usgs.gov/esc/skhash.git",
+		"vcs": "git",
+		"laborHours": 0,
+		"tags": [
+			"earthquake",
+			"focal mechanism"
+		],
+		"languages": [
+			"Python",
+			"Fortran"
+		],
+		"contact": {
+			"name": "Robert J. Skoumal",
+			"email": "rskoumal@usgs.gov"
+		},
+		"date": {
+			"metadataLastUpdated": "2025-05-13"
+		}
+	},
+	{
+		"name": "SKHASH",
+		"organization": "U.S. Geological Survey",
+		"description": "Python package for focal mechanims inversion",
+		"version": "0.1",
+		"status": "Development",
+		"permissions": {
+			"usageType": "openSource",
+			"licenses": [
+				{
+					"name": "Public Domain, CC0-1.0",
+					"URL": "https://code.usgs.gov/esc/skhash/-/raw/0.1/LICENSE.md"
+				}
+			]
+		},
+		"homepageURL": "https://code.usgs.gov/esc/skhash/",
+		"downloadURL": "https://code.usgs.gov/esc/skhash/-/archive/0.1/skhash-0.1.zip",
+		"disclaimerURL": "https://code.usgs.gov/esc/skhash/-/raw/0.1/DISCLAIMER.md",
+		"repositoryURL": "https://code.usgs.gov/esc/skhash.git",
+		"vcs": "git",
+		"laborHours": 0,
+		"tags": [
+			"earthquake",
+			"focal mechanism"
+		],
+		"languages": [
+			"Python",
+			"Fortran"
+		],
+		"contact": {
+			"name": "Robert J. Skoumal",
+			"email": "rskoumal@usgs.gov"
+		},
+		"date": {
+			"metadataLastUpdated": "2023-10-02"
+		}
+	},
+	{
+		"name": "SKHASH",
+		"organization": "U.S. Geological Survey",
+		"description": "Python package for focal mechanims inversion",
+		"version": "1.0",
+		"status": "Development",
+		"permissions": {
+			"usageType": "openSource",
+			"licenses": [
+				{
+					"name": "Public Domain, CC0-1.0",
+					"URL": "https://code.usgs.gov/esc/skhash/-/raw/1.0/LICENSE.md"
+				}
+			]
+		},
+		"homepageURL": "https://code.usgs.gov/esc/skhash/",
+		"downloadURL": "https://code.usgs.gov/esc/skhash/-/archive/1.0/skhash-1.0.zip",
+		"disclaimerURL": "https://code.usgs.gov/esc/skhash/-/raw/1.0/DISCLAIMER.md",
+		"repositoryURL": "https://code.usgs.gov/esc/skhash.git",
+		"vcs": "git",
+		"laborHours": 0,
+		"tags": [
+			"earthquake",
+			"focal mechanism"
+		],
+		"languages": [
+			"Python",
+			"Fortran"
+		],
+		"contact": {
+			"name": "Robert J. Skoumal",
+			"email": "rskoumal@usgs.gov"
+		},
+		"date": {
+			"metadataLastUpdated": "2025-05-13"
+		}
+	}
+]

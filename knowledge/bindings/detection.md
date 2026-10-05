@@ -1,6 +1,6 @@
 # Detection — execution binding
 
-The PALM paper is method background. Current execution uses the pinned integrated PALM implementation, medium-only templates, one scan/global association and CC>=0.4/0.6/0.8 independent products. These are project choices, not universal thresholds derived from the paper.
+The PALM paper is method background. Current execution follows the Eryuan MESS rules through the skill launchers: the full medium-tier hypoDD catalog as the unique template library, one scan/global association, depth offset 0, and CC>=0.4/0.6/0.8 independent products. These are project choices, not universal thresholds derived from the paper.
 
 ## Read in this order
 
@@ -13,8 +13,10 @@ The PALM paper is method background. Current execution uses the pinned integrate
 
 - [workflow_policy](../../skills/seismic-detection/SKILL.md)
 - [pinned_implementation](../../knowledge/repos/PALM/MFT_src/associate_mft.py)
-- [actual_scan_workflow](../../skills/seismic-detection/scripts/run_mess.py)
-- [actual_threshold_products](../../skills/seismic-detection/scripts/export_cc_catalogs.py)
+- [region_dependent_config_template](../../skills/seismic-detection/scripts/config_mess.py)
+- [template_and_station_inputs](../../skills/seismic-detection/scripts/1_prepare_inputs.py)
+- [scan_workflow](../../skills/seismic-detection/scripts/2_run_mess_scan.py)
+- [threshold_products](../../skills/seismic-detection/scripts/3_export_tiers.py)
 
 ## Wiki reading route
 
@@ -24,4 +26,7 @@ The PALM paper is method background. Current execution uses the pinned integrate
 - [From Waveforms to an Expanded Earthquake Catalog](../library/wiki/synthesis/catalog-construction.md)
 - [Version and Evidence Gaps](../library/wiki/queries/version-and-evidence-gaps.md)
 
-The original Wiki records its eight-source scope. These bindings add execution context; they do not claim independent scientific validation of every Wiki statement.
+Region-dependent values (freq band, max stations, trigger threshold, the
+magnitude formula for new events) are confirmed with the user per region;
+the seven documented pitfalls in the skill are operational constraints, not
+suggestions.

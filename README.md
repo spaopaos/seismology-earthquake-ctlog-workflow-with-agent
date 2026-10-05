@@ -1,18 +1,18 @@
 # Seismology Agent — workflow revision 0.3.0-dev
 
-Agent-guided seismology workflow: PhaseNet+ picking, GaMMA association, HYPOINVERSE location, HypoDD relocation and PALM MESS detection — from raw waveforms to multi-grade earthquake catalogs（全CUG（武汉）最好用的指导agent从连续波形到地震目录制作框架）.
+Agent-guided seismology workflow: PhaseNet+ picking, GaMMA association, HYPOINVERSE location, HypoDD relocation, PALM MESS detection, joint CC+CT relocation and SKHASH focal mechanisms — from raw waveforms to multi-grade earthquake catalogs（全CUG（武汉）最好用的指导agent从连续波形到地震目录制作框架）.
 
 ## Three steps to a catalog
 
 1. **Get the package** — clone this repository, download the assets of the [v0.3.0-dev release](../../releases/tag/v0.3.0-dev), and run `scripts/restore_offline_assets.sh <download-dir>` to restore the runtime archives, model weights and native binaries.
 2. **Hand it to an agent** — point the agent at [AGENTS.md](AGENTS.md). It is self-contained; the agent reads the docs and skills it needs. No conversation history is required.
-3. **Point it at your data** — give the agent your raw waveforms, response information and station metadata, plus a new run directory. The agent writes the dataset-specific preprocessing and then drives the stages `preprocess → picking → association → location → relocation → detection → post_detection_relocation`, pausing at documented decision points (GaMMA eps, HypoDD DAMP...) for your confirmation.
+3. **Point it at your data** — give the agent your raw waveforms, response information and station metadata, plus a new run directory. The agent writes the dataset-specific preprocessing and then drives the stages `preprocess → picking → association → location → relocation → detection → post_detection_relocation → focal_mechanism`, pausing at documented decision points (GaMMA eps, HypoDD DAMP, MESS freq band, SKHASH polarity threshold and reversal list...) for your confirmation.
 
 Deployment commands and runtime options: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Workflow overview
 
-![Workflow overview: raw waveforms → preprocess → PhaseNet+ → GaMMA → HYPOINVERSE → HypoDD → PALM MESS → joint HypoDD → three CC-tier catalogs](docs/images/catalog-pipeline-dark.png)
+![Workflow overview: raw waveforms → preprocess → PhaseNet+ → GaMMA → HYPOINVERSE → HypoDD → PALM MESS → joint HypoDD → CC-tier catalogs + SKHASH focal mechanisms](docs/images/catalog-pipeline-dark.png)
 
 Still hand-coding? Still doing research the old-fashioned way? So last season!
 
@@ -21,7 +21,7 @@ Still hand-coding? Still doing research the old-fashioned way? So last season!
 - **QC at every stage.** Each stage ships data-driven visual checks and validity reports; a green contract is never silently treated as scientific truth, and empty or degraded products are reported rather than hidden. Until full AGI arrives, guided semi-automatic research is the practical optimum.
 The workflow executed accurately on GLM-5.3, Kimi K3 and GPT-5.6; a 1M-token context window gives the best experience.
 
-A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, and post-MESS joint CC+CT HypoDD. The final joint stage reuses the first-round catalog differential times verbatim alongside the MESS cross-correlation differential times and produces exactly three CC-threshold catalogs. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
+A reusable workflow for a general agent to prepare regional seismic data and execute PhaseNet+, GaMMA, HYPOINVERSE, first-round CT HypoDD, PALM MESS, post-MESS joint CC+CT HypoDD, and SKHASH focal mechanisms from the PhaseNet+ first-motion polarity. The joint stage reuses the first-round catalog differential times verbatim alongside the MESS cross-correlation differential times into one joint catalog; the focal-mechanism stage turns the same picks into A/B/C/D-graded mechanisms with an evidence-gated polarity-reversal check. The agent adapts uncertain raw input layouts; standardized archives, maintained converters, versioned tools, contracts and QC connect the scientific stages.
 
 Project-authored code uses MIT; third-party software retains its own terms.
 
@@ -36,6 +36,9 @@ Workflow software and methods:
 - Klein, F. W. (2002). User's guide to HYPOINVERSE-2000, a Fortran program to solve for earthquake locations and magnitudes (ver. 1.0). *USGS Open-File Report* 02-171.
 - Waldhauser, F. (2001). hypoDD — A program to compute double-difference hypocenter locations. *USGS Open-File Report* 01-113.
 - Zhou, Y., Yue, H., Fang, L., Zhou, S., Zhao, L., & Ghosh, A. (2022). An earthquake detection and location architecture for continuous seismograms: Phase picking, association, location, and matched filter (PALM). *Seismological Research Letters*, 93(1), 413–425. https://doi.org/10.1785/0220210111
+- Hardebeck, J. L., & Shearer, P. M. (2002). A new method for determining first-motion focal mechanisms. *Bulletin of the Seismological Society of America*, 92(6), 2264–2276. https://doi.org/10.1785/0120010200
+- Hardebeck, J. L., & Shearer, P. M. (2003). Using S/P amplitude ratios to constrain the focal mechanisms of small earthquakes. *Bulletin of the Seismological Society of America*, 93(6), 2434–2444. https://doi.org/10.1785/0120020236
+- Skoumal, R. J., Hardebeck, J. L., & Shearer, P. M. (2024). SKHASH: A Python package for computing earthquake focal mechanisms. *Seismological Research Letters*, 95(4), 2519–2526. https://doi.org/10.1785/0220230329 (vendored v1.1, USGS, CC0-1.0; see [knowledge/repos/SKHASH/VENDORED_PATCHES.md](knowledge/repos/SKHASH/VENDORED_PATCHES.md))
 
 Agent-guided science:
 

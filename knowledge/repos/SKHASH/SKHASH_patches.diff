@@ -1,0 +1,48 @@
+# SKHASH 运行副本补丁记录（相对上游 D:\yunan\skhash\SKHASH-main，共 4 处）
+
+上游原仓库未改动；正式计算使用 D:\yunan\skhash\SKHASH_run 副本。
+补丁目的：使 SKHASH v1.1 (2025-12-17) 兼容 numpy>=2 / pandas 3（gamma 环境 numpy 2.4.6 / pandas 3.0.6）。
+验证：smile/maacama/hash3 三个示例在补丁前后语义一致（maacama 首事件解与上游在 numpy<2 环境的公开结果一致）。
+
+## 1) src/SKHASH/functions/fun.py（numpy 2 禁止长度 1 数组隐式标量化）
+
+```diff
+-       str_avg[imult],dip_avg[imult],rak_avg[imult]=sdr_from_vector(norm1_avg[np.newaxis].T,norm2_avg[np.newaxis].T)
++       # numpy>=2 compat: sdr_from_vector returns length-1 arrays; extract scalars explicitly
++       str_avg[imult],dip_avg[imult],rak_avg[imult]=[v[0] for v in sdr_from_vector(norm1_avg[np.newaxis].T,norm2_avg[np.newaxis].T)]
+```
+
+## 2) src/SKHASH/functions/in_sp.py（location 码 "00"/"20" 读回成 int，sta_code 拼接崩）
+
+```diff
+     spamp_df['event_id']=spamp_df['event_id'].astype(str)
+     if 'event_id2' in spamp_df.columns:
+         spamp_df['event_id2']=spamp_df['event_id2'].astype(str)
++    # numeric-looking codes (e.g. location "00") are int-coerced on read; cast like in_pol.py does
++    for merge_col in merge_on:
++        spamp_df[merge_col]=spamp_df[merge_col].astype(str)
+```
+
+## 3) src/SKHASH/functions/in_sta.py（同上，台站表 .str.strip() 前需先转 str）
+
+```diff
+     for merge_col in p_dict['merge_on']:
+-        station_df[merge_col]=station_df[merge_col].str.strip()
++        # numeric-looking codes (e.g. location "00") are int-coerced on read; cast before .str
++        station_df[merge_col]=station_df[merge_col].astype(str).str.strip()
+```
+
+## 4) src/SKHASH/functions/in_sta.py read_reverse_skhash_file（同上，反转表 sta_code 拼接前需先转 str）
+
+```diff
+     pol_reverse_df.loc[(pol_reverse_df['start_time'].astype(str)=='0'),'start_time']='1900-01-01'
+     pol_reverse_df.loc[(pol_reverse_df['end_time'].astype(str)=='0'),'end_time']='2200-01-01'
++    # numeric-looking codes (e.g. location "20") are int-coerced on read; cast before sta_code join
++    for merge_col in merge_on:
++        pol_reverse_df[merge_col]=pol_reverse_df[merge_col].astype(str)
+```
+
+另注：使用 $plfile 时，反转表时间须带时区（如 2025-03-01T00:00:00+00:00），
+与本目录 catalog.csv 的 UTC 时间对齐，否则 pandas 3 拒绝 naive/aware 比较。
+
+注意：int 强转使 location "00" 在内部 sta_code 中表示为 "0"，极性/振幅/台站三处一致转换后匹配不受影响。

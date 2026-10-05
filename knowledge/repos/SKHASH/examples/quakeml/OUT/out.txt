@@ -1,0 +1,4 @@
+event_id,strike,dip,rake,quality,fault_plane_uncertainty,aux_plane_uncertainty,num_p_pol,num_sp_ratios,azimuthal_gap,takeoff_gap,polarity_misfit,prob_mech,sta_distribution_ratio,sp_misfit,mult_solution_flag,time,magnitude,origin_lat,origin_lon,origin_depth_km,horz_uncert_km,vert_uncert_km
+uw61930961,343.4,60.0,147.9,D,39.5,37.1,19,0,62.1,28.0,14.9,44.7,55.0,0.0,True,2023-06-06 21:35:15,3.03,45.367,-121.703833,1.35,0,0
+uw61930961,171.7,76.7,162.4,D,41.1,40.6,19,0,62.1,28.0,17.4,31.7,54.9,0.0,True,2023-06-06 21:35:15,3.03,45.367,-121.703833,1.35,0,0
+uw61930961,134.1,49.2,103.4,D,44.1,46.3,19,0,62.1,28.0,12.1,15.7,49.2,0.0,True,2023-06-06 21:35:15,3.03,45.367,-121.703833,1.35,0,0

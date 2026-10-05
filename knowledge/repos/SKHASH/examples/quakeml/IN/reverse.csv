@@ -1,0 +1,3 @@
+network,station,location,channel,start_time,end_time
+UW, VCR, , EHZ, 1900-01-01, 2200-01-01
+UW, CDF, , EHZ, 1900-01-01, 2200-01-01

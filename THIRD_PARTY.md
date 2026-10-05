@@ -7,6 +7,7 @@ Project-authored files use the root MIT license. This does not relicense upstrea
 | EQNet / PhaseNet+ | AI4EPS/EQNet; exact commit in toolchain.json | Hashed upstream source snapshot |
 | GaMMA | AI4EPS/GAMMA; exact commit in toolchain.json | Hashed upstream source snapshot |
 | PALM MESS | YijianZhou/PALM integrated implementation; exact commit in toolchain.json | Hashed source, not the standalone paper MESS release |
+| SKHASH | USGS SKHASH v1.1 (2025-12-17, code.usgs.gov/esc/skhash, CC0-1.0) | Vendored source with four numpy>=2/pandas3 compatibility patches; provenance in knowledge/repos/SKHASH/VENDORED_PATCHES.md |
 | PhaseNet+ weights | AI4EPS/models PhaseNet-Plus-v1/model_99.pth | Official-release-identical checkpoint with SHA256 |
 | HYPOINVERSE 1.40 | USGS source package, manual and testone | Source, tested build and build script |
 | HypoDD / ph2dt | Pinned production Linux x86-64 binaries | Exact hashes preserved; matching source/build provenance unresolved |

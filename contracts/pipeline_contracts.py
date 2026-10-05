@@ -4,6 +4,7 @@ Paths are relative to the contract file. The scientific environment needs only
 the standard library; full JSON Schema validation may use the user-selected
 existing interpreter in validator_config.json.
 """
+import hashlib
 import argparse
 import copy
 import csv

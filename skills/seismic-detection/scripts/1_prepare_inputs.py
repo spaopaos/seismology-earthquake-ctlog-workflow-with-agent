@@ -59,17 +59,31 @@ def build_temp(catalog, assignments, out):
 
 
 def build_sta(stations, out):
-    """Build PALM station file (5 columns, gain=1.0, deduplicated)."""
+    """Build PALM station file (5 columns, gain=1.0, deduplicated).
+
+    Accepts either 'network,station,...' columns or a gamma-style 'id'
+    column (NET.STA.LOC.CHA).
+    """
+    if "id" in stations.columns:
+        parts = stations["id"].str.split(".", expand=True)
+        nets, stas = parts[0], parts[1]
+    else:
+        nets, stas = stations["network"], stations["station"]
+    lat_col = "latitude" if "latitude" in stations.columns else "lat"
+    lon_col = "longitude" if "longitude" in stations.columns else "lon"
+    ele_col = next(c for c in ("elevation", "elevation_m", "ele")
+                   if c in stations.columns)
     lines = []
     seen = set()
-    for _, r in stations.iterrows():
-        key = "%s.%s" % (r.network, r.station)
+    for i in range(len(stations)):
+        key = "%s.%s" % (nets.iloc[i], stas.iloc[i])
         if key in seen:
             continue
         seen.add(key)
         lines.append("%s,%.5f,%.5f,%.1f,1.0" % (
-            key, float(r.latitude), float(r.longitude),
-            float(r.elevation)))
+            key, float(stations[lat_col].iloc[i]),
+            float(stations[lon_col].iloc[i]),
+            float(stations[ele_col].iloc[i])))
     Path(out).write_text("\n".join(lines) + "\n")
     return len(lines)
 

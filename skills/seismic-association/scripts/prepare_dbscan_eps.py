@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Prepare the default/estimated DBSCAN eps options; never choose or run association."""
+import hashlib
 import argparse
 
 import json

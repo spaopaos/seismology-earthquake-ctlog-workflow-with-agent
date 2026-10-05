@@ -4,20 +4,55 @@
 Usage:
   # Single run (uses DAMP from --damp or default 400):
   python 5_run_hypodd_joint.py \\
-    --template-hypodd-inp /path/to/strict/hypoDD.inp \\
     --indir output/joint/input \\
     --outdir output/joint/output \\
+    --hypodd-bin /path/to/hypoDD \\
+    --vp-model velocity_p.cre --vs-model velocity_s.cre --ratio 1.7092 \\
     --damp 400
 
   # DAMP scan (generates configs, runs all in parallel):
   python 5_run_hypodd_joint.py ... --damp-scan 50,100,200,400,800
 
   # Then select best DAMP and rerun with --damp <best>
+
+Velocity model: layered .cre files (2 columns: vp/vs km/s, depth_top_km,
+header line skipped). TOP/VELP come from the P model; RAT per layer is
+vp_i/vs_i (constant --ratio fallback if layer counts mismatch).
 """
 import argparse
 import os
 import subprocess
 from pathlib import Path
+
+
+def load_layers(path):
+    rows = []
+    for line in Path(path).read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith(("#", "*", "%")):
+            continue
+        parts = line.replace(",", " ").split()
+        try:
+            v, d = float(parts[0]), float(parts[1])
+        except (ValueError, IndexError):
+            continue
+        rows.append((d, v))
+    return sorted(rows)
+
+
+def model_lines(vp_path, vs_path, ratio):
+    vp = load_layers(vp_path)
+    top = " ".join("%.2f" % d for d, _ in vp) + " -9"
+    velp = " ".join("%.2f" % v for _, v in vp) + " -9"
+    if vs_path:
+        vs = load_layers(vs_path)
+        if len(vs) == len(vp) and all(abs(dp - ds) < 1e-6 for (dp, _), (ds, _) in zip(vp, vs)):
+            rat = " ".join("%.6f" % (a / b) for (_, a), (_, b) in zip(vp, vs)) + " -9"
+        else:
+            rat = ("%.6f " % ratio) * len(vp) + "-9"
+    else:
+        rat = ("%.6f " % ratio) * len(vp) + "-9"
+    return top, velp, rat
 
 
 TEMPLATE = """hypoDD_2
@@ -54,19 +89,20 @@ TEMPLATE = """hypoDD_2
 * IMOD
 1
 * TOP (km), terminated by -9
-  0.00 20.17 39.91 48.51 -9
+  {top}
 * VELP (km/s), terminated by -9
-  6.10 6.30 7.00 8.02 -9
+  {velp}
 * RAT (Vp/Vs), terminated by -9
-  1.718310 1.726027 1.754386 1.798206 -9
+  {rat}
 * CID
 0
 * ID
 """
 
 
-def write_inp(path, indir, outdir, damp):
-    text = TEMPLATE.format(indir=indir, outdir=outdir, damp=int(damp))
+def write_inp(path, indir, outdir, damp, top, velp, rat):
+    text = TEMPLATE.format(indir=indir, outdir=outdir, damp=int(damp),
+                           top=top, velp=velp, rat=rat)
     path.write_text(text, newline="\n")  # LF endings, no CRLF
 
 
@@ -82,6 +118,10 @@ def main():
     ap.add_argument("--indir", required=True, help="input dir with event.dat, dt.ct, dt.cc")
     ap.add_argument("--outdir", required=True, help="output dir for hypoDD results")
     ap.add_argument("--hypodd-bin", required=True, help="path to hypoDD binary")
+    ap.add_argument("--vp-model", required=True, help="layered P model (.cre)")
+    ap.add_argument("--vs-model", default=None, help="layered S model (.cre)")
+    ap.add_argument("--ratio", type=float, default=1.7,
+                    help="constant Vp/Vs fallback for RAT")
     ap.add_argument("--damp", type=float, default=400, help="damping value")
     ap.add_argument("--damp-scan", default=None,
                     help="comma-separated DAMP values, e.g. 50,100,200,400,800")
@@ -91,6 +131,7 @@ def main():
     outdir = Path(args.outdir).resolve()
     outdir.mkdir(parents=True, exist_ok=True)
     hypodd_bin = Path(args.hypodd_bin).resolve()
+    top, velp, rat = model_lines(args.vp_model, args.vs_model, args.ratio)
 
     if args.damp_scan:
         # Parallel DAMP scan
@@ -100,7 +141,7 @@ def main():
             sub_out = outdir.parent / f"output_d{int(d)}"
             sub_out.mkdir(parents=True, exist_ok=True)
             inp = outdir.parent / f"hypoDD_d{int(d)}.inp"
-            write_inp(inp, indir, sub_out, d)
+            write_inp(inp, indir, sub_out, d, top, velp, rat)
             log = outdir.parent / f"damp_d{int(d)}.log"
             procs.append((d, inp,
                           subprocess.Popen(
@@ -118,7 +159,7 @@ def main():
     else:
         # Single run
         inp = outdir / "hypoDD.inp"
-        write_inp(inp, indir, outdir, args.damp)
+        write_inp(inp, indir, outdir, args.damp, top, velp, rat)
         log = outdir / "hypoDD.log"
         run_hypodd(inp, hypodd_bin, log)
         n = len((outdir / "hypoDD.reloc").read_text().splitlines())

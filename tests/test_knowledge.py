@@ -90,23 +90,49 @@ class WikiIntegration(unittest.TestCase):
         with patch.object(runner,'step',side_effect=checkpoint):
             with self.assertRaisesRegex(ValueError,'Test stop'): runner.run_stage('preprocess')
         self.assertIn('knowledge',json.loads((self.run/'run_state.json').read_text()))
-    def test_post_mess_is_last_and_routes_to_joint_runner(self):
+    RELOC_STUB={'tiers':{'statuses':{'medium':{'status':'READY'},'strict':{'status':'READY'}}},
+                'outputs':{'catalogs':{'medium':'relocation/medium/output/hypodd_catalog.csv',
+                                       'strict':'relocation/strict/output/hypodd_catalog.csv'}}}
+    def _driver(self):
         spec=importlib.util.spec_from_file_location('joint_seisflow',ROOT/'seisflow.py')
         mod=importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
-        self.assertEqual(mod.STAGES[-2:], ['detection', 'post_detection_relocation'])
+        return mod
+    def test_stage_order_and_joint_routing(self):
+        mod=self._driver()
+        self.assertEqual(mod.STAGES[-3:], ['detection','post_detection_relocation','focal_mechanism'])
         config=json.loads((ROOT/'configs/pipeline.example.json').read_text())
         (self.run/'pipeline.json').write_text(json.dumps(config))
         runner=mod.Runner(self.run/'pipeline.json')
         called=[]
         def checkpoint(stage,name,script,args,expected=()):
-            called.append((stage,name,str(script)))
-            if name=='run_stage':
+            called.append(name)
+            if name=='5_run_hypodd_joint':
                 self.assertTrue((self.run/'knowledge/context-post_detection_relocation.json').is_file())
-                self.assertTrue(str(script).endswith('seismic-post-detection-relocation/scripts/run_stage.py'))
+                self.assertTrue(str(script).endswith('seismic-post-detection-relocation/scripts/5_run_hypodd_joint.py'))
                 raise ValueError('Joint execution boundary')
-        with patch.object(runner,'step',side_effect=checkpoint):
+        with patch.object(mod,'load_contract',return_value=(self.RELOC_STUB,None)), \
+             patch.object(mod,'binary',return_value='/usr/bin/true'), \
+             patch.object(runner,'step',side_effect=checkpoint):
             with self.assertRaisesRegex(ValueError,'Joint execution boundary'):
                 runner.run_stage('post_detection_relocation')
-        self.assertEqual([item[1] for item in called], ['prepare_region', 'run_stage'])
+        self.assertEqual(called, ['prepare_region','4_build_joint_inputs','5_run_hypodd_joint'])
+    def test_focal_mechanism_routing(self):
+        mod=self._driver()
+        config=json.loads((ROOT/'configs/pipeline.example.json').read_text())
+        (self.run/'pipeline.json').write_text(json.dumps(config))
+        runner=mod.Runner(self.run/'pipeline.json')
+        called=[]
+        def checkpoint(stage,name,script,args,expected=()):
+            called.append(name)
+            if name=='5_run_skhash':
+                self.assertTrue((self.run/'knowledge/context-focal_mechanism.json').is_file())
+                self.assertTrue(str(script).endswith('seismic-focal-mechanism/scripts/5_run_skhash.py'))
+                raise ValueError('SKHASH execution boundary')
+        with patch.object(mod,'load_contract',return_value=(self.RELOC_STUB,None)), \
+             patch.object(runner,'step',side_effect=checkpoint):
+            with self.assertRaisesRegex(ValueError,'SKHASH execution boundary'):
+                runner.run_stage('focal_mechanism')
+        self.assertEqual(called, ['prepare_region','1_build_inputs','2_cut_event_waveforms',
+                                  '3_measure_sp_amplitudes','5_run_skhash'])
 
 if __name__=='__main__': unittest.main()

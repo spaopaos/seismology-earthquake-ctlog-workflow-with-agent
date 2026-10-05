@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Prepare GaMMA inputs, retaining source identity and downstream phase metadata."""
+import hashlib
 import argparse
 
 import json

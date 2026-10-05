@@ -1,5 +1,6 @@
 """Portable release identity and explicit runtime configuration (stdlib only)."""
 
+import hashlib
 import json
 import os
 from pathlib import Path

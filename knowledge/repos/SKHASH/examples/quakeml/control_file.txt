@@ -1,0 +1,64 @@
+## Control file example for SKHASH quakeml
+
+$input_format_fpfile  # format of input files
+quakeml
+
+$plfile        # station polarity reversal filepath
+quakeml/IN/reverse.csv
+
+$fpfile        # P-polarity input filepath
+quakeml/IN/quakeml.xml
+
+$flip_takeoff  # Handles flipped takeoffs such that [180: upgoing and 0: downgoing]
+True
+
+$outfile1      # focal mechanisms output filepath
+quakeml/OUT/out.txt
+
+$outfolder_plots
+quakeml/OUT
+
+$plot_station_names
+True
+
+$plot_acceptable_solutions
+False
+
+$plot_mult_solutions
+True
+
+$default_takeoff_uncert
+10
+
+$default_azimuth_uncert
+1
+
+$npolmin       # mininum number of polarity data
+4
+
+$max_agap      # maximum azimuthal gap
+120
+
+$max_pgap      # maximum "plungal" gap
+60
+
+$dang          # minimum grid spacing (degrees)
+5
+
+$nmc           # number of trials
+30
+
+$maxout        # max num of acceptable focal mech. outputs
+300
+
+$badfrac       # fraction polarities assumed bad
+0.1
+
+$delmax        # maximum allowed source-receiver distance in km.
+120
+
+$cangle        # angle for computing mechanisms probability
+45
+
+$prob_max      # probability threshold for multiples (e.g., 0.1)
+0.05

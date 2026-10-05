@@ -1,0 +1,29 @@
+## Control file example for SKHASH ncsn
+
+$input_format_fpfile  # format of phase input file
+ncsn
+
+$min_polarity_weight  # minimum polarity weight to consider
+1
+
+$require_location_match  # Ignores location metadata (NCEDC phase files don't report location codes)
+False
+
+$stfile        # station list filepath
+ncsn/IN/stations.csv
+
+$plfile        # station polarity reversal filepath
+ncsn/IN/reverse.csv
+
+$fpfile        # P-polarity input filepath
+ncsn/IN/phase.txt
+
+$outfile1      # focal mechanisms output filepath
+ncsn/OUT/out.txt
+
+$vmodel_paths  # whitespace/newline delimited list of paths to the velocity models
+velocity_models/socal.txt
+velocity_models/north.txt
+velocity_models/lab1.txt
+velocity_models/sgm1.txt
+velocity_models/vb1.txt

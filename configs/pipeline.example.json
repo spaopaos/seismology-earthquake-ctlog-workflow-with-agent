@@ -1,7 +1,9 @@
 {
   "config_version": "1.0",
   "run_id": "new-region",
-  "raw_inputs": ["raw"],
+  "raw_inputs": [
+    "raw"
+  ],
   "archive": "archive",
   "stations": "input/stations.csv",
   "velocity_model": "input/velocity.csv",
@@ -9,11 +11,21 @@
     "horizontal_datum": "WGS84",
     "depth_reference": "sea_level",
     "elevation_units": "m",
-    "depth_range_km": [0, 30],
+    "depth_range_km": [
+      0,
+      30
+    ],
     "station_margin_km": 20
   },
-  "resources": {"cpu_workers": 4, "picking_device": "cpu", "mess_device": "cpu", "gpu_index": null},
-  "picking": {"min_prob": 0.3},
+  "resources": {
+    "cpu_workers": 4,
+    "picking_device": "cpu",
+    "mess_device": "cpu",
+    "gpu_index": null
+  },
+  "picking": {
+    "min_prob": 0.3
+  },
   "association": {
     "dbscan_eps_choice": null,
     "dbscan_eps_s": null,
@@ -26,39 +38,78 @@
     "max_sigma22": 1.0,
     "oversample": 5
   },
-  "location": {"pos": 1.75},
+  "location": {
+    "pos": 1.75
+  },
   "relocation": {
     "vp_vs_ratio": null,
-    "damping_trials": [20, 50, 100, 200],
+    "damping_trials": [
+      20,
+      50,
+      100,
+      200
+    ],
     "tiers": {
-      "loose": {"minlnk": 3, "minobs": 3, "obsct": 3, "wdct_last": 4, "maxdist": 100, "maxsep": 10, "maxngh": 10},
-      "medium": {"minlnk": 4, "minobs": 4, "obsct": 4, "wdct_last": 3, "maxdist": 100, "maxsep": 10, "maxngh": 10},
-      "strict": {"minlnk": 6, "minobs": 6, "obsct": 6, "wdct_last": 2, "maxdist": 100, "maxsep": 10, "maxngh": 10}
+      "loose": {
+        "minlnk": 3,
+        "minobs": 3,
+        "obsct": 3,
+        "wdct_last": 4,
+        "maxdist": 100,
+        "maxsep": 10,
+        "maxngh": 10
+      },
+      "medium": {
+        "minlnk": 4,
+        "minobs": 4,
+        "obsct": 4,
+        "wdct_last": 3,
+        "maxdist": 100,
+        "maxsep": 10,
+        "maxngh": 10
+      },
+      "strict": {
+        "minlnk": 6,
+        "minobs": 6,
+        "obsct": 6,
+        "wdct_last": 2,
+        "maxdist": 100,
+        "maxsep": 10,
+        "maxngh": 10
+      }
     }
   },
-  "detection": {"time_range": null},
+  "detection": {
+    "time_range": null,
+    "segment_days": 7,
+    "parameter_rationale": "PALM MESS via the skill launchers (1_prepare_inputs -> 2_run_mess_scan -> 3_export_tiers). Templates = the full medium-tier hypoDD catalog; freq band and station caps live in the copied config_<run_id>.py template ([REGION-DEPENDENT] block, user-confirmed). Delivery: independent CC>=0.4/0.6/0.8 catalogs."
+  },
   "post_detection_relocation": {
-    "detection_catalogs": "detection/catalogs",
-    "method": "joint_lite_cc_ct",
-    "idat": 3,
-    "ipha": 3,
-    "dist": 100.0,
-    "obscc": 0,
-    "obsct": 4,
-    "ct_reuse": {"relocation_tier": "medium"},
-    "damping_trials": [20, 50, 100, 200],
-    "initial_erh_km": null,
-    "iterations": [
-      {"niter": 4, "wtccp": 0.01, "wtccs": 0.005, "wrcc": -9, "wdcc": -9, "wtctp": 1.0, "wtcts": 0.5, "wrct": -9, "wdct": -9},
-      {"niter": 8, "wtccp": 0.1, "wtccs": 0.05, "wrcc": 6, "wdcc": 5, "wtctp": 1.0, "wtcts": 0.5, "wrct": 6, "wdct": 5},
-      {"niter": 12, "wtccp": 1.0, "wtccs": 0.5, "wrcc": 4, "wdcc": 3, "wtctp": 0.1, "wtcts": 0.04, "wrct": 4, "wdct": 4},
-      {"niter": 16, "wtccp": 1.0, "wtccs": 0.5, "wrcc": 3, "wdcc": 2, "wtctp": 0.1, "wtcts": 0.03, "wrct": 3, "wdct": 3}
+    "ct_reuse": {
+      "relocation_tier": "medium"
+    },
+    "new_cc_min": 0.4,
+    "damp": 400,
+    "damping_trials": [
+      50,
+      100,
+      200,
+      400,
+      800
     ],
-    "parameter_rationale": "Joint lite: reuse the first-round medium-tier ph2dt dt.ct verbatim (hash-tied to its solver evidence) together with the MESS-native dt.cc, IDAT=3. Newly detected events connect to the catalog network only through MESS cross-correlation links to their templates; no independent re-picking and no new ph2dt run. Effective joint link threshold OBSCC+OBSCT=4. Each CC tier is solved independently and keeps the project DAMP trials (spatial-evidence rule); values are explicit starting settings, not fitted optima."
+    "parameter_rationale": "Joint lite (Eryuan rules): first-round ph2dt dt.ct reused verbatim + MESS-native dt.cc, IDAT=3, OBSCC=4/OBSCT=6, LSQR; launchers 4_build_joint_inputs -> 5_run_hypodd_joint -> 6_parse_joint. Select DAMP with the spatial-evidence rule via --damp-scan (400 confirmed by scan in the Eryuan validation); new events enter only through CC links to their templates."
   },
   "parameter_rationale": {
     "profile": "Initial working configuration; inspect regional applicability. No case-specific optimum is implied.",
     "region": "Researcher-specified analysis extent and datum; review before scientific computation.",
     "relocation_ratio": "Record source and applicability here when setting vp_vs_ratio. The supplied P/S model may have depth-varying ratios."
+  },
+  "focal_mechanism": {
+    "relocation_tier": "strict",
+    "polarity_threshold": 0.3,
+    "delmax_km": 120,
+    "num_cpus": 8,
+    "reversal_stations": [],
+    "parameter_rationale": "SKHASH v1.1 grid search on PhaseNet+ weighted first-motion polarity + measured S/P amplitude ratios (launchers 1_build_inputs -> 2_cut_event_waveforms -> 3_measure_sp_amplitudes -> 5_run_skhash -> 6_parse_mechanisms). Region-dependent values must be user-confirmed: velocity model (inputs/velocity_p.cre), polarity threshold 0.3 (= HASH impulsive-picks equivalent), delmax, and the reversal list. Run 4_check_polarity_reversal.py first and confirm its evidence table with the user before filling reversal_stations; a reversal is only accepted when post-reversal mechanism agreement jumps above 60%. badfrac=0.1/npolmin=8/nmc=30/dang=5deg/azmax=10/ratmin=2 are method constants (5_run_skhash.py defaults)."
   }
 }

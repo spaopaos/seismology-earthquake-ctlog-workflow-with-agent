@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify release file contents; runtime archives have a separate manifest."""
+import hashlib
 import argparse
 
 import json

@@ -3,11 +3,11 @@
   "platform": "linux-x86_64",
   "files": {
     ".gitignore": {
-      "sha256": "3027e0b8a812df3b20fdd0a482aba3a39199ba3347db5cabf7225aa5700217c6",
+      "sha256": "f7770c6c6a8d85236ca6954b0bcb6be79cca34ce7a4b5ecd396f03c0e9cb00a6",
       "category": "source"
     },
     "AGENTS.md": {
-      "sha256": "01a7f399766dad0b92816184f237cfc4cda6c16b3911e8be3d9a6f45e74355e3",
+      "sha256": "87c9105282b6ecc80aa0eee4fec3e2dcf6061d72e7721ebbefbe70e350665a07",
       "category": "source"
     },
     "LICENSE": {
@@ -15,51 +15,31 @@
       "category": "source"
     },
     "README.md": {
-      "sha256": "0f90aaf0f673c576f8461705d1d2e546c682f1e37f0f3a9f426f837973a09216",
+      "sha256": "22a2d84531bb186996e2c779c8e212b22563dde0704d236b397984b615405a3b",
       "category": "source"
     },
     "THIRD_PARTY.md": {
-      "sha256": "bba6945b9d3f13d9b05859ff44f9720270c5146d553ebd97982f96edef28b502",
+      "sha256": "89e970fa96b19406542777bc4fce1a08a198c63548b8f015b4a0ac5426750d7a",
+      "category": "source"
+    },
+    "_tmp_final.py": {
+      "sha256": "8ade54d365475a775fa45a262ce51dbafa69f2213fe34d098c3dc7d19353cc49",
+      "category": "source"
+    },
+    "_tmp_prep_smoke.py": {
+      "sha256": "7770a8e782e705e92b717d4e146998644d471829051ffd2f5901d994e9d92b51",
       "category": "source"
     },
     "seisflow.py": {
-      "sha256": "109d03f32ce3b8496313a71b46c757b34ccb31dc6e9b06aa3cb711f116a55a00",
+      "sha256": "f6be3871a91aeb630aa6e7668f7727c90bcbc2f8932a4ed1da3b4a5aef3efd3e",
       "category": "source"
     },
     "toolchain.json": {
       "sha256": "6d9a005725e1bd3a40f1e38dd72e28cb9ab898f6c2387e83b5891b993b12c3cb",
       "category": "source"
     },
-    "assets/weights/phasenet_plus_v1.pth": {
-      "sha256": "f1643330e34bffaa4f7e3a5f7dd9205fb4019d76e5b9b6cb598232360d22f384",
-      "category": "runtime_asset"
-    },
-    "bin/hyp1.40": {
-      "sha256": "892f465a5de16c4fdee47f1fd2e06aa76a4c8f9fb3001638fa014f0e3827a5c2",
-      "category": "runtime_asset"
-    },
-    "bin/hypoDD": {
-      "sha256": "f21ce7b4aa0d391d7a32264b89f2288fdbf17919f3d2e44a1b07dcaf8ec7d610",
-      "category": "runtime_asset"
-    },
-    "bin/ph2dt": {
-      "sha256": "81438e6afb045bccaf3ee27e6b2d7321834ebec81c513b29af2fe764efb63cf7",
-      "category": "runtime_asset"
-    },
-    "bin/lib/libgcc_s.so.1": {
-      "sha256": "489803ded8a4d803e2c792763a2767c12185f5764b7bba080742d14ef2452b27",
-      "category": "runtime_asset"
-    },
-    "bin/lib/libgfortran.so.5": {
-      "sha256": "01fc721062fc3c2b5492202d276c5a374b7d952fc168d2d1e603fa85660cc502",
-      "category": "runtime_asset"
-    },
-    "bin/lib/libquadmath.so.0": {
-      "sha256": "36ccd8fddb16b65129879a6ecf379b468d6e920bdcaeb01e3a7fdd4e7ddf1be8",
-      "category": "runtime_asset"
-    },
     "configs/pipeline.example.json": {
-      "sha256": "31da1af1497561daabe39847a755e3246f33bbb04a7a3ecec74827d96ba6d688",
+      "sha256": "af13446a2118dc2f63dcbd14fd4f4197c8dff94f8930a34d7b711f425b7ae437",
       "category": "source"
     },
     "contracts/README.md": {
@@ -67,7 +47,7 @@
       "category": "source"
     },
     "contracts/SHA256SUMS.txt": {
-      "sha256": "b0a20e9a110cd842644bb11630fdfb49e74d981437d85f0e11c58161bc79c9ad",
+      "sha256": "239fb5ca8fed3c6b7650e3c2bab6f34c5da303550e3cdc33ca74ef6043ac7ee4",
       "category": "source"
     },
     "contracts/archive_interface.py": {
@@ -87,11 +67,11 @@
       "category": "source"
     },
     "contracts/hypodd_inputs.py": {
-      "sha256": "8832a5ea139c54c277fbf221d3662c6300421515646d4b5f942ac5d366559e68",
+      "sha256": "6fdfd6ea91a2f8e451ae8de95da3abca543c81baa20b41c963d6270a2e6e4ba0",
       "category": "source"
     },
     "contracts/knowledge_access.py": {
-      "sha256": "861d770e6504aa28abf9e0e134cc154c76aa08684cb78c11eb32e633fb4ffab7",
+      "sha256": "db06e69e078b00c69b5945e0d2f10e5c5588e39fdd71e1e40f642e53e73058dd",
       "category": "source"
     },
     "contracts/location.contract.schema.json": {
@@ -103,7 +83,7 @@
       "category": "source"
     },
     "contracts/migrate_contracts.py": {
-      "sha256": "6acaa4650aebfa19a53c4c79ec21709c5f3d7b3a4cc25a59eb8f7b09ea5d7da3",
+      "sha256": "daf869f4f8cb3ada609a04ab62a1f704979331e7bb508a1d36bfe300717de858",
       "category": "source"
     },
     "contracts/picking.contract.schema.json": {
@@ -111,11 +91,11 @@
       "category": "source"
     },
     "contracts/pipeline_contracts.py": {
-      "sha256": "796b21a57ffa5770c6ee76928d5d0f7b937f3ac394d8832f85b896cc82529e6c",
+      "sha256": "762ad7789038516d01c4a06604ab5d781e38ff3b847ff7a2b05edfed18408477",
       "category": "source"
     },
     "contracts/post_detection_relocation.contract.schema.json": {
-      "sha256": "c4092ea50797006380107ca11ff7672b467a4da00656844042b709e9a6fc2f2c",
+      "sha256": "53788e129f8581d998f2e99dc9b3f90703fb92bdc7234aa8c3c30168415619c2",
       "category": "source"
     },
     "contracts/preprocess.contract.schema.json": {
@@ -127,7 +107,7 @@
       "category": "source"
     },
     "contracts/runtime_support.py": {
-      "sha256": "d6fae250e2012915d5471738d1ff69776429585d12af9fd52d5b5e1d0f88b647",
+      "sha256": "c4649ba01ddf80acccdbbe1a6d4a2f95a0491542d4b0566a5b9653f6e8f17436",
       "category": "source"
     },
     "contracts/station_identity.py": {
@@ -187,11 +167,11 @@
       "category": "source"
     },
     "docs/POST_MESS_RELOCATION.md": {
-      "sha256": "5b87bb430f9f0845458a5b2e0359bffd6e20a98306462f2a78f1366da193ff18",
+      "sha256": "a8b64e083f84efc8f0b2a09d0a20c00261f018f2980913719858fa82eb10f5d8",
       "category": "source"
     },
     "docs/POST_MESS_VALIDATION.md": {
-      "sha256": "974210e3bf69ff2227a690cc2c281f0912c36e033c496d470be808d39c99fcf6",
+      "sha256": "4f084069d813a96badac8cc6bedf282c82054820b61de8e34e8ba8a3c2a8b088",
       "category": "source"
     },
     "docs/SUPPORTED_INPUTS.md": {
@@ -212,6 +192,10 @@
     },
     "docs/validation.json": {
       "sha256": "318412ae3bb151c41dbec3bb8c9b548e11666db7864da3216588abeb15b83c34",
+      "category": "source"
+    },
+    "docs/images/catalog-pipeline-dark.png": {
+      "sha256": "f640c35c00afe17950d52346ce1eb6bf53f192fbee79e6b2f1330b4ff0d8dd99",
       "category": "source"
     },
     "docs/superpowers/plans/2026-09-15-mess-joint-hypodd.md": {
@@ -291,11 +275,11 @@
       "category": "source"
     },
     "knowledge/knowledge-manifest.json": {
-      "sha256": "5e7f76699fc3d06e0ab7910b7181d5754ddfa27fc55ae6e8dfe6346d1615583f",
+      "sha256": "8ae4a1aa375fb02f5f490d98b82b8fb1e9914847fe200a45b0ce6a984e5dc794",
       "category": "source"
     },
     "knowledge/stage-routes.json": {
-      "sha256": "2281bfcbf909bd530675c3fce886e5b00ac0ac7917846cd35ff5f7e47b241f8a",
+      "sha256": "eb7bc63fd438aa224182388a80e599f1d57c8ba471691b54a6243c778bf734ed",
       "category": "source"
     },
     "knowledge/bindings/association.md": {
@@ -303,7 +287,11 @@
       "category": "source"
     },
     "knowledge/bindings/detection.md": {
-      "sha256": "3d01adf860d867c3a5bf8ac3909d8f0ef60ad569b4ea196c6acd99afdca011e3",
+      "sha256": "d9c46e37f1612c70682d49f35945115b90fe223d4a25bc70000068d2169c2967",
+      "category": "source"
+    },
+    "knowledge/bindings/focal_mechanism.md": {
+      "sha256": "bc2f777571994f388db2a63e0bc4d3ae1dd26189e38b1b8eaaca91f2d4d916f2",
       "category": "source"
     },
     "knowledge/bindings/location.md": {
@@ -315,7 +303,7 @@
       "category": "source"
     },
     "knowledge/bindings/post_detection_relocation.md": {
-      "sha256": "6b2ce76f0af2b3429ee7be4243ec5b35aea7d57fd32e8e87ef0128824aeb75e0",
+      "sha256": "3e608ec70b42219ed81c6f9d7d2997fbf55a13923dbd4a6088b00643c2289503",
       "category": "source"
     },
     "knowledge/bindings/preprocess.md": {
@@ -323,7 +311,7 @@
       "category": "source"
     },
     "knowledge/bindings/relocation.md": {
-      "sha256": "cb5d606a1d2f1795e1e89106cc060cb44e077b0338347f2c82837b44cd204a47",
+      "sha256": "8b7b985881bde03165213f1fe1a6f6b5487f1a03e3b5ab40e68733cb2f96f7be",
       "category": "source"
     },
     "knowledge/library/corpus-manifest.json": {
@@ -587,7 +575,7 @@
       "category": "source"
     },
     "knowledge/repos/EQNet/utils.py": {
-      "sha256": "39e8a09d676ac39051e7f01b57eea94af6ba5e4a3c4617d0812b1751ea5e72d2",
+      "sha256": "b4990b0413893742b2336a34f7f53de30be68081556159b6ac42759c9e8ca625",
       "category": "source"
     },
     "knowledge/repos/EQNet/.github/workflows/docs.yml": {
@@ -1082,14 +1070,6 @@
       "sha256": "8170003e806fa34b6d467c3399ea50b5ab76f1efa1b0282b4831789daa9235dc",
       "category": "source"
     },
-    "knowledge/repos/GAMMA/tests/catalog_gamma.csv": {
-      "sha256": "d2423f4a2d06295fcd963e514b97b8affa39ced538c8e3c8b7238238b71c7aee",
-      "category": "source"
-    },
-    "knowledge/repos/GAMMA/tests/catalog_scsn.csv": {
-      "sha256": "75fc2450a3bc34cd050fef75414d68defdf1b6a22963fc8f7eaa48f812f9dd6b",
-      "category": "source"
-    },
     "knowledge/repos/GAMMA/tests/comparison.ipynb": {
       "sha256": "3e511414143de4b4859eb615317f129ddd8d49e86ca59b89dc32a47c56aa328b",
       "category": "source"
@@ -1104,22 +1084,6 @@
     },
     "knowledge/repos/GAMMA/tests/example_phasenet_neuma.ipynb": {
       "sha256": "145c2e5325d30fec06743b454902c3e4912fd77255c750c8d5df401617b8eee0",
-      "category": "source"
-    },
-    "knowledge/repos/GAMMA/tests/picks.json": {
-      "sha256": "3692653148da1bc7284ab1087137655ac55669676ac66f66feceafc092f5b822",
-      "category": "source"
-    },
-    "knowledge/repos/GAMMA/tests/picks_gamma.csv": {
-      "sha256": "bc93f4a32b183b7144b14811087d8f5115a033661f0586c44c51f508a6494aa5",
-      "category": "source"
-    },
-    "knowledge/repos/GAMMA/tests/stations.csv": {
-      "sha256": "c8a448443d44036cd3a566c12e56cb83c1bcfb846a83bef72a86738fb523d580",
-      "category": "source"
-    },
-    "knowledge/repos/GAMMA/tests/stations_hawaii.csv": {
-      "sha256": "a0995a4c83da2f44a8aeedb3ab948f30ae8f354578b4ae2947ac40c1d333c966",
       "category": "source"
     },
     "knowledge/repos/GAMMA/tests/statistics.ipynb": {
@@ -1140,10 +1104,6 @@
     },
     "knowledge/repos/GAMMA/tests/comparison/compare_eikogamma.ipynb": {
       "sha256": "378ffc912cf08a7089a8331e6eac2267a00b281ecf4de1d181839c57a6c224a1",
-      "category": "source"
-    },
-    "knowledge/repos/GAMMA/tests/comparison/stations_ridgecrest.csv": {
-      "sha256": "c8a448443d44036cd3a566c12e56cb83c1bcfb846a83bef72a86738fb523d580",
       "category": "source"
     },
     "knowledge/repos/GAMMA/tests/comparison/statistics.ipynb": {
@@ -1451,7 +1411,7 @@
       "category": "source"
     },
     "knowledge/repos/PALM/MFT_src/cut_template.py": {
-      "sha256": "453d2326ee024bfa84223181e694dc034436b8cfce0032acf182e3f444d91028",
+      "sha256": "c297af4c719e67a3f6f1f7a4d32f8710dc918c74846f9956cf7537a5698b18f5",
       "category": "source"
     },
     "knowledge/repos/PALM/MFT_src/dataset.py": {
@@ -1583,7 +1543,7 @@
       "category": "source"
     },
     "knowledge/repos/PALM/preprocess/0.2_format_station_file_eg.py": {
-      "sha256": "59fc1c305e80074f74ad5b20b9b9ef29b07fa2a1c915c28257edd8da699bc94c",
+      "sha256": "c3314c9826d3d5d3ff75e9c574a89d49ce8c08373683fa307fd961726f14ac83",
       "category": "source"
     },
     "knowledge/repos/PALM/preprocess/1.1_download_continuous_data_eg.py": {
@@ -1612,6 +1572,366 @@
     },
     "knowledge/repos/PALM/preprocess/preprocess_common.py": {
       "sha256": "1590f57140893e4f9de2a32e80b5cbc24fa7bfbe95c3e3b47fe686b71043cdf0",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/.gitignore": {
+      "sha256": "6077e798e22330ea867e0415e6d492ad901563d8292b6cae8f2ae9d2c7a2087f",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/CODE_OF_CONDUCT.md": {
+      "sha256": "b8b4efa1676bb43db5985d5530b7e2755a577b16f68e5ca2ac2dce0dcb115f1f",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/CONTRIBUTING.md": {
+      "sha256": "70eccc479e7dc9f8b5fea48d5b4cdfcfabf449dbb573a27234bb2eb9efb86983",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/CONTRIBUTORS.md": {
+      "sha256": "1ceeb74a580bacfc5141a1b34ba76e783bc2b6c03181eca4be0c7f503d516f60",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/DISCLAIMER.md": {
+      "sha256": "9e023581728b208a380959b026084e13e027050188e96cc0f8d64de750afa80b",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/LICENSE.md": {
+      "sha256": "8f7f9f0a052bd4b9883e2a6ad88ef52fde0fecf05e75abae674c4c7a072e3043",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/README.md": {
+      "sha256": "3c75ef2d62167f0eb70c4878dc2809f7265351273a1f823670ecccd8928244c7",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/SKHASH_manual.pdf": {
+      "sha256": "1d074bef640a284ec6cae102acae016ab308b3b6e194b6b5595b46bd2590e4ca",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/SKHASH_patches.diff": {
+      "sha256": "cb0180911aace35afc294ec422c08a62de70f7f8a69101c4941300446eacd3b9",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/VENDORED_PATCHES.md": {
+      "sha256": "9308690780b5323e32aa5c9133fd587ec547a05808297202a7fdcb44d38740f4",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/code.json": {
+      "sha256": "6426be111651ce8e040c30be6e6b0ea834f237413fc07066c1870877fff257f0",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/pyproject.toml": {
+      "sha256": "e357eda2546ec5db77195d2cd1c19c5b2bbbefb001df9a290fb5cab6c5b83c05",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/requirements.txt": {
+      "sha256": "2adb171060444442b69378e783d3a8746c9f4f3619170b77313a04b3dfc66ed8",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash1/control_file.txt": {
+      "sha256": "19eee222169393168256d3d8b638d07de3178920d91c8822c493572ff8330557",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash1/IN/north1.phase.txt": {
+      "sha256": "2f830b31533187155fe4f3fd8a5750b10cba651243f5762a8df51dc751271dfa",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash1/IN/scsn.reverse.txt": {
+      "sha256": "8007395f477d22aac1ebec071c7ecb1754be31dd1f2403b16e3591f5c2527df4",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash1/OUT/out.txt": {
+      "sha256": "8effd8d86fe41d03995574f31396dc8e9d82b995364992ccad0f4a36d9747c25",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash1/OUT/out2.txt": {
+      "sha256": "1626dd740a9ddff8092e889c0407f5b049637668d9572795bc99a2e68272954d",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash2/control_file.txt": {
+      "sha256": "0758fb7e4d89633616f26c97ec0eac16066ed658ff879c3578c99d38cc43fd66",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash2/IN/north2.phase.txt": {
+      "sha256": "429be17cc65570400fa796537385e912b19ccbbc5b08be3d346b60be23a0748d",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash2/IN/scsn.reverse.txt": {
+      "sha256": "8007395f477d22aac1ebec071c7ecb1754be31dd1f2403b16e3591f5c2527df4",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash2/IN/scsn.stations.txt": {
+      "sha256": "96be078f7290f961e78168caa6a4e5fedae4a74e803a93d46101b29ce6596257",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash2/OUT/out.txt": {
+      "sha256": "34e6bd7daea10a0e5d82701034c131d86e2594cd4719528dc9126785a41fa292",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash2/OUT/out2.txt": {
+      "sha256": "a3f11b437effa43be05b583c99a2dfa1edb3c4773645265344191d602138935b",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/control_file.txt": {
+      "sha256": "37ab3747fa6e13001a322049fd4b318ec4e3b5d33e87a3673819bfe205fee260",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/IN/north2.phase.txt": {
+      "sha256": "bcbcd472c3b8a1b51018c5f0a2d487878c9835ccb9a2b3c846a951c9f3a7b664",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/IN/north3.amp.txt": {
+      "sha256": "d6b6f730bcc1eb5c9200674caa9dfcdee65cdb4e31eb3069b094166cb4de73b6",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/IN/north3.statcor.txt": {
+      "sha256": "ef7ef08fc727b2df54e1dcf45b40270b9e6a95033e1f00b430c60728e0afc333",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/IN/scsn.reverse.txt": {
+      "sha256": "8007395f477d22aac1ebec071c7ecb1754be31dd1f2403b16e3591f5c2527df4",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/IN/scsn.stations.txt": {
+      "sha256": "96be078f7290f961e78168caa6a4e5fedae4a74e803a93d46101b29ce6596257",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/OUT/out.txt": {
+      "sha256": "4a1645f6bfe5494d793af79c09413e3d52a8bfa982aca756d20ffa0dc519a080",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash3/OUT/out2.txt": {
+      "sha256": "de06f09d63a7561f3d32e4f3fee96ffcc975709ba53738402d6af8a4e010e412",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash4/control_file.txt": {
+      "sha256": "468fb26d6d47c34ee6d5b67c2e6f6f02eb743c27da86d35885cd57cb206b2131",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash4/IN/north4.phase.txt": {
+      "sha256": "de12229a694f71bccd4c6ea88355118371a7e958c41f193e833e070477836a58",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash4/IN/scsn.reverse.txt": {
+      "sha256": "8007395f477d22aac1ebec071c7ecb1754be31dd1f2403b16e3591f5c2527df4",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash4/IN/scsn.stations_5char.txt": {
+      "sha256": "cafe6cab1505fe7e9391b704144fb6b939259cce89ab2eae5f2d103aa6c92185",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash4/OUT/out.txt": {
+      "sha256": "6b3efa9c737c6660beab573df1d905a2989c77688bfffa1716c423edf2926ee0",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash4/OUT/out2.txt": {
+      "sha256": "42ba17db0fffb6a4f2c92cfdfc040189aa3fa26700f4e6f6ced740b3b099a324",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash5/control_file.txt": {
+      "sha256": "1afb1d7daca44c7a6310e704793ad8c6fb333dee78be6c57a775da227f338097",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash5/IN/north2.phase.txt": {
+      "sha256": "3e87ffd1bcf1dc859c72e22d53a72ca469721bb62f8926d91fa03893b4122797",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash5/IN/north5.simul.txt": {
+      "sha256": "a4a08eee0d8989d7ad7f7865355ca81215385a3b34ee409db9ccffd50c4b4a9f",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash5/IN/scsn.reverse.txt": {
+      "sha256": "8007395f477d22aac1ebec071c7ecb1754be31dd1f2403b16e3591f5c2527df4",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash5/OUT/out.txt": {
+      "sha256": "096c6fb47ff612f30ae95a5ac76f716a72e32b4fa2600c48bac78c53ea4667ce",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/hash5/OUT/out2.txt": {
+      "sha256": "3326697b891af9df7feb43400104d277d3647ab48ab71ba9b79995b7d8b1b53a",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/maacama/control_file.txt": {
+      "sha256": "48d9b2f418d49107498498b08daeffa0c1144d9c456cac0e6f8b0770b99e377f",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/maacama/IN/pol_consensus.csv": {
+      "sha256": "12206d6cde985ed338f797a7b7f954cd0ae4d8793cd8e3d2356318634dcfc64f",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/maacama/IN/reverse.csv": {
+      "sha256": "a2ee69773bed3372a6d701f6b466c5041069864dea0b8a1b47094d73d8714f67",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/maacama/IN/station.csv": {
+      "sha256": "baa4f6b5bf78706aa75ec0368c7def5a3fc974705fb00ae39c9abf4facd7ec29",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/maacama/OUT/out.csv": {
+      "sha256": "a980b03811e8d04ada120b5186022f486eae11260931f7a93feeb9143cebd4fb",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/maacama/OUT/out_polagree.csv": {
+      "sha256": "88172000e22088b38e18e239e2cd6b2902d5b878ca47217388a51afc5e94df9e",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/maacama/OUT/out_polinfo.csv": {
+      "sha256": "6723c292e0c0c9ae6bd94be8d286e67a4d275d5d3399fe6da53fa591619df1ae",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/ncsn/control_file.txt": {
+      "sha256": "6a5847e1775cd294cc6b03a2272f147e5084d8f49f8983102c70b7fe2f9e65af",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/ncsn/IN/phase.txt": {
+      "sha256": "bbed6de0e220453068d6fa845d3a48a6c7930a81cb186db50e2dcfd5bf81ed36",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/ncsn/IN/reverse.csv": {
+      "sha256": "eded48bb13106adfed57e26bbca94567ed11b42fc8ece5854daf27a02a4c3aa1",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/ncsn/IN/stations.csv": {
+      "sha256": "5ff38b2d60219a47d4d0fab31726b5d8f89c456c2078511d5ebcca205b76fb83",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/ncsn/OUT/out.txt": {
+      "sha256": "3489f907ec35aa4f70243fd8016b8d961d3c7888a71feb5c759b695e8b955bb9",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/quakeml/control_file.txt": {
+      "sha256": "ec4537f7c16382d1c37cec72319f2e8face04908f3fb8c02745e02ddd076fbfa",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/quakeml/IN/quakeml.xml": {
+      "sha256": "b2446cddafc77d41772abf7aa35cfcdd9e0968a5307c9d0a15b10aafba0cd362",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/quakeml/IN/reverse.csv": {
+      "sha256": "faa4641ddf649a674d0f3ba983a21391f48d3b94e81489b8952aa57ff7a8bf15",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/quakeml/OUT/out.txt": {
+      "sha256": "c59deb4bdc947e1f38eecd586c66d4e1cf2a6704ec760dc5ed7e0a1240f3fa7f",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/quakeml/OUT/uw61930961.png": {
+      "sha256": "44eae595186c324a6ab9b85a09c98bcda98eacd832c70199d6a9b6a25577fabf",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/control_file.txt": {
+      "sha256": "74dae3b99b0bb5fc75f7798eefe232eed7ccf202d3691c0de7fa455d2bb43f26",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/IN/amp.csv": {
+      "sha256": "8c664b8962e0f7f090a95db56066a05e81013b734950bc735ddfe61f3b130e6d",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/IN/eq_catalog.csv": {
+      "sha256": "cad686b673e87e24bc34695e86e0a2d4126f70f0f598fbcfd9c0a3938874291c",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/IN/pol.csv": {
+      "sha256": "f6e565b4e576f0b9d5c063b9a9ae2326bbda9d80f7efa9f49c2ac6506c02b873",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/OUT/123456.png": {
+      "sha256": "7ceb2b277ad909ac6b4ff5f4985ac9ec41171bb60393360f7b3cf083d053de59",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/OUT/out.csv": {
+      "sha256": "ec71f871e3160563ff7423dc605ec2bf03314539931ffcdfd991738d3fff17ed",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/OUT/out_polagree.csv": {
+      "sha256": "400e877ff30349f8fab106f67260df48371b4b421f7750408c3898d16d9c414a",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/OUT/out_polinfo.csv": {
+      "sha256": "c1b1b8b1a514abc73c205e4dcc279ec09353d1100a1ad27c2c23e53e6c8b47f8",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/smile/OUT/out_spagree.csv": {
+      "sha256": "4eef52b672542ea69fd650798bb21c37810a36e29f2e19ce6fef2b9683e6adc2",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/velocity_models/lab1.txt": {
+      "sha256": "2e215ec3b42c4cb1aab21eeb33ebeb710d04d8635895e8b63276588976e8cb0d",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/velocity_models/mvel.txt": {
+      "sha256": "049bc4679208491be10c20abb657f18b6ae3846331b467cce321c2cb1cbb06a7",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/velocity_models/north.txt": {
+      "sha256": "84a2bf35daa60b5f077eb0368d076600fb944775466c1a2177229ec861791088",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/velocity_models/sgm1.txt": {
+      "sha256": "1faa2c6fc711bf3df1db55bc48026ac9a1e94e204a820d416adaf098a8d4a7e6",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/velocity_models/socal.txt": {
+      "sha256": "ef36ffad65d904e0f6b9e2c2cbd3ae2085f0ce77ffadf315607a572ee59e450d",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/examples/velocity_models/vb1.txt": {
+      "sha256": "efcf2048f848c84671687d39204146b1f1448e00d30a9e5cad579142eae69194",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/SKHASH.py": {
+      "sha256": "a6ee84fd49636ceb8b677514272010e2f04015a91632b2d80f30b303ea99fbe6",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/__init__.py": {
+      "sha256": "2e1ecd39df7e9fea3eee2470dfe448a10085fc5e7bce165092d2630a44983a00",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/__init__.py": {
+      "sha256": "2e1ecd39df7e9fea3eee2470dfe448a10085fc5e7bce165092d2630a44983a00",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/compute_mech.py": {
+      "sha256": "3860a381ec399af6953cc55cf0944f36dfe8e96998259450b19fbeb4e2e84b75",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/fun.py": {
+      "sha256": "9a60454cd6d6a892897dd120f15481827463360ffc4a07d836062e2cff046073",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/gridsearch.f": {
+      "sha256": "3d33e9bc29afebf8025cc45e91abe9d7af1a36910779b966503ccaa34321eaf0",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/gridsearch_so.py": {
+      "sha256": "cba4a40ed86b7729ad7681495b95598f046f901576fadcdae1723904b38986f7",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/in_other.py": {
+      "sha256": "0fa5b3ba3cdbd399b128ffbd0720e333e6d279c1e9ec678aa1541816927da775",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/in_pol.py": {
+      "sha256": "dbc712f1aa15a539509be2a42ba940a9cd12b6edb822d1947a197541b184d6ec",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/in_qc.py": {
+      "sha256": "9981204321d95e9e67705233cdceaa11dce1e913619c8dc70fe3cdd32d50389b",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/in_sp.py": {
+      "sha256": "2194fa477e5e8df975fce2ec1dcb6e362f726e13cfed072dd0124d24a4ee8d56",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/in_sta.py": {
+      "sha256": "13e353b135d6397b661e1ae97bec7f4468a56db44214a9fe2f64ac88e9d16c7c",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/out.py": {
+      "sha256": "5ceb7517b6f5687d09edfaf74dc06a1d6aa8a374c01c2b5f64aa609c23855b40",
+      "category": "source"
+    },
+    "knowledge/repos/SKHASH/src/SKHASH/functions/plot_mech.py": {
+      "sha256": "10cc7abee75a505e18a00487b1b2f858e7e00020e6a64b39730866ffc5d04e08",
       "category": "source"
     },
     "knowledge/repos/hyp2000-1.40/build_and_verify.sh": {
@@ -1891,31 +2211,35 @@
       "category": "source"
     },
     "scripts/build_knowledge_manifest.py": {
-      "sha256": "0e88ebd5a6a5fefe95785ed05abaf403a46a16c755a5dde5506f9f3d7c7b72fa",
+      "sha256": "8066f12718adc7e3e17a97be6c5d335b9e5d86776424ee78303601f379b4911d",
       "category": "source"
     },
     "scripts/build_release.py": {
-      "sha256": "e99707feca62c2ffc4574a708af5209d21c8675747ed2b64e4f67e8e40728a89",
+      "sha256": "0c7d4ee1274d67a05f639067b10df219bb97c23ffe4d1dd17263b4f6daf90c99",
       "category": "source"
     },
     "scripts/deploy_runtime.py": {
-      "sha256": "c497add0374f34cecb9f491205a85f3bbb3d3dc969697fef494d416ca66f7ce1",
+      "sha256": "82c7fd4d8fba462991f860e53860d4122b52add60e83c9f49333d06ceb7f7174",
       "category": "source"
     },
     "scripts/export_wiki.py": {
-      "sha256": "f271be583a155c2ed5788404b4b64cfc75d3205f289b2cf7b9025bf5bfefd278",
+      "sha256": "ab77c8fd14d3abeec553506b0a396aa6d8ba3ca7d7d421f9f8764bdb20aa56ca",
       "category": "source"
     },
     "scripts/prepare_region.py": {
       "sha256": "0ad3acdee905765902999931c517eef11f56f5688a3aaaa1830837ba413b92f4",
       "category": "source"
     },
+    "scripts/restore_offline_assets.sh": {
+      "sha256": "79eba6a85f0446870ac1a0e12a8cfa3107afbf29c203a5a9525f874f152fe19a",
+      "category": "source"
+    },
     "scripts/validate_archive.py": {
-      "sha256": "a3501471cb8ac53c1fc8e619008eefa0db60ff29490d2db1027c34ff35515f62",
+      "sha256": "bffd444510ee2c2f9e37f927f72f4073f29a90b6220adced88a8eafb63548488",
       "category": "source"
     },
     "scripts/verify_release.py": {
-      "sha256": "6e2305afd9c2f5a6092569872493986b96f89214dcba5c34d3e97fae0c314916",
+      "sha256": "a33d2491998c19ec5cf2349df046cd9dfea9d08f9f1c0f85df64b40fc411eca7",
       "category": "source"
     },
     "skills/seismic-association/SKILL.md": {
@@ -1931,11 +2255,11 @@
       "category": "source"
     },
     "skills/seismic-association/scripts/build_gamma_inputs.py": {
-      "sha256": "c1cab7b7f3ff74dfa22cd9b246e9431d441b0ffc863ab48e00a762de16d9fbd4",
+      "sha256": "0bbeac62eb874e673d8dd39a705f6491265f3856b4df9bdfbda92427c425133f",
       "category": "source"
     },
     "skills/seismic-association/scripts/contract_io.py": {
-      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "sha256": "b78f97b30592a828cbb72dc8c769abd67a416860332264a3b846cba7f0b7dbce",
       "category": "source"
     },
     "skills/seismic-association/scripts/gamma_outputs.py": {
@@ -1943,7 +2267,7 @@
       "category": "source"
     },
     "skills/seismic-association/scripts/prepare_dbscan_eps.py": {
-      "sha256": "77166e56dabd359e737c42d0192b900eb48388db38f25e4060cb308461098ce4",
+      "sha256": "eff63712ed0b7bc77f5ae5e49222328253ab96717aab667a592ab92e337d694d",
       "category": "source"
     },
     "skills/seismic-association/scripts/qc_and_contract.py": {
@@ -1951,55 +2275,63 @@
       "category": "source"
     },
     "skills/seismic-association/scripts/run_gamma.py": {
-      "sha256": "fedcc2b5fb9a3f8d36b6b68d9f1d6ae1a1497e073c0e3e9f75a36bf1674d42d3",
+      "sha256": "1fbc5d848348e2a2db724a6596b24c6a37ac3abe65ea5a4b3675ec2cb92e5dae",
       "category": "source"
     },
     "skills/seismic-association/scripts/verify_dbscan_eps.py": {
-      "sha256": "f3151c93bf725741d7d6f5aa888683e73289c4b842082ec1519a1e1a7725e4dd",
+      "sha256": "199d69e862b989c17bba4d92e6514dbf48831919f1270df00ba274d6bf6cf208",
       "category": "source"
     },
     "skills/seismic-association/scripts/verify_gamma_amplitude.py": {
-      "sha256": "bd98e2d3ea4a7945b2ddc633199dfc9653bfb8eee9f750eae606e6349c9ad57c",
+      "sha256": "d172368fecdfc11e93d2610f832bfeda641f5d4cc98b80c70d314c32756533b8",
       "category": "source"
     },
     "skills/seismic-detection/SKILL.md": {
-      "sha256": "2a059fc1268dfbb6042c1eb5a92017e7dfae6b1151b4e618111b12aacc23dcba",
+      "sha256": "2df438d4df597937fad127a01fc2896f409eb4aceabdf136fb8f779d45b1ff63",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/SHA256SUMS.txt": {
-      "sha256": "d18f94a97c7853dbafdc6389db3d07d6e6cc0b42c657d34010993eda99d583c2",
+    "skills/seismic-detection/scripts/1_prepare_inputs.py": {
+      "sha256": "c6f08fafbd86ce66f0bfa8814bad80a11da54d057f3466428c757641ef0793eb",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/adapt_to_palm.py": {
-      "sha256": "e8b232a623394ae45a0f5ec7a16cb3893310c214c428c6efc78dc26dcca08c63",
+    "skills/seismic-detection/scripts/2_run_mess_scan.py": {
+      "sha256": "6ba87537122c89111e6a59751e4f5d63b148ec9a3b268c24cea1ad46d4d8826d",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/contract_io.py": {
-      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+    "skills/seismic-detection/scripts/3_export_tiers.py": {
+      "sha256": "2ba014ee424f8cb73eaae9a30e12f2a6542fb5904ca65add8c8c3dc8528804b6",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/derive_params.py": {
-      "sha256": "2b1451c6a02dbbb478f0d3a2b6f69dce774d38d945b3dd078f47df1884b2f31f",
+    "skills/seismic-detection/scripts/config_mess.py": {
+      "sha256": "998773028c8e8471d08847cf205c83f3bb0b0c3b70ccc0da26451223320fa67c",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/export_cc_catalogs.py": {
-      "sha256": "79d11ead1d17ccb210c14aa04d29a99025a742e3b27f1e0bf78db710677370e8",
+    "skills/seismic-focal-mechanism/SKILL.md": {
+      "sha256": "53bd3652d9fc5a40319709651222df96013cadae243c5b7a80753cfbf2385c75",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/mess_contracts.py": {
-      "sha256": "cfc68dcdd568a32e0f4807e93f48de8a7ce2d7d9304d2d99e38f5f306ca88f5e",
+    "skills/seismic-focal-mechanism/scripts/1_build_inputs.py": {
+      "sha256": "6e3e38196786bc6b0616b27936ac006432e9599f1624d0978fc91b7b21b10cb1",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/run_mess.py": {
-      "sha256": "2df589aa40e93ec148b6a56713c37f5f0fcb4fb2ec2af191134824a8b638f732",
+    "skills/seismic-focal-mechanism/scripts/2_cut_event_waveforms.py": {
+      "sha256": "a31ba8bdfa9632a4c3ce8bbf10bdedbe4249955698edf5d5096e44cb6bd896ed",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/template_inputs.py": {
-      "sha256": "4e60d81f9aa9500e936de153cdeedaa85fed8b52364e246ae0e3b1a226745f68",
+    "skills/seismic-focal-mechanism/scripts/3_measure_sp_amplitudes.py": {
+      "sha256": "f06e0f418f7bcb74fdf7a804782ca7b31079a149240ccdf3a6bc8c731ee87c6a",
       "category": "source"
     },
-    "skills/seismic-detection/scripts/verify_mess_inputs.py": {
-      "sha256": "9f907b45e60d6b227965b12b81c6c65d5b0c06c91a91229f67ef795b790d584d",
+    "skills/seismic-focal-mechanism/scripts/4_check_polarity_reversal.py": {
+      "sha256": "ad5d97556d740f39d5f85bef6e2da1294e584d24af884a36fc7ada5a32185426",
+      "category": "source"
+    },
+    "skills/seismic-focal-mechanism/scripts/5_run_skhash.py": {
+      "sha256": "1e19861d12f73db150ac1889943d2d5e492a1e37ab98759c78ccc71ef8bc61d5",
+      "category": "source"
+    },
+    "skills/seismic-focal-mechanism/scripts/6_parse_mechanisms.py": {
+      "sha256": "eb43390dcfe42baf392b1bb110edbfc2c2650e07676f58d904ca7f1f59c55acb",
       "category": "source"
     },
     "skills/seismic-location/SKILL.md": {
@@ -2011,11 +2343,11 @@
       "category": "source"
     },
     "skills/seismic-location/scripts/contract_io.py": {
-      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "sha256": "b78f97b30592a828cbb72dc8c769abd67a416860332264a3b846cba7f0b7dbce",
       "category": "source"
     },
     "skills/seismic-location/scripts/make_hypoinverse_inputs.py": {
-      "sha256": "c393ddadd36ddc1cf4ea1b388ece0727246184c2c7345f112571274f719e6a02",
+      "sha256": "85c37e4845478f5edfd163ca4816270b3715373bb75168a4c7a8999013f25325",
       "category": "source"
     },
     "skills/seismic-location/scripts/qc_and_contract.py": {
@@ -2023,11 +2355,11 @@
       "category": "source"
     },
     "skills/seismic-location/scripts/run_hypoinverse.py": {
-      "sha256": "8a31d2efdeac7fd21a2f25d81a8963e871b53b5eb938c656392990e441e1ae23",
+      "sha256": "b170ec92fcbcd805b01ba71c0d4324e7b6747c02ed6ef652e7e85e088b81991a",
       "category": "source"
     },
     "skills/seismic-location/scripts/verify_phase_dat.py": {
-      "sha256": "0547ffa2dcb59ae633c417b8bf89956cdd6f95f1332d0765fab32511a64c5da8",
+      "sha256": "3a2226e3ecbb9cb827eadceb7955320b933656ff6eca042984a9ff3675b0a55f",
       "category": "source"
     },
     "skills/seismic-location/scripts/wadati_pos.py": {
@@ -2059,15 +2391,15 @@
       "category": "source"
     },
     "skills/seismic-picking/scripts/contract_io.py": {
-      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "sha256": "b78f97b30592a828cbb72dc8c769abd67a416860332264a3b846cba7f0b7dbce",
       "category": "source"
     },
     "skills/seismic-picking/scripts/eqnet_pick.py": {
-      "sha256": "d1e9e4e526764cbf31659c47390b50bf82976786dc030f2d0061246229184acb",
+      "sha256": "7ebc776a451c8fee16187e090b2ff07d28a11cbc0386e801c6797cce3af35bbd",
       "category": "source"
     },
     "skills/seismic-picking/scripts/gen_picking_contract.py": {
-      "sha256": "df1368f743e64860fc081330f08a07eac3c325d59c0be232bf29865ce1780282",
+      "sha256": "e5a7860e15e581dc96949c1352342461d2d1b96c3ee320f6542612b8f326a233",
       "category": "source"
     },
     "skills/seismic-picking/scripts/normalize_picks.py": {
@@ -2083,31 +2415,19 @@
       "category": "source"
     },
     "skills/seismic-post-detection-relocation/SKILL.md": {
-      "sha256": "58f03451c1004fe9fd43b6d4baf1bf8d745d11144345491a1fbff93104d4c655",
+      "sha256": "6f84caf72c6972ca352f394024cd3c6219126dae3db39763563628875a7b31cb",
       "category": "source"
     },
-    "skills/seismic-post-detection-relocation/scripts/SHA256SUMS.txt": {
-      "sha256": "756bf2119587df9eae411633217eb0d239a9fbd5796f0d5ff39cdb9795c05868",
+    "skills/seismic-post-detection-relocation/scripts/4_build_joint_inputs.py": {
+      "sha256": "cd58106436755d8d8bb6a27cfd79b9705640e8db54afba4175edc32bf486e56c",
       "category": "source"
     },
-    "skills/seismic-post-detection-relocation/scripts/bootstrap.py": {
-      "sha256": "95bfc9c08981b70130cfd8d5bc397c7d2b68ce1008ed7b8801b387d976f8a27b",
+    "skills/seismic-post-detection-relocation/scripts/5_run_hypodd_joint.py": {
+      "sha256": "884750cf113594aeed3455f73ae672adace30ae8ba74affa85a02679353f25c5",
       "category": "source"
     },
-    "skills/seismic-post-detection-relocation/scripts/prepare_inputs.py": {
-      "sha256": "955888daac2929c5288660f36449876187b6ce447d36304321879f3dfc6faf53",
-      "category": "source"
-    },
-    "skills/seismic-post-detection-relocation/scripts/publish_results.py": {
-      "sha256": "c02d42c3bd217c15f760c75d2f57aa524a30eae5beb0f317648d274830a4bfb1",
-      "category": "source"
-    },
-    "skills/seismic-post-detection-relocation/scripts/run_stage.py": {
-      "sha256": "06446de54f65c1d638678d823e1fbb215cc35e5c17024a5b4c8041f3826f8251",
-      "category": "source"
-    },
-    "skills/seismic-post-detection-relocation/scripts/verify_inputs.py": {
-      "sha256": "e8e01df886b884d8350ccb711e8c92dd39eae73aab46c85ec4451bbd9cdb6c75",
+    "skills/seismic-post-detection-relocation/scripts/6_parse_joint.py": {
+      "sha256": "88fae0c25b2f1cc7e6f176d4389b89f4f5cf16e8b9467cc4162bc930b1bcc53f",
       "category": "source"
     },
     "skills/seismic-preprocess/SKILL.md": {
@@ -2159,11 +2479,11 @@
       "category": "source"
     },
     "skills/seismic-relocation/scripts/SHA256SUMS.txt": {
-      "sha256": "e012de13046cfb7b87461a633e84ba98b3cc75aefc6b93198349b036524c73ed",
+      "sha256": "a712344594284b07561cee462b356a9b4e814e34d6b3f7b21e13b8c34774477b",
       "category": "source"
     },
     "skills/seismic-relocation/scripts/contract_io.py": {
-      "sha256": "7c7a03c3c36262d47af6abc629a264ef3d4d673d47af9fe6d8f5c249089e6771",
+      "sha256": "b78f97b30592a828cbb72dc8c769abd67a416860332264a3b846cba7f0b7dbce",
       "category": "source"
     },
     "skills/seismic-relocation/scripts/damping_metrics.py": {
@@ -2171,7 +2491,7 @@
       "category": "source"
     },
     "skills/seismic-relocation/scripts/make_ph2dt_inputs.py": {
-      "sha256": "f786de6a9854990cdce2d832df0b945d62ac503aea3a62816790dee7d4cd174b",
+      "sha256": "ebdfd1c9e30adcd0292f5236ff395ecc6fa6d6c936a98d85e36001fa24671be7",
       "category": "source"
     },
     "skills/seismic-relocation/scripts/qc_and_contract.py": {
@@ -2179,19 +2499,19 @@
       "category": "source"
     },
     "skills/seismic-relocation/scripts/run_hypodd.py": {
-      "sha256": "371ac2befd49c147b2d1d79300f3413a4ae58acac7c7d0e052a91a8c4b53ba43",
+      "sha256": "1b6b80f267ab9a911bbf3f2d6e1a487442a2a23517c2597fbb2e920a1b93957a",
       "category": "source"
     },
     "skills/seismic-relocation/scripts/run_ph2dt.py": {
-      "sha256": "858ea89f78d906e76ffde1e0683e47b0d32c275f8386eefbf91b6dc6888dc2cf",
+      "sha256": "f754759b0198a66b29e978c2db8c772564e7ff819b907381a655b7528f2c9ddb",
       "category": "source"
     },
     "skills/seismic-relocation/scripts/tier_outcomes.py": {
-      "sha256": "c33ae59d2eb3344ca2ecc507fbb60d76b76b43217f3f2304676d1f8ef5e08d8b",
+      "sha256": "d92a22be8c397f40a579e8d7dde5c02e15025666bf6b32dc74682d9afcb671cf",
       "category": "source"
     },
     "skills/seismic-relocation/scripts/verify_ph2dt_inputs.py": {
-      "sha256": "9b8f60228b1fdd49a3b3e5c47a94746db3629fa5024e3aa47ae99d346565f5a3",
+      "sha256": "2d04bb37c443282a5eab2e608c8a077c7c314932305ae3995781ccfb31c2eed6",
       "category": "source"
     },
     "tests/native_smoke.py": {
@@ -2199,15 +2519,11 @@
       "category": "source"
     },
     "tests/test_knowledge.py": {
-      "sha256": "133da4f83987e1c7f34d4c66fa7ed91e87f57ce28f482bfacba933cdf3a34e0a",
+      "sha256": "9118dd40c2dc0108aa95ef7c242f1e3afed8fdb7ff79acd50d8411837f152fb6",
       "category": "source"
     },
     "tests/test_portability.py": {
       "sha256": "24399f41b95e2b3024891832686a81d8b7bc0bf37643c08b42c3969d0d4c828b",
-      "category": "source"
-    },
-    "tests/test_post_detection_relocation.py": {
-      "sha256": "310754f90e31ad628b8489634ab064309decb67ae2704edec7e88430516705f1",
       "category": "source"
     }
   }

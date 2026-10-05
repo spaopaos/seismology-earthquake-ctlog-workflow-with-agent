@@ -13,6 +13,7 @@ Modes:
 Parses the native log once; reports removals from "negative depth" messages.
 Verifies binary sha256 (R2), scientific inputs and final selection evidence.
 """
+import hashlib
 import argparse
 
 import json

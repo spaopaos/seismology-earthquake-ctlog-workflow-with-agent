@@ -25,6 +25,7 @@ def main():
     args = ap.parse_args()
 
     cat = pd.read_csv(args.strict_catalog)
+    n_templates = len(cat)
     mess = pd.read_csv(args.mess_catalog)
     mess["event_id"] = mess.event_id.astype(int)
     mmap = mess.set_index("event_id")
@@ -37,7 +38,7 @@ def main():
         cusp = int(p[0])
         lat, lon, dep = float(p[1]), float(p[2]), float(p[3])
 
-        if cusp < 4545:  # adjust this threshold to your catalog size
+        if cusp < n_templates:  # template rows are strict-catalog row numbers
             src = cat.iloc[cusp]
             eid, kind = src.event_id, "template"
             ml = getattr(src, "ml", None)

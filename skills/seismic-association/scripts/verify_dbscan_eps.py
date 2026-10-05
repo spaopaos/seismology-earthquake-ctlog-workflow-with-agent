@@ -3,6 +3,7 @@
 
 Runs the actual runner only with --prepare-only; never calls association.
 """
+import hashlib
 import json
 import os
 import subprocess

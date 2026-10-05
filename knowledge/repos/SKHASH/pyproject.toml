@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "SKHASH"
+version = "1.1.4"
+authors = [
+  { name="Robert J. Skoumal", email="rskoumal@usgs.gov" },
+]
+description = "Python package for earthquake focal mechanism inversions"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+	"numpy<2.0",
+	"pandas",
+	"meson; python_version>='3.12'",
+	"ninja; python_version>='3.12'",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "CC0-1.0"
+license-files = ["LICENSE.md"]
+
+[project.optional-dependencies]
+plot=[
+	"matplotlib",
+]
+
+[tool.hatch.build]
+exclude = [
+	"examples",
+	"code.json",
+	"requirements.txt",
+	"*.pdf",
+	"*.so",
+]
+
+[project.scripts]
+SKHASH = "SKHASH.SKHASH:main"
+
+[project.urls]
+Homepage = "https://code.usgs.gov/esc/SKHASH"
+Issues = "https://code.usgs.gov/esc/SKHASH/-/issues"

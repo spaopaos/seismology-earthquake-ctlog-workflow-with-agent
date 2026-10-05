@@ -1,5 +1,6 @@
 """Distinguish a verified empty computation from missing or failed execution."""
 
+import hashlib
 import json
 from pathlib import Path
 
