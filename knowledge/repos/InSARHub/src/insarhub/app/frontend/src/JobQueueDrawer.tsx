@@ -1,0 +1,3252 @@
+import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { statusColor, type Theme } from './theme'
+import { NetworkEditor } from './NetworkEditor'
+import { useResizable } from './useResizable'
+import { DrawerShell, DrawerHeader } from './Drawer'
+import { useCopyFeedback } from './useCopyFeedback'
+import { useFetchJson } from './useFetchJson'
+import { API } from './api'
+
+// ── Raster overlay passed up to the map ──────────────────────────────────────
+
+export interface RasterOverlay {
+  id:        string
+  url:       string          // blob URL of rendered canvas
+  bounds:    [number, number, number, number]  // [west, south, east, north]
+  // Optional 4 ground corners [lon,lat] in TL,TR,BR,BL order for a rotated
+  // (non-axis-aligned) overlay -- e.g. a Sentinel-1 SLC quicklook whose swath
+  // is tilted. When set, the map places the image at these corners instead of
+  // deriving an axis-aligned box from `bounds`.
+  corners?:  [number, number][]
+  pixelData: Float32Array
+  width:     number
+  height:    number
+  nodata:    number | null
+  type:      string
+  label:     string
+  vmin:      number
+  vmax:      number
+  source?:   { kind: 'mintpy' | 'dolphin'; folderPath: string; tsFile?: string | null }
+}
+
+
+// Persist active download job IDs across L2 drawer unmount/remount
+const _dlJobs:    Map<string, string> = new Map()
+
+// Suggested processing container, offered when the user opts into running a
+// local processor (ISCE2_S1 / GMTSAR_S1 / ISCE3_Burst) inside Docker. It ships
+// insarhub + isce3/dolphin/mintpy; the field stays editable for other images.
+const _orbitJobs: Map<string, string> = new Map()
+
+interface JobFolder {
+  type:         'folder' | 'file'
+  name:         string
+  path:         string
+  tags:         string[]
+  workflow:     Record<string, string>
+  has_children: boolean
+  size?:        number
+}
+
+interface FolderDetails {
+  downloader_config: Record<string, any> | null
+  has_pairs:         boolean
+}
+
+interface Props {
+  theme:          Theme
+  workdir:        string
+  mapClickSignal: number
+  aoiWkt:         string | null
+  onClose:        () => void
+  onMinimize:     () => void
+  onRasterSelect: (overlay: RasterOverlay | null) => void
+}
+
+function wktToBbox(wkt: string): [number, number, number, number] | null {
+  const coords = Array.from(wkt.matchAll(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g))
+    .map(m => [parseFloat(m[1]), parseFloat(m[2])] as [number, number])
+  if (coords.length === 0) return null
+  const lons = coords.map(c => c[0])
+  const lats = coords.map(c => c[1])
+  // returns [S, N, W, E]
+  return [Math.min(...lats), Math.max(...lats), Math.min(...lons), Math.max(...lons)]
+}
+
+// Color per workflow role
+const ROLE_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  downloader: { bg: '#0d3b6e', color: '#90caf9', border: '#1565c0' },
+  processor:  { bg: '#4a2500', color: '#ffcc80', border: '#e65100' },
+  analyzer:   { bg: '#1b3a2a', color: '#a5d6a7', border: '#2e7d32' },
+}
+const ROLE_FALLBACK = { bg: '#1e1e2e', color: '#aaa', border: '#444' }
+
+// Config fields to display and their labels (in order) — label here is only
+// the English fallback; the render site translates via CFG_FIELD_LABEL_KEYS.
+const CFG_FIELDS: { key: string; label: string }[] = [
+  { key: 'start',          label: 'Start' },
+  { key: 'end',            label: 'End' },
+  { key: 'relativeOrbit',  label: 'Path' },
+  { key: 'frame',          label: 'Frame' },
+  { key: 'flightDirection',label: 'Direction' },
+  { key: 'intersectsWith', label: 'AOI' },
+  { key: 'dataset',        label: 'Dataset' },
+  { key: 'platform',       label: 'Platform' },
+  { key: 'maxResults',     label: 'Max Results' },
+  { key: 'beamMode',       label: 'Beam Mode' },
+  { key: 'polarization',   label: 'Polarization' },
+]
+const CFG_FIELD_LABEL_KEYS: Record<string, string> = {
+  start:           'topBar.start',
+  end:             'topBar.end',
+  relativeOrbit:   'searchFilters.fields.path',
+  frame:           'searchFilters.fields.frame',
+  flightDirection: 'scenePanel.direction',
+  intersectsWith:  'jobQueue.aoi',
+  dataset:         'jobQueue.dataset',
+  platform:        'searchFilters.fields.platform',
+  maxResults:      'searchFilters.maxResults',
+  beamMode:        'scenePanel.beamMode',
+  polarization:    'scenePanel.polarization',
+}
+
+function fmtVal(key: string, val: any): string {
+  if (val === null || val === undefined || val === '') return ''
+  if (key === 'intersectsWith' && typeof val === 'string')
+    return val.length > 40 ? val.slice(0, 38) + '…' : val
+  if (Array.isArray(val)) return val.join(', ')
+  return String(val)
+}
+
+
+// ── L4: Pair detail drawer ────────────────────────────────────────────────────
+
+function parseScene(name: string) {
+  // Burst stacks key pairs by bare YYYYMMDD; scene stacks by full SLC names.
+  if (/^\d{8}$/.test(name ?? '')) {
+    return {
+      platform: '',
+      date: `${name.slice(0,4)}-${name.slice(4,6)}-${name.slice(6,8)}`,
+      time: '',
+      orbit: '',
+      full: name,
+    }
+  }
+  const dateStr = name?.slice(17, 25) ?? ''
+  const timeStr = name?.slice(26, 32) ?? ''
+  const orbitRaw = name?.slice(49, 55) ?? ''
+  return {
+    platform: name?.slice(0, 3) ?? '',
+    date: dateStr.match(/^\d{8}$/) ? `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}` : dateStr,
+    time: timeStr.match(/^\d{6}$/) ? `${timeStr.slice(0,2)}:${timeStr.slice(2,4)}:${timeStr.slice(4,6)}` : timeStr,
+    orbit: orbitRaw ? String(parseInt(orbitRaw, 10)) : '',
+    full: name ?? '',
+  }
+}
+
+interface PairDetailProps { theme: Theme; ref_: string; sec: string; onClose: () => void; rightOffset: number }
+
+function PairDetailDrawer({ theme: t, ref_, sec, onClose, rightOffset }: PairDetailProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(300)
+  const r = parseScene(ref_)
+  const s = parseScene(sec)
+  const dtDays = (r.date && s.date)
+    ? Math.round(Math.abs(new Date(s.date).getTime() - new Date(r.date).getTime()) / 86400000)
+    : null
+  const { copiedKey, copy: copyVal0 } = useCopyFeedback()
+  function copyVal(key: string, val: string) {
+    if (!val || val === '—') return
+    copyVal0(key, val)
+  }
+
+  const cfgRow = (label: string, val: string) => (
+    <div key={label} onClick={() => copyVal(label, val)}
+      style={{ display: 'flex', gap: 8, padding: '5px 0', borderBottom: `1px solid ${t.divider}`,
+               cursor: val ? 'copy' : 'default' }}>
+      <span style={{ width: 80, flexShrink: 0, color: t.textMuted, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+      <span style={{ color: copiedKey === label ? '#4caf50' : t.text, fontSize: 11, fontFamily: 'monospace',
+                     transition: 'color 0.2s' }}>{val || '—'}{copiedKey === label ? ' ✓' : ''}</span>
+    </div>
+  )
+
+  const sceneCard = (label: string, accent: string, sc: ReturnType<typeof parseScene>) => (
+    <div>
+      <div style={{ color: accent, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>{label}</div>
+      {cfgRow(tr('searchFilters.fields.platform'), sc.platform)}
+      {cfgRow(tr('jobQueue.date'), sc.date)}
+      {cfgRow(tr('jobQueue.timeUtc'), sc.time)}
+      {cfgRow(tr('jobQueue.absOrbit'), sc.orbit)}
+      <div style={{ padding: '5px 0' }}>
+        <span style={{ width: 80, flexShrink: 0, color: t.textMuted, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 2 }}>{tr('jobQueue.sceneId')}</span>
+        <span style={{ color: t.textMuted, fontSize: 9, fontFamily: 'monospace', wordBreak: 'break-all' }} title={sc.full}>{sc.full}</span>
+      </div>
+    </div>
+  )
+
+  return (
+    <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={114} onHandleMouseDown={onHandleMouseDown}>
+      <DrawerHeader theme={t} onClose={onClose}>
+        <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.pairDetail')}</span>
+      </DrawerHeader>
+
+      {dtDays !== null && (
+        <div style={{ padding: '8px 14px', background: t.bg2, borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
+          <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.temporalBaseline')} </span>
+          <span style={{ color: t.accent, fontWeight: 700, fontSize: 13 }}>{tr('jobQueue.days', { count: dtDays })}</span>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {sceneCard(tr('jobQueue.reference'), '#90caf9', r)}
+        <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 12 }}>
+          {sceneCard(tr('jobQueue.secondary'), '#a5d6a7', s)}
+        </div>
+      </div>
+    </DrawerShell>
+  )
+}
+
+// ── L3: Pairs list drawer ─────────────────────────────────────────────────────
+
+interface PairsDrawerProps { theme: Theme; folderPath: string; onClose: () => void; rightOffset: number }
+
+function PairsDrawer({ theme: t, folderPath, onClose, rightOffset }: PairsDrawerProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(280)
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
+
+  const { data, loading, error } = useFetchJson<{ pairs: string[][]; count: number; file: string }>(
+    `${API}/api/folder-pairs?path=${encodeURIComponent(folderPath)}`, [folderPath])
+  const pairs = data?.pairs ?? []
+  const count = data?.count ?? 0
+  const fname = data?.file ?? ''
+
+  const extractDate = (name: string) => {
+    // Burst pairs are bare YYYYMMDD; scene pairs are full SLC names.
+    if (/^\d{8}$/.test(name ?? '')) {
+      return `${name.slice(0,4)}-${name.slice(4,6)}-${name.slice(6,8)}`
+    }
+    const d = name?.slice(17, 25)
+    return d?.match(/^\d{8}$/) ? `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}` : (name ?? '')
+  }
+
+  return (
+    <>
+      {selectedIdx !== null && pairs[selectedIdx] && (
+        <PairDetailDrawer
+          theme={t}
+          ref_={pairs[selectedIdx][0]}
+          sec={pairs[selectedIdx][1]}
+          onClose={() => setSelectedIdx(null)}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={113} onHandleMouseDown={onHandleMouseDown}>
+        <DrawerHeader theme={t} onClose={onClose}>
+          <div>
+            <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.pairs')}</span>
+            {count > 0 && (
+              <span style={{ color: t.textMuted, fontSize: 10, marginLeft: 8 }}>{tr('jobQueue.pairsCount', { count })} · {fname}</span>
+            )}
+          </div>
+        </DrawerHeader>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {loading ? (
+            <div style={{ color: t.textMuted, fontSize: 11, textAlign: 'center', padding: '32px 0' }}>{tr('jobQueue.loading')}</div>
+          ) : error ? (
+            <div style={{ color: '#e53935', fontSize: 11, padding: 14 }}>{error}</div>
+          ) : pairs.map(([ref, sec], i) => {
+            const isSelected = selectedIdx === i
+            return (
+              <button key={i} onClick={() => setSelectedIdx(isSelected ? null : i)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 14px', borderBottom: `1px solid ${t.divider}`,
+                background: isSelected ? t.btnActiveBg : i % 2 === 0 ? 'transparent' : t.bg2,
+                border: 'none', cursor: 'pointer', textAlign: 'left',
+                fontSize: 11, fontFamily: 'monospace',
+              }}>
+                <span style={{ color: t.textMuted, width: 28, textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
+                <span style={{ color: isSelected ? t.accent : t.isDark ? '#90caf9' : '#1565c0' }}>{extractDate(ref)}</span>
+                <span style={{ color: t.textMuted }}>↔</span>
+                <span style={{ color: isSelected ? t.accent : t.isDark ? '#a5d6a7' : '#2e7d32' }}>{extractDate(sec)}</span>
+              </button>
+            )
+          })}
+        </div>
+      </DrawerShell>
+    </>
+  )
+}
+
+// ── Process Modal ────────────────────────────────────────────────────────────
+
+interface FieldMeta { key: string; label: string; type: string; default: any; options?: string[]; min?: number; max?: number; step?: number; hint?: string; show_if?: Record<string, any> }
+interface ProcMeta  { label: string; fields: FieldMeta[]; groups?: Array<{ label: string; fields: string[] }>; compatible_downloader?: string | null; is_local?: boolean; container_default?: string | null }
+
+// ── SbatchOptionsModal — shared by ProcessModal (ISCE2_S1, GMTSAR_S1) and
+// AnalyzerConfigModal (ISCE2_Mintpy_SBAS, Hyp3_Mintpy_SBAS, GMTSAR_Mintpy_SBAS) ──
+
+interface SbatchOptionsModalProps { theme: Theme; folderPath: string; processorType?: string; onClose: () => void; onSaved?: (msg: string) => void; zIndex?: number }
+
+function SbatchOptionsModal({ theme: t, folderPath, processorType, onClose, onSaved, zIndex = 220 }: SbatchOptionsModalProps) {
+  const { t: tr } = useTranslation()
+  const [text,    setText]    = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving,  setSaving]  = useState(false)
+  const [msg,     setMsg]     = useState('')
+  const [msgOk,   setMsgOk]   = useState(false)
+
+  useEffect(() => {
+    // processorType tells the backend which per-processor default template to
+    // use when the file doesn't exist yet (or needs a missing key added) --
+    // without it, a brand-new GMTSAR_S1 workdir's first-ever open here would
+    // seed the file with ISCE's numbered steps instead of GMTSAR's own
+    // align/topo/intf/merge (see app/routes/processor.py's get_sbatch_options).
+    const q = `path=${encodeURIComponent(folderPath)}` +
+      (processorType ? `&processor=${encodeURIComponent(processorType)}` : '')
+    fetch(`${API}/api/folder-sbatch-options?${q}`)
+      .then(r => r.json())
+      .then(d => { setText(d.content ?? ''); setLoading(false) })
+      .catch(e => { setMsg(String(e)); setMsgOk(false); setLoading(false) })
+  }, [folderPath, processorType])
+
+  function save() {
+    setSaving(true); setMsg('')
+    fetch(`${API}/api/folder-sbatch-options?path=${encodeURIComponent(folderPath)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: text }),
+    })
+      .then(r => r.json())
+      .then(d => { const m = d.ok ? tr('jobQueue.savedDot') : (d.detail ?? tr('scenePanel.error')); setMsg(m); setMsgOk(!!d.ok); onSaved?.(m) })
+      .catch(e => { setMsg(String(e)); setMsgOk(false); onSaved?.(String(e)) })
+      .finally(() => setSaving(false))
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{
+        background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 8,
+        padding: 16, display: 'flex', flexDirection: 'column', gap: 10,
+        width: 500, maxWidth: '95vw',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ color: t.text, fontWeight: 600, fontSize: 13 }}>{tr('jobQueue.sbatchOptionsPerStep')}</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: 18 }}>×</button>
+        </div>
+        <span style={{ color: t.textMuted, fontSize: 10 }}>
+          JSON object mapping {processorType === 'GMTSAR_S1'
+            ? <>stage name (<code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>align</code>, <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>topo</code>, <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>intf</code>, <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>merge</code>)</>
+            : <>two-digit step number</>} → <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>Slurmjob_Config</code> fields, configuring the jobs that do the real processing. <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>"default"</code> applies to any unlisted step; step keys override it. Step <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>{processorType === 'GMTSAR_S1' ? '"sbas"' : '"17"'}</code> configures the MintPy SBAS analyzer's HPC job. <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>"manager"</code> sets only the <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>partition</code> that job managers run on — their cores/memory/walltime are fixed (1 idle core, 1G, and the most walltime that partition allows). Available fields: <code style={{ background: t.inputBg, padding: '0 3px', borderRadius: 3 }}>time, partition, nodes, ntasks, cpus_per_task, mem, account, qos, nodelist, gpus, mail_user</code>.
+        </span>
+        {loading ? (
+          <div style={{ color: t.textMuted, fontSize: 12, textAlign: 'center', padding: '20px 0' }}>{tr('jobQueue.loading')}</div>
+        ) : (
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            rows={16}
+            spellCheck={false}
+            style={{
+              background: t.inputBg, border: `1px solid ${t.inputBorder}`,
+              color: t.text, borderRadius: 4, padding: '6px 8px',
+              fontSize: 11, fontFamily: 'monospace', resize: 'vertical',
+            }}
+          />
+        )}
+        {msg && (
+          <span style={{ fontSize: 10, color: msgOk ? '#81c784' : '#e57373', fontFamily: 'monospace' }}>{msg}</span>
+        )}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{
+            padding: '5px 14px', fontSize: 11, borderRadius: 4,
+            background: 'none', color: t.textMuted, border: `1px solid ${t.border}`, cursor: 'pointer',
+          }}>{tr('jobQueue.close')}</button>
+          <button disabled={saving || loading} onClick={save} style={{
+            padding: '5px 14px', fontSize: 11, borderRadius: 4,
+            background: '#4a2500', color: '#ffcc80', border: '1px solid #e65100',
+            cursor: (saving || loading) ? 'default' : 'pointer', opacity: (saving || loading) ? 0.6 : 1,
+          }}>{tr('jobQueue.save')}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface ProcessModalProps { theme: Theme; folderPath: string; downloaderType: string; aoiWkt: string | null; onClose: () => void; onDone: () => void; onSubmitted?: () => void }
+
+function ProcessModal({ theme: t, folderPath, downloaderType, aoiWkt, onClose, onDone, onSubmitted }: ProcessModalProps) {
+  const { t: tr } = useTranslation()
+  const [loading,      setLoading]      = useState(true)
+  const [procType,     setProcType]     = useState('')
+  const [procOptions,  setProcOptions]  = useState<Record<string, ProcMeta>>({})
+  const [procConfig,   setProcConfig]   = useState<Record<string, any>>({})
+  const [folderAoiWkt, setFolderAoiWkt] = useState<string | null>(null)
+  const [dryRun,       setDryRun]       = useState(false)
+  const [status,       setStatus]       = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [message,      setMessage]      = useState('')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/api/settings`).then(r => r.json()),
+      fetch(`${API}/api/workflows`).then(r => r.json()),
+      fetch(`${API}/api/folder-details?path=${encodeURIComponent(folderPath)}`).then(r => r.json()).catch(() => ({})),
+      fetch(`${API}/api/folder-config?path=${encodeURIComponent(folderPath)}`).then(r => r.json()).catch(() => ({})),
+    ]).then(([settings, workflows, details, folderCfg]) => {
+      const allProcs: Record<string, ProcMeta> = workflows.processors ?? {}
+      const compat = Object.fromEntries(
+        Object.entries(allProcs).filter(([, m]) =>
+          !m.compatible_downloader || m.compatible_downloader === 'all' || m.compatible_downloader === downloaderType
+        )
+      )
+      setProcOptions(compat)
+      // Prefer THIS folder's saved processor type/config over the global
+      // settings, so the panel reflects what was last submitted for this folder
+      // (stack_mode, reference, …) instead of app-wide defaults.
+      const cur = folderCfg?.processor?.type || settings.processor
+      const sel = compat[cur] ? cur : (Object.keys(compat)[0] ?? '')
+      setProcType(sel)
+      setProcConfig(folderCfg?.processor?.config ?? settings.processor_config ?? {})
+      const wkt = details?.downloader_config?.intersectsWith ?? null
+      setFolderAoiWkt(wkt)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [downloaderType, folderPath])
+
+  // Once procType is known, fetch resolved path defaults for this specific processor+folder
+  useEffect(() => {
+    if (!procType || !folderPath) return
+    fetch(`${API}/api/processor-defaults?processor=${encodeURIComponent(procType)}&workdir=${encodeURIComponent(folderPath)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(resolved => { if (resolved) setProcConfig(prev => ({ ...prev, ...resolved })) })
+      .catch(() => {})
+  }, [procType, folderPath])
+
+  // Pre-fill bbox from map AOI (or folder's saved intersectsWith) whenever proc type or AOI changes
+  const effectiveAoi = aoiWkt ?? folderAoiWkt
+  useEffect(() => {
+    if (procType !== 'ISCE2_S1' || !effectiveAoi) return
+    const box = wktToBbox(effectiveAoi)
+    if (!box) return
+    setProcConfig(c => {
+      if (c.full_frame) return c
+      return { ...c, bbox: box.map(v => v.toFixed(4)).join(' ') }
+    })
+  }, [procType, effectiveAoi])
+
+  function handleProcTypeChange(type: string) {
+    setProcType(type)
+    const defaults: Record<string, any> = {}
+    procOptions[type]?.fields.forEach(f => { defaults[f.key] = f.default })
+    setProcConfig(defaults)
+  }
+
+  async function handleRun() {
+    setStatus('running'); setMessage(tr('jobQueue.submitting'))
+    try {
+      let submitConfig = procConfig
+      if (procType === 'ISCE2_S1') {
+        submitConfig = { ...procConfig }
+        if (submitConfig.full_frame) {
+          submitConfig.bbox = null
+        } else if (typeof submitConfig.bbox === 'string' && submitConfig.bbox.trim()) {
+          const parsed = submitConfig.bbox.trim().split(/\s+/).map(Number).filter((n: number) => !isNaN(n))
+          submitConfig.bbox = parsed.length === 4 ? parsed : null
+        }
+      }
+      const res = await fetch(`${API}/api/folder-process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_path: folderPath, processor_type: procType, processor_config: submitConfig, dry_run: dryRun }),
+      })
+      if (!res.ok) { const d = await res.json(); setStatus('error'); setMessage(d.detail ?? tr('scenePanel.error')); return }
+      const { job_id } = await res.json()
+      // Submit accepted -> the folder's job file exists now (written host-side),
+      // so refresh the folder's job tags immediately instead of waiting for the
+      // user to close the modal (dry-run writes nothing, so skip it).
+      if (!dryRun) onSubmitted?.()
+      pollRef.current = setInterval(async () => {
+        try {
+          const r = await fetch(`${API}/api/jobs/${job_id}`)
+          if (!r.ok) { clearInterval(pollRef.current!); setStatus('error'); setMessage(tr('jobQueue.jobNotFound')); return }
+          const job = await r.json()
+          setMessage(job.message ?? '')
+          if (job.status === 'done')  { clearInterval(pollRef.current!); setStatus('done') }
+          else if (job.status === 'error') { clearInterval(pollRef.current!); setStatus('error') }
+        } catch { /* network blip — keep polling */ }
+      }, 1500)
+    } catch (e) { setStatus('error'); setMessage(String(e)) }
+  }
+
+  const [sbatchOpen, setSbatchOpen] = useState(false)
+  const [sbatchMsg,  setSbatchMsg]  = useState('')
+
+  const currentMeta = procOptions[procType]
+  const inp: React.CSSProperties = {
+    background: t.inputBg, border: `1px solid ${t.inputBorder}`,
+    color: t.text, borderRadius: 4, padding: '4px 8px',
+    fontSize: 12, width: '100%', boxSizing: 'border-box',
+    colorScheme: t.isDark ? 'dark' : 'light',
+  }
+  const lbl: React.CSSProperties = { color: t.textMuted, fontSize: 10, marginBottom: 3, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }
+
+  function renderFieldInput(f: FieldMeta) {
+    const val = procConfig[f.key] ?? f.default
+    const set = (v: any) => {
+      if (f.key === 'full_frame') {
+        setProcConfig(c => {
+          const next: Record<string, any> = { ...c, full_frame: v }
+          if (!v && effectiveAoi) {
+            const box = wktToBbox(effectiveAoi)
+            if (box) next.bbox = box.map((n: number) => n.toFixed(4)).join(' ')
+          }
+          return next
+        })
+      } else {
+        setProcConfig(c => ({ ...c, [f.key]: v }))
+      }
+    }
+    if (f.type === 'bool') return (
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+        <input type="checkbox" checked={!!val} onChange={e => set(e.target.checked)}
+          style={{ accentColor: t.accent, width: 14, height: 14 }} />
+      </label>
+    )
+    if (f.key === 'bbox') {
+      const disabled = !!procConfig.full_frame
+      return <input type="text" value={disabled ? '' : (val ?? '')} disabled={disabled}
+        onChange={e => set(e.target.value)}
+        style={{ ...inp, opacity: disabled ? 0.35 : 1, cursor: disabled ? 'not-allowed' : 'text' }} />
+    }
+    if (f.type === 'select') return (
+      <select value={val ?? ''} onChange={e => set(e.target.value)} style={inp}>
+        {f.options!.map(o => <option key={o} value={o}>{o || '(any)'}</option>)}
+      </select>
+    )
+    if (f.type === 'number') return (
+      <input type="number" value={val ?? ''} min={f.min} max={f.max} step={f.step ?? 1}
+        onChange={e => set(parseFloat(e.target.value))} style={{ ...inp, width: 90 }} />
+    )
+    return <input type="text" value={val ?? ''} onChange={e => set(e.target.value)} style={inp} />
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 210 }} />
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        width: 500, maxHeight: '85vh',
+        background: t.bg, border: `1px solid ${t.border}`, borderRadius: 8,
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.5)', zIndex: 211, overflow: 'hidden',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '11px 18px', borderBottom: `1px solid ${t.border}`, background: t.bg2, flexShrink: 0,
+        }}>
+          <span style={{ color: t.text, fontWeight: 700, fontSize: 14 }}>{tr('jobQueue.submitToProcessor')}</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none',
+            cursor: 'pointer', color: t.textMuted, fontSize: 20, lineHeight: 1, padding: '0 4px' }}>×</button>
+        </div>
+
+        {loading ? (
+          <div style={{ color: t.textMuted, fontSize: 12, textAlign: 'center', padding: '40px 0' }}>{tr('jobQueue.loading')}</div>
+        ) : (
+          <div style={{ overflowY: 'auto', padding: '16px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Processor type */}
+            <div>
+              <label style={lbl}>{tr('jobQueue.processor')}</label>
+              <select value={procType} onChange={e => handleProcTypeChange(e.target.value)}
+                style={{ ...inp, fontFamily: 'monospace' }}>
+                {Object.keys(procOptions).map(k => <option key={k} value={k}>{k}</option>)}
+              </select>
+            </div>
+
+            {/* Grouped parameter fields. HPC + Container groups always render
+                last, regardless of where a config lists them. */}
+            {[...(currentMeta?.groups ?? [])].sort((a, b) => {
+              const rank = (g: { label: string }) =>
+                /container/i.test(g.label) ? 2 : /hpc/i.test(g.label) ? 1 : 0
+              return rank(a) - rank(b)
+            }).map(grp => {
+              const byKey = Object.fromEntries(currentMeta.fields.map(f => [f.key, f]))
+              // show_if: hide a field (and drop empty groups) unless every
+              // named field currently holds the required value. e.g. the ESD
+              // params only apply when coregistration=esd.
+              const visible = (f: FieldMeta) => !f.show_if || Object.entries(f.show_if)
+                .every(([k, v]) => String((procConfig[k] ?? byKey[k]?.default)) === String(v))
+              const grpFields = grp.fields.map(k => byKey[k]).filter(Boolean).filter(visible)
+              if (!grpFields.length) return null
+              const isPathsGroup = grp.label.toLowerCase() === 'paths'
+              // Both ISCE2_S1 and GMTSAR_S1 are local SLURM/HPC-capable
+              // processors with their own sbatch_options.json (auto-set
+              // workdir field, hpc_mode + per-stage resource editor) --
+              // GMTSAR_S1 used to be silently excluded from this UI even
+              // though its backend support (fixed alongside this) works the
+              // same way.
+              const isIsceProc   = procType === 'ISCE2_S1' || procType === 'GMTSAR_S1'
+              return (
+                <div key={grp.label}>
+                  <div style={{
+                    color: t.textMuted, fontSize: 10, textTransform: 'uppercase',
+                    letterSpacing: '0.07em', fontWeight: 700, marginBottom: 8,
+                    paddingBottom: 4, borderBottom: `1px solid ${t.divider}`,
+                  }}>{grp.label}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {/* workdir: read-only, auto-set to job folder */}
+                    {isPathsGroup && isIsceProc && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={lbl}>workdir</label>
+                        <input readOnly value={folderPath} style={{ ...inp, color: t.textMuted, cursor: 'default' }} />
+                      </div>
+                    )}
+                    {grpFields.map(f => {
+                      // Container: opt-in checkbox (off by default = host
+                      // processing). Checking it pre-fills the suggested image
+                      // but leaves the field editable for any other image.
+                      // Only local processors carry a "container" field, so
+                      // this control is naturally hidden for Hyp3_S1.
+                      if (f.key === 'container') {
+                        const cur = procConfig.container ?? ''
+                        const enabled = !!String(cur).trim()
+                        // Per-processor default image, from the schema endpoint
+                        // (currentMeta.container_default) -- GMTSAR uses
+                        // gmtsar-mintpy, ISCE2 uses isce2, etc. It's a UI-only
+                        // constant and is no longer persisted in the config, so
+                        // read it from the schema (fall back to any legacy value
+                        // still in an older config). No default -> the user types
+                        // an image.
+                        const defImg = currentMeta?.container_default || procConfig.container_default || ''
+                        return (
+                          <div key={f.key} style={{ gridColumn: '1 / -1' }} title={f.hint}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11, color: t.text }}>
+                              <input type="checkbox" checked={enabled}
+                                onChange={e => setProcConfig(c => ({ ...c, container: e.target.checked ? defImg : '' }))}
+                                style={{ accentColor: t.accent, width: 13, height: 13 }} />
+                              {tr('jobQueue.runInContainer')}
+                            </label>
+                            {enabled && (
+                              <input type="text" value={cur} spellCheck={false}
+                                onChange={e => setProcConfig(c => ({ ...c, container: e.target.value }))}
+                                placeholder={defImg}
+                                style={{ ...inp, marginTop: 6, fontFamily: 'monospace', fontSize: 11 }} />
+                            )}
+                            <div style={{ color: t.textMuted, fontSize: 10, marginTop: 4 }}>{tr('jobQueue.runInContainerHint')}</div>
+                          </div>
+                        )
+                      }
+                      if (f.key === 'hpc_mode' && isIsceProc) return (
+                        <div key={f.key} style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 8 }} title={f.hint}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1, fontSize: 11, color: t.text }}>
+                            <input type="checkbox" checked={!!procConfig.hpc_mode}
+                              onChange={e => setProcConfig(c => ({ ...c, hpc_mode: e.target.checked }))}
+                              style={{ accentColor: t.accent, width: 13, height: 13 }} />
+                            {tr('jobQueue.hpcModeSlurm')}
+                          </label>
+                          <button onClick={() => { setSbatchMsg(''); setSbatchOpen(true) }} style={{
+                            padding: '3px 10px', fontSize: 10, borderRadius: 4,
+                            background: 'none', color: t.textMuted, border: `1px solid ${t.border}`,
+                            cursor: 'pointer',
+                          }}>{tr('jobQueue.editSbatchOptions')}</button>
+                          {sbatchMsg && !sbatchOpen && (
+                            <span style={{ fontSize: 10, color: sbatchMsg === tr('jobQueue.savedDot') ? '#81c784' : '#e57373', fontFamily: 'monospace' }}>{sbatchMsg}</span>
+                          )}
+                        </div>
+                      )
+                      return (
+                        <div key={f.key} title={f.hint}>
+                          <label style={lbl}>{f.label}</label>
+                          {renderFieldInput(f)}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+
+            {message && (
+              <div style={{
+                color: statusColor(status, t.textMuted),
+                fontSize: 11, fontFamily: 'monospace',
+              }}>{message}</div>
+            )}
+          </div>
+        )}
+
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 18px', borderTop: `1px solid ${t.border}`, background: t.bg2, flexShrink: 0,
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <input type="checkbox" checked={dryRun} onChange={e => { setDryRun(e.target.checked); if (status !== 'running') setStatus('idle') }}
+              style={{ accentColor: '#ffb74d', width: 13, height: 13 }} />
+            <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.dryRun')}</span>
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { if (status === 'done' && !dryRun) onDone(); else onClose() }} style={{
+              padding: '5px 16px', background: 'transparent', color: t.textMuted,
+              border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, cursor: 'pointer',
+            }}>{status === 'done' ? tr('jobQueue.close') : tr('searchFilters.cancel')}</button>
+            <button onClick={status === 'done' ? (dryRun ? onClose : onDone) : handleRun} disabled={loading || status === 'running'} style={{
+              padding: '5px 20px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+              background: status === 'done' ? '#1b3a2a' : status === 'error' ? '#b71c1c' : dryRun ? '#2a2000' : '#4a2500',
+              color:      status === 'done' ? '#a5d6a7' : status === 'error' ? '#ef9a9a' : dryRun ? '#ffeb80' : '#ffcc80',
+              border: `1px solid ${status === 'done' ? '#2e7d32' : status === 'error' ? '#c62828' : dryRun ? '#f9a825' : '#e65100'}`,
+              cursor: loading || status === 'running' ? 'default' : 'pointer',
+            }}>
+              {status === 'running' ? (dryRun ? tr('jobQueue.checking') : tr('jobQueue.submitting'))
+                : status === 'done' ? tr('jobQueue.done')
+                : status === 'error' ? tr('scenePanel.retry')
+                : dryRun ? tr('jobQueue.dryRunButton') : tr('jobQueue.submit')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* sbatch options modal — z-index above ProcessModal (211) */}
+      {sbatchOpen && (
+        <SbatchOptionsModal theme={t} folderPath={folderPath} processorType={procType} onClose={() => setSbatchOpen(false)}
+          onSaved={m => setSbatchMsg(m)} />
+      )}
+    </>
+  )
+}
+
+// ── Analyzer Panel (MintPy step runner) ──────────────────────────────────────
+
+// ── AnalyzerConfigModal ────────────────────────────────────────────────────────
+
+interface AzCompMeta {
+  fields: FieldMeta[]
+  groups?: Array<{ label: string; fields: string[] }>
+  compatible_processor?: string | string[] | null
+}
+
+interface AnalyzerConfigModalProps { theme: Theme; folderPath: string; analyzerType: string; onClose: () => void }
+
+function AnalyzerConfigModal({ theme: t, folderPath, analyzerType, onClose }: AnalyzerConfigModalProps) {
+  const { t: tr } = useTranslation()
+  const [config,     setConfig]     = useState<Record<string, any>>({})
+  const [meta,       setMeta]       = useState<AzCompMeta | null>(null)
+  const [loading,    setLoading]    = useState(true)
+  const [saving,     setSaving]     = useState(false)
+  const [msg,        setMsg]        = useState('')
+  const [msgIsError, setMsgIsError] = useState(false)
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
+  const [sbatchOpen, setSbatchOpen] = useState(false)
+  const [sbatchMsg,  setSbatchMsg]  = useState('')
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/api/folder-config?path=${encodeURIComponent(folderPath)}`).then(r => r.json()),
+      fetch(`${API}/api/workflows`).then(r => r.json()),
+    ]).then(([folderCfg, workflows]) => {
+      setConfig(folderCfg?.analyzer?.config ?? {})
+      const m: AzCompMeta = workflows?.analyzers?.[analyzerType] ?? { fields: [] }
+      setMeta(m)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [folderPath, analyzerType])
+
+  function setField(k: string, v: any) { setConfig(c => ({ ...c, [k]: v })) }
+  function toggleGroup(label: string) {
+    setOpenGroups(prev => {
+      const next = new Set(prev)
+      next.has(label) ? next.delete(label) : next.add(label)
+      return next
+    })
+  }
+
+  async function save() {
+    setSaving(true); setMsg(''); setMsgIsError(false)
+    try {
+      const r = await fetch(`${API}/api/folder-config?path=${encodeURIComponent(folderPath)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analyzer_config: config }),
+      })
+      if (!r.ok) throw new Error(await r.text())
+      setMsg(tr('jobQueue.saved'))
+      setTimeout(onClose, 600)
+    } catch (e) { setMsg(tr('jobQueue.errorColon', { error: e })); setMsgIsError(true) }
+    setSaving(false)
+  }
+
+  const inputSt: React.CSSProperties = {
+    background: t.inputBg, color: t.text, border: `1px solid ${t.inputBorder}`,
+    borderRadius: 3, padding: '3px 7px', fontSize: 12, colorScheme: t.isDark ? 'dark' : 'light',
+  }
+
+  function renderField(f: FieldMeta) {
+    const val = config[f.key] ?? f.default
+    return (
+      <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
+        <label style={{ fontSize: 10, color: t.textMuted, display: 'flex', alignItems: 'center', gap: 4 }}>
+          {f.label}
+          {f.hint && <span title={f.hint} style={{ cursor: 'help', color: t.textMuted, fontSize: 10, border: `1px solid ${t.divider}`, borderRadius: '50%', width: 13, height: 13, lineHeight: '13px', textAlign: 'center', display: 'inline-block', flexShrink: 0 }}>?</span>}
+        </label>
+        {f.type === 'select' && (
+          <select value={val ?? ''} onChange={e => setField(f.key, e.target.value)} style={{ ...inputSt, width: '100%' }}>
+            {f.options!.map(o => <option key={o} value={o}>{o === '' ? tr('jobQueue.any') : o}</option>)}
+          </select>
+        )}
+        {f.type === 'bool' && f.key === 'hpc_mode' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={val === true} onChange={e => setField(f.key, e.target.checked)} style={{ accentColor: t.accent, width: 14, height: 14 }} />
+              <span style={{ color: t.text, fontSize: 12 }}>{tr('jobQueue.enable')}</span>
+            </label>
+            <button onClick={() => { setSbatchMsg(''); setSbatchOpen(true) }} style={{
+              padding: '3px 10px', fontSize: 10, borderRadius: 4,
+              background: 'none', color: t.textMuted, border: `1px solid ${t.border}`,
+              cursor: 'pointer',
+            }}>{tr('jobQueue.editSbatchOptions')}</button>
+            {sbatchMsg && !sbatchOpen && (
+              <span style={{ fontSize: 10, color: sbatchMsg === tr('jobQueue.savedDot') ? '#81c784' : '#e57373', fontFamily: 'monospace' }}>{sbatchMsg}</span>
+            )}
+          </div>
+        )}
+        {f.type === 'bool' && f.key !== 'hpc_mode' && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input type="checkbox" checked={val === true} onChange={e => setField(f.key, e.target.checked)} style={{ accentColor: t.accent, width: 14, height: 14 }} />
+            <span style={{ color: t.text, fontSize: 12 }}>{val === true ? tr('jobQueue.enabled') : tr('jobQueue.disabled')}</span>
+          </label>
+        )}
+        {f.type === 'bool_str' && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input type="checkbox" checked={val === 'yes'} onChange={e => setField(f.key, e.target.checked ? 'yes' : 'no')} style={{ accentColor: t.accent, width: 14, height: 14 }} />
+            <span style={{ color: t.text, fontSize: 12 }}>{val === 'yes' ? tr('jobQueue.yes') : tr('jobQueue.no')}</span>
+          </label>
+        )}
+        {f.type === 'number' && (
+          <input type="number" value={val} min={f.min} max={f.max} step={f.step ?? 1}
+            onChange={e => setField(f.key, parseFloat(e.target.value))} style={{ ...inputSt, width: 110 }} />
+        )}
+        {f.type === 'auto_number' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="number" value={val === 'auto' || val == null ? '' : val}
+              min={f.min} max={f.max} step={f.step ?? 1} placeholder={tr('jobQueue.auto')}
+              onChange={e => setField(f.key, e.target.value === '' ? (f.default == null ? null : 'auto') : parseFloat(e.target.value))}
+              style={{ ...inputSt, width: 100 }} />
+            {val !== 'auto' && val != null && (
+              <button onClick={() => setField(f.key, f.default == null ? null : 'auto')}
+                style={{ fontSize: 11, color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{tr('jobQueue.reset')}</button>
+            )}
+          </div>
+        )}
+        {f.type === 'adaptive_number' && (() => {
+          const isNum = val != null && val !== 'auto' && val !== 'adaptive'
+          const mode = isNum ? 'custom' : String(val ?? 'adaptive')
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <select value={mode}
+                onChange={e => setField(f.key, e.target.value === 'custom'
+                  ? (typeof f.default === 'number' ? f.default : (f.min ?? 0.5))
+                  : e.target.value)}
+                style={{ ...inputSt, width: 110 }}>
+                <option value="adaptive">adaptive</option>
+                <option value="auto">auto</option>
+                <option value="custom">custom…</option>
+              </select>
+              {isNum && (
+                <input type="number" value={val} min={f.min} max={f.max} step={f.step ?? 0.05}
+                  onChange={e => setField(f.key, parseFloat(e.target.value))}
+                  style={{ ...inputSt, width: 90 }} />
+              )}
+            </div>
+          )
+        })()}
+        {f.type === 'text' && (
+          <input type="text" value={val ?? ''} onChange={e => setField(f.key, e.target.value)} style={{ ...inputSt, width: '100%' }} />
+        )}
+      </div>
+    )
+  }
+
+  function renderBody() {
+    if (!meta) return null
+    if (!meta.groups) return meta.fields.map(f => renderField(f))
+    const byKey = Object.fromEntries(meta.fields.map(f => [f.key, f]))
+    return meta.groups.map(grp => {
+      const isOpen = openGroups.has(grp.label)
+      return (
+        <div key={grp.label} style={{ marginBottom: 4 }}>
+          <button onClick={() => toggleGroup(grp.label)} style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '6px 0', marginBottom: isOpen ? 8 : 0,
+            borderBottom: `1px solid ${t.divider}`,
+          }}>
+            <span style={{ color: t.textMuted, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>{grp.label}</span>
+            <span style={{ color: t.textMuted, fontSize: 10 }}>{isOpen ? '▲' : '▼'}</span>
+          </button>
+          {isOpen && (
+            <div style={{ paddingTop: 4, marginBottom: 8 }}>
+              {grp.fields.map(key => byKey[key] && renderField(byKey[key]))}
+            </div>
+          )}
+        </div>
+      )
+    })
+  }
+
+  return (
+    <>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 8, width: 500, maxHeight: '82vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: `1px solid ${t.divider}` }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{tr('jobQueue.analyzerConfig', { analyzerType })}</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted, fontSize: 18, lineHeight: 1 }}>×</button>
+        </div>
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+          {loading
+            ? <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.loading')}</span>
+            : renderBody()
+          }
+        </div>
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, padding: '10px 16px', borderTop: `1px solid ${t.divider}` }}>
+          {msg && <span style={{ fontSize: 11, color: msgIsError ? '#e53935' : '#4caf50', marginRight: 'auto' }}>{msg}</span>}
+          <button onClick={onClose} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer', background: 'transparent', color: t.textMuted, border: `1px solid ${t.border}` }}>{tr('searchFilters.cancel')}</button>
+          <button onClick={save} disabled={saving || loading} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: saving ? 'default' : 'pointer', background: t.accent, color: '#fff', border: 'none', opacity: saving ? 0.6 : 1 }}>
+            {saving ? tr('jobQueue.savingEllipsis') : tr('jobQueue.save')}
+          </button>
+        </div>
+      </div>
+    </div>
+    {sbatchOpen && (
+      <SbatchOptionsModal theme={t} folderPath={folderPath} processorType={(Array.isArray(meta?.compatible_processor) ? meta?.compatible_processor[0] : meta?.compatible_processor) ?? undefined}
+        onClose={() => setSbatchOpen(false)} onSaved={m => setSbatchMsg(m)} zIndex={10000} />
+    )}
+    </>
+  )
+}
+
+interface AnalyzerPanelProps { theme: Theme; folderPath: string; analyzerType: string }
+
+function AnalyzerPanel({ theme: t, folderPath, analyzerType }: AnalyzerPanelProps) {
+  const { t: tr } = useTranslation()
+  const [steps,       setSteps]      = useState<string[]>([])
+  const [checked,     setChecked]    = useState<Set<string>>(new Set())
+  const [loading,     setLoading]    = useState(true)
+  const [runMsg,      setRunMsg]     = useState('')
+  const [runStat,     setRunStat]    = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [progress,    setProgress]   = useState(0)
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const [cleanupMsg,  setCleanupMsg]  = useState('')
+  const [configOpen,  setConfigOpen]  = useState(false)
+  const [containerImg,      setContainerImg]      = useState('')   // '' = run on host
+  const [supportsContainer, setSupportsContainer] = useState(false)
+  const [containerDefault,  setContainerDefault]  = useState('')   // this analyzer's default image
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const _storageKey      = `analyzer_job:${folderPath}`
+  const _stepsStorageKey = `analyzer_steps:${folderPath}:${analyzerType}`
+
+  function _saveState(jobId: string, msg: string, pct: number) {
+    localStorage.setItem(_storageKey, JSON.stringify({ jobId, msg, pct }))
+  }
+  function _clearState() { localStorage.removeItem(_storageKey) }
+
+  function _startPolling(job_id: string) {
+    setActiveJobId(job_id)
+    if (pollRef.current) clearInterval(pollRef.current)
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`${API}/api/jobs/${job_id}`)
+        if (!r.ok) {
+          // 404 = server restarted, job is gone
+          clearInterval(pollRef.current!); setRunStat('error')
+          setRunMsg(tr('jobQueue.jobNotFoundRerun'))
+          setActiveJobId(null); _clearState()
+          return
+        }
+        const job = await r.json()
+        const msg = job.message ?? ''
+        const pct = job.progress ?? 0
+        setRunMsg(msg)
+        setProgress(pct)
+        _saveState(job_id, msg, pct)
+        if (job.status === 'done') {
+          clearInterval(pollRef.current!); setRunStat('done'); setProgress(100)
+          setActiveJobId(null); _clearState()
+        } else if (job.status === 'error') {
+          clearInterval(pollRef.current!); setRunStat('error')
+          setActiveJobId(null); _clearState()
+        }
+      } catch { /* network blip — keep polling */ }
+    }, 1500)
+  }
+
+  // On mount / folder change: reset state, load steps, then reconnect any in-progress job
+  useEffect(() => {
+    setRunStat('idle')
+    setRunMsg('')
+    setProgress(0)
+    setActiveJobId(null)
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+    setLoading(true)
+    fetch(`${API}/api/analyzer-steps?analyzer_type=${encodeURIComponent(analyzerType)}`)
+      .then(r => r.json())
+      .then(d => {
+        const s: string[] = d.steps ?? []
+        setSteps(s)
+        try {
+          const saved = localStorage.getItem(_stepsStorageKey)
+          const savedSteps: string[] = saved ? JSON.parse(saved) : null
+          setChecked(savedSteps ? new Set(s.filter(st => savedSteps.includes(st))) : new Set(s))
+        } catch { setChecked(new Set(s)) }
+        setLoading(false)
+
+        // Reconnect to a running job if one was saved for this folder
+        const saved = localStorage.getItem(`analyzer_job:${folderPath}`)
+        if (saved) {
+          try {
+            const { jobId, msg, pct } = JSON.parse(saved)
+            // Verify job still exists on server before restoring running state
+            fetch(`${API}/api/jobs/${jobId}`).then(r => {
+              if (!r.ok) { localStorage.removeItem(`analyzer_job:${folderPath}`); return }
+              return r.json()
+            }).then(job => {
+              if (!job) return
+              if (job.status === 'done' || job.status === 'error') {
+                localStorage.removeItem(`analyzer_job:${folderPath}`)
+                setRunStat(job.status); setRunMsg(job.message ?? msg); setProgress(job.progress ?? pct)
+              } else {
+                setRunStat('running'); setRunMsg(msg ?? ''); setProgress(pct ?? 0)
+                _startPolling(jobId)
+              }
+            }).catch(() => localStorage.removeItem(`analyzer_job:${folderPath}`))
+          } catch { localStorage.removeItem(`analyzer_job:${folderPath}`) }
+        }
+      })
+      .catch(() => setLoading(false))
+  }, [analyzerType, folderPath])
+
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+
+  // Whether this analyzer can re-run inside a container (its config exposes a
+  // 'container' field -- e.g. GMTSAR_SBAS and every MintPy analyzer do), plus
+  // the last image used for it. Runtime-only, so it lives in localStorage, not
+  // the saved config.
+  const _containerStorageKey = `analyzer_container:${folderPath}:${analyzerType}`
+  useEffect(() => {
+    fetch(`${API}/api/workflows`).then(r => r.json()).then(w => {
+      const meta = w?.analyzers?.[analyzerType]
+      const has = !!meta?.fields?.some((f: FieldMeta) => f.key === 'container')
+      setSupportsContainer(has)
+      setContainerDefault(meta?.container_default ?? '')
+      try { setContainerImg(has ? (localStorage.getItem(_containerStorageKey) ?? '') : '') }
+      catch { setContainerImg('') }
+    }).catch(() => setSupportsContainer(false))
+  }, [analyzerType, folderPath])
+
+  function setContainer(img: string) {
+    setContainerImg(img)
+    try {
+      if (img) localStorage.setItem(_containerStorageKey, img)
+      else localStorage.removeItem(_containerStorageKey)
+    } catch { /* ignore */ }
+  }
+
+  function _saveChecked(next: Set<string>) {
+    localStorage.setItem(_stepsStorageKey, JSON.stringify([...next]))
+  }
+
+  function toggleAll(val: boolean) {
+    const next = val ? new Set(steps) : new Set<string>()
+    setChecked(next); _saveChecked(next)
+  }
+
+  function toggle(step: string) {
+    setChecked(prev => {
+      const next = new Set(prev)
+      next.has(step) ? next.delete(step) : next.add(step)
+      _saveChecked(next)
+      return next
+    })
+  }
+
+  function runAnalyzer() {
+    const selected = steps.filter(s => checked.has(s))
+    if (selected.length === 0) return
+    setRunStat('running')
+    setProgress(0)
+    setRunMsg(tr('jobQueue.submitting'))
+    fetch(`${API}/api/folder-run-analyzer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder_path: folderPath, analyzer_type: analyzerType, steps: selected,
+                             container: containerImg || null }),
+    })
+      .then(r => r.json())
+      .then(({ job_id }) => { _saveState(job_id, tr('jobQueue.submitting'), 0); _startPolling(job_id) })
+      .catch(e => { setRunStat('error'); setRunMsg(String(e)) })
+  }
+
+  function stopAnalyzer() {
+    if (!activeJobId) return
+    fetch(`${API}/api/jobs/${activeJobId}/stop`, { method: 'POST' }).catch(() => {})
+  }
+
+  const rc = ROLE_COLORS.analyzer
+  const busy = runStat === 'running'
+
+  if (loading) return <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.loadingSteps')}</span>
+  if (steps.length === 0) return <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.noStepsAvailable')}</span>
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {configOpen && (
+        <AnalyzerConfigModal theme={t} folderPath={folderPath} analyzerType={analyzerType} onClose={() => setConfigOpen(false)} />
+      )}
+      {/* Step checklist */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ color: t.textMuted, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tr('jobQueue.steps')}</div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => setConfigOpen(true)} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, cursor: 'pointer', background: 'transparent', color: t.accent, border: `1px solid ${t.border}` }}>{tr('jobQueue.config')}</button>
+          <button onClick={() => toggleAll(true)} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, cursor: 'pointer', background: 'transparent', color: t.textMuted, border: `1px solid ${t.border}` }}>{tr('jobQueue.all')}</button>
+          <button onClick={() => toggleAll(false)} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, cursor: 'pointer', background: 'transparent', color: t.textMuted, border: `1px solid ${t.border}` }}>{tr('jobQueue.none')}</button>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {steps.map((step, i) => (
+          <label key={step} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+            <input
+              type="checkbox"
+              checked={checked.has(step)}
+              disabled={busy}
+              onChange={() => toggle(step)}
+              style={{ accentColor: rc.bg, cursor: busy ? 'default' : 'pointer' }}
+            />
+            <span style={{ fontSize: 11, color: t.text, fontFamily: 'monospace' }}>
+              <span style={{ color: t.textMuted, marginRight: 4 }}>{String(i + 1).padStart(2, '0')}</span>
+              {step}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* Run in container (opt-in). Only for analyzers whose config supports it. */}
+      {supportsContainer && !busy && (
+        <div title={tr('jobQueue.runInContainerHint')}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11, color: t.text }}>
+            <input type="checkbox" checked={!!containerImg}
+              onChange={e => setContainer(e.target.checked ? containerDefault : '')}
+              style={{ accentColor: t.accent, width: 13, height: 13 }} />
+            {tr('jobQueue.runInContainer')}
+          </label>
+          {!!containerImg && (
+            <input type="text" value={containerImg} spellCheck={false}
+              onChange={e => setContainer(e.target.value)}
+              placeholder={containerDefault}
+              style={{ background: t.inputBg, border: `1px solid ${t.inputBorder}`,
+                       color: t.text, borderRadius: 4, padding: '4px 8px', width: '100%',
+                       boxSizing: 'border-box', marginTop: 6, fontFamily: 'monospace', fontSize: 11,
+                       colorScheme: t.isDark ? 'dark' : 'light' }} />
+          )}
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {busy && (
+        <div style={{ background: t.bg2, borderRadius: 3, border: `1px solid ${t.divider}`, overflow: 'hidden', height: 6 }}>
+          <div style={{ height: '100%', width: `${progress}%`, background: rc.bg, transition: 'width 0.4s ease' }} />
+        </div>
+      )}
+
+      {/* Run / Stop button */}
+      {busy ? (
+        <button onClick={stopAnalyzer} style={{
+          padding: '6px 0', fontSize: 11, borderRadius: 4, cursor: 'pointer',
+          background: '#e53935', color: '#fff', border: '1px solid #e53935',
+        }}>{tr('scenePanel.stop')}</button>
+      ) : (
+        <button
+          disabled={checked.size === 0}
+          onClick={runAnalyzer}
+          style={{
+            padding: '6px 0', fontSize: 11, borderRadius: 4,
+            cursor: checked.size === 0 ? 'default' : 'pointer',
+            background: rc.bg, color: rc.color, border: `1px solid ${rc.border}`,
+            opacity: checked.size === 0 ? 0.5 : 1,
+          }}
+        >
+          {tr('jobQueue.runSteps', { count: checked.size })}
+        </button>
+      )}
+
+      {/* Cleanup button */}
+      <button
+        disabled={busy}
+        onClick={() => {
+          if (!confirm(tr('jobQueue.confirmCleanup'))) return
+          setCleanupMsg(tr('jobQueue.cleaning'))
+          fetch(`${API}/api/folder-analyzer-cleanup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ folder_path: folderPath, analyzer_type: analyzerType, steps: [] }),
+          })
+            .then(r => r.json())
+            .then(() => setCleanupMsg(tr('jobQueue.cleaned')))
+            .catch(e => setCleanupMsg(tr('jobQueue.errorColon', { error: e })))
+        }}
+        style={{
+          padding: '6px 0', fontSize: 11, borderRadius: 4,
+          cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.5 : 1,
+          background: 'transparent', color: t.textMuted, border: `1px solid ${t.border}`,
+        }}
+        title={tr('jobQueue.removeTmpDirsTitle')}
+      >{tr('jobQueue.cleanup')}</button>
+      {cleanupMsg && <div style={{ fontSize: 10, color: t.textMuted }}>{cleanupMsg}</div>}
+
+      {/* Status message */}
+      {runMsg && (
+        <div style={{
+          fontSize: 10, fontFamily: 'monospace', padding: '5px 8px', borderRadius: 3,
+          background: t.bg2, border: `1px solid ${t.divider}`,
+          color: statusColor(runStat, t.textMuted),
+          whiteSpace: 'pre', overflowX: 'auto', maxHeight: 300, overflowY: 'auto',
+        }}>{runMsg}</div>
+      )}
+    </div>
+  )
+}
+
+
+// ── Server-rendered TIF → RasterOverlay ──────────────────────────────────────
+
+async function renderTif(
+  zipPath: string, filename: string, typeHint: string, label: string,
+): Promise<RasterOverlay> {
+  const url = `${API}/api/render-tif?zip=${encodeURIComponent(zipPath)}&file=${encodeURIComponent(filename)}&type_hint=${encodeURIComponent(typeHint)}`
+  const resp = await fetch(url)
+  if (!resp.ok) throw new Error(`render-tif ${resp.status}`)
+  const d = await resp.json()
+
+  // PNG blob URL
+  const pngBytes = Uint8Array.from(atob(d.png_b64), c => c.charCodeAt(0))
+  const imgUrl   = URL.createObjectURL(new Blob([pngBytes], { type: 'image/png' }))
+
+  // Float32 pixel data for hover
+  const rawBuf   = Uint8Array.from(atob(d.pixel_b64), c => c.charCodeAt(0)).buffer
+  const pixelData = new Float32Array(rawBuf)
+
+  const id = `${zipPath}|${filename}`
+  return {
+    id,
+    url:   imgUrl,
+    bounds: d.bounds as [number,number,number,number],
+    pixelData,
+    width:  d.pixel_width,
+    height: d.pixel_height,
+    nodata: d.nodata,
+    type:   d.type,
+    label,
+    vmin:   d.vmin,
+    vmax:   d.vmax,
+  }
+}
+
+// ── L3: Interferogram Viewer Drawer ──────────────────────────────────────────
+
+interface IfgPair {
+  name:   string
+  zip:    string
+  files:  { filename: string; type: string }[]
+  bounds: [number, number, number, number] | null
+}
+
+interface IfgViewerProps {
+  theme:          Theme
+  folderPath:     string
+  onClose:        () => void
+  onRasterSelect: (overlay: RasterOverlay | null) => void
+  rightOffset:    number
+}
+
+function IfgViewerDrawer({ theme: t, folderPath, onClose, onRasterSelect, rightOffset }: IfgViewerProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(300)
+  const [active,       setActive]      = useState<string | null>(null)
+  const [decoding,     setDecoding]    = useState(false)
+  const [expandedPair, setExpandedPair] = useState<string | null>(null)
+
+  const { data, loading, error } = useFetchJson<{ pairs: IfgPair[] }>(
+    `${API}/api/folder-ifg-list?path=${encodeURIComponent(folderPath)}`, [folderPath])
+  const pairs = data?.pairs ?? []
+
+  async function handleFileClick(pair: IfgPair, f: { filename: string; type: string }) {
+    const key = `${pair.zip}|${f.filename}`
+    if (active === key) { setActive(null); onRasterSelect(null); return }
+    if (!pair.bounds) { setActive(key); return }
+    setActive(key); setDecoding(true)
+    try {
+      const label   = `${pair.name} · ${f.type}`
+      const overlay = await renderTif(pair.zip, f.filename, f.type, label)
+      onRasterSelect(overlay)
+    } catch(e) { console.error(e) }
+    setDecoding(false)
+  }
+
+  const TYPE_COLORS: Record<string, string> = {
+    unw_phase: '#7986cb', corr: '#80cbc4', dem: '#a5d6a7',
+    lv_theta: '#ffcc80', lv_phi: '#f48fb1', water_mask: '#90caf9',
+  }
+
+  return (
+    <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={113} onHandleMouseDown={onHandleMouseDown}>
+      <DrawerHeader theme={t} onClose={onClose}>
+        <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.data')}</span>
+      </DrawerHeader>
+
+      {decoding && (
+        <div style={{ padding: '4px 14px', background: '#0d3b6e', fontSize: 10, color: '#90caf9' }}>
+          {tr('jobQueue.decodingTif')}
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading ? (
+          <div style={{ color: t.textMuted, fontSize: 11, textAlign: 'center', padding: '32px 0' }}>{tr('jobQueue.loading')}</div>
+        ) : error ? (
+          <div style={{ color: '#e53935', fontSize: 11, padding: 14 }}>{error}</div>
+        ) : pairs.length === 0 ? (
+          <div style={{ color: t.textMuted, fontSize: 11, textAlign: 'center', padding: '32px 0' }}>
+            {tr('jobQueue.noZipFiles')}
+          </div>
+        ) : pairs.map(pair => {
+          const isExpanded = expandedPair === pair.zip
+          return (
+            <div key={pair.zip} style={{ borderBottom: `1px solid ${t.divider}` }}>
+              {/* Pair header — click to expand/collapse */}
+              <button
+                onClick={() => setExpandedPair(isExpanded ? null : pair.zip)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 14px', background: t.bg2,
+                  border: 'none', cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 9, color: t.textMuted, flexShrink: 0 }}>
+                  {isExpanded ? '▾' : '▸'}
+                </span>
+                <span style={{ color: t.text, fontSize: 10, fontFamily: 'monospace' }}>{pair.name}</span>
+              </button>
+              {/* Files — only shown when expanded */}
+              {isExpanded && pair.files.map(f => {
+                const key = `${pair.zip}|${f.filename}`
+                const isActive = active === key
+                const color = TYPE_COLORS[f.type] ?? t.textMuted
+                return (
+                  <button key={f.filename}
+                    onClick={() => handleFileClick(pair, f)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '5px 14px 5px 28px',
+                      background: isActive ? t.btnActiveBg : 'transparent',
+                      border: 'none', cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{
+                      display: 'inline-block', width: 8, height: 8, borderRadius: 2,
+                      background: color, flexShrink: 0,
+                    }} />
+                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: isActive ? t.accent : t.text }}>
+                      {f.type}
+                    </span>
+                    {!pair.bounds && (
+                      <span style={{ fontSize: 9, color: t.textMuted, marginLeft: 'auto' }}>{tr('jobQueue.noBounds')}</span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    </DrawerShell>
+  )
+}
+
+// ── L3: raw downloaded-data viewer (downloader "View Data") ───────────────────
+// Lists the raw products under slc/ and overlays each one's georeferenced
+// quicklook on the map: Sentinel-1 SLC/burst (quick-look.png at its 4 KML
+// ground corners) and NISAR GSLC (a cached downsampled amplitude). See
+// app/routes/render.py's /api/folder-slc-list + /api/render-slc-preview.
+interface SlcItem { file: string; kind: string; date: string }
+
+function SlcViewerDrawer({ theme: t, folderPath, onClose, onRasterSelect, rightOffset }: IfgViewerProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(300)
+  const [active,   setActive]   = useState<string | null>(null)
+  const [decoding, setDecoding] = useState(false)
+
+  const { data, loading, error } = useFetchJson<{ items: SlcItem[] }>(
+    `${API}/api/folder-slc-list?path=${encodeURIComponent(folderPath)}`, [folderPath])
+  const items = data?.items ?? []
+
+  async function handleClick(it: SlcItem) {
+    if (active === it.file) { setActive(null); onRasterSelect(null); return }
+    setActive(it.file); setDecoding(true)
+    try {
+      const resp = await fetch(
+        `${API}/api/render-slc-preview?path=${encodeURIComponent(folderPath)}&file=${encodeURIComponent(it.file)}`)
+      if (!resp.ok) throw new Error(`render-slc-preview ${resp.status}`)
+      const d = await resp.json()
+      const corners = d.corners as [number, number][]
+      const lons = corners.map(c => c[0]); const lats = corners.map(c => c[1])
+      onRasterSelect({
+        id: `slc:${folderPath}:${it.file}`,
+        url: `data:image/png;base64,${d.png_b64}`,
+        bounds: [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)],
+        corners,
+        pixelData: new Float32Array(0), width: 0, height: 0, nodata: null,
+        type: 'amplitude', label: d.label ?? it.file, vmin: 0, vmax: 1,
+      })
+    } catch (e) { console.error(e); setActive(null) }
+    setDecoding(false)
+  }
+
+  const KIND_COLOR: Record<string, string> = { s1: '#80cbc4', nisar: '#ffcc80' }
+
+  return (
+    <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={113} onHandleMouseDown={onHandleMouseDown}>
+      <DrawerHeader theme={t} onClose={onClose}>
+        <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.data')}</span>
+      </DrawerHeader>
+
+      {decoding && (
+        <div style={{ padding: '4px 14px', background: '#0d3b6e', fontSize: 10, color: '#90caf9' }}>
+          {tr('jobQueue.renderingPreview')}
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading ? (
+          <div style={{ color: t.textMuted, fontSize: 11, textAlign: 'center', padding: '32px 0' }}>{tr('jobQueue.loading')}</div>
+        ) : error ? (
+          <div style={{ color: '#e53935', fontSize: 11, padding: 14 }}>{error}</div>
+        ) : items.length === 0 ? (
+          <div style={{ color: t.textMuted, fontSize: 11, textAlign: 'center', padding: '32px 0' }}>
+            {tr('jobQueue.noRawData')}
+          </div>
+        ) : items.map(it => {
+          const isActive = active === it.file
+          return (
+            <button key={it.file}
+              onClick={() => handleClick(it)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 14px', borderBottom: `1px solid ${t.divider}`,
+                background: isActive ? t.btnActiveBg : 'transparent',
+                border: 'none', cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2,
+                background: KIND_COLOR[it.kind] ?? t.textMuted, flexShrink: 0 }} />
+              <span style={{ fontSize: 10, fontFamily: 'monospace', color: isActive ? t.accent : t.text }}>
+                {it.date || it.file}
+              </span>
+              <span style={{ fontSize: 9, color: t.textMuted, marginLeft: 'auto', textTransform: 'uppercase' }}>{it.kind}</span>
+            </button>
+          )
+        })}
+      </div>
+    </DrawerShell>
+  )
+}
+
+// ── Processor Panel (HyP3 job actions) ───────────────────────────────────────
+
+interface Hyp3File { name: string; total: number; users: string[] }
+
+interface ProcessorPanelProps { theme: Theme; folderPath: string; processorType: string; aoiWkt: string | null; onFolderRefresh: () => void; ifgViewerOpen: boolean; onViewIfgToggle: () => void }
+
+function ProcessorPanel({ theme: t, folderPath, processorType, aoiWkt: _aoiWkt, onFolderRefresh, ifgViewerOpen, onViewIfgToggle }: ProcessorPanelProps) {
+  const { t: tr } = useTranslation()
+  const [files,      setFiles]      = useState<Hyp3File[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [selected,   setSelected]   = useState('')
+  const [actionMsg,     setActionMsg]     = useState('')
+  const [actionStat,    setActionStat]    = useState<'idle' | 'running' | 'done' | 'error'>('idle')
+  const [actionProgress, setActionProgress] = useState(0)
+  const [currentAction,  setCurrentAction]  = useState('')
+  const [activeJobId,    setActiveJobId]    = useState<string | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const [analyzers,        setAnalyzers]        = useState<string[]>([])
+  const [selectedAnalyzer, setSelectedAnalyzer] = useState('')
+  const [analyzerMsg,      setAnalyzerMsg]      = useState('')
+  const [analyzerStat,     setAnalyzerStat]     = useState<'idle' | 'ok' | 'error'>('idle')
+
+  const [availSteps,  setAvailSteps]  = useState<string[]>([])
+  const [forceSteps,  setForceSteps]  = useState<string[]>([])
+
+  // Whether processorType takes pairs as its own constructor arg (ISCE2_S1,
+  // GMTSAR_S1) rather than as a cloud-job config field (Hyp3_S1) -- derived
+  // from /api/workflows (see the effect below) instead of hardcoding a
+  // processor name, so any local processor gets the right job-management UI.
+  const [isLocal, setIsLocal] = useState(true)
+
+  useEffect(() => {
+    if (!isLocal) { setAvailSteps([]); return }
+    fetch(`${API}/api/processor-steps?processor=${encodeURIComponent(processorType)}`)
+      .then(r => r.ok ? r.json() : { steps: [] })
+      .then(d => setAvailSteps(d.steps ?? []))
+      .catch(() => setAvailSteps([]))
+  }, [isLocal, processorType])
+
+  function loadFiles() {
+    setLoading(true)
+    const endpoint = isLocal
+      ? `${API}/api/folder-local-jobs?path=${encodeURIComponent(folderPath)}&processor=${encodeURIComponent(processorType)}`
+      : `${API}/api/folder-hyp3-jobs?path=${encodeURIComponent(folderPath)}`
+    fetch(endpoint)
+      .then(r => r.json())
+      .then(d => {
+        const fs: Hyp3File[] = d.files ?? []
+        setFiles(fs)
+        setSelected(prev => {
+          if (fs.length === 0) return ''
+          if (prev && fs.some(f => f.name === prev)) return prev
+          return fs[fs.length - 1].name
+        })
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/api/settings`).then(r => r.json()),
+      fetch(`${API}/api/workflows`).then(r => r.json()),
+    ]).then(([settings, workflows]) => {
+      // Only show analyzers CHAINED to this folder's processor -- an analyzer
+      // declares its upstream via compatible_processor (e.g.
+      // ISCE3_Dolphin_S1_PL -> ISCE3_Burst). Showing every analyzer let the
+      // user pick one that cannot read this processor's output. Analyzers with
+      // no declared processor stay visible as a catch-all.
+      const all = workflows.analyzers ?? {}
+      const names: string[] = Object.keys(all).filter((n: string) => {
+        // compatible_processor may be null/'all' (catch-all), a single name, or
+        // an array of names (an analyzer serving several upstreams). The dolphin
+        // analyzers used to be the array case -- one class for both ISCE3
+        // upstreams -- and are now one per sensor, each a single name; the array
+        // branch stays for any analyzer that still declares several.
+        const cp = all[n]?.compatible_processor
+        if (!cp || cp === 'all') return true
+        if (Array.isArray(cp)) return cp.includes(processorType) || cp.includes('all')
+        return cp === processorType
+      })
+      setAnalyzers(names)
+      setSelectedAnalyzer(
+        names.includes(settings.analyzer) ? settings.analyzer : (names[0] || ''))
+      const procMeta: ProcMeta | undefined = workflows.processors?.[processorType]
+      if (procMeta) setIsLocal(procMeta.is_local ?? true)
+    }).catch(() => {})
+  }, [processorType])
+
+  function runInitAnalyzer() {
+    if (!selectedAnalyzer) return
+    setAnalyzerStat('idle')
+    setAnalyzerMsg(tr('jobQueue.initializing'))
+    fetch(`${API}/api/folder-init-analyzer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder_path: folderPath, analyzer_type: selectedAnalyzer }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          setAnalyzerStat('ok')
+          setAnalyzerMsg(tr('jobQueue.analyzerSetTo', { analyzer: d.analyzer }))
+          onFolderRefresh()
+        } else {
+          setAnalyzerStat('error')
+          setAnalyzerMsg(d.detail ?? tr('jobQueue.failed'))
+        }
+      })
+      .catch(e => { setAnalyzerStat('error'); setAnalyzerMsg(String(e)) })
+  }
+
+  useEffect(() => {
+    loadFiles()
+  }, [folderPath, isLocal])
+
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+
+  function runAction(action: string, steps?: string[]) {
+    if (!selected) return
+    setCurrentAction(action)
+    setActionStat('running')
+    setActionProgress(0)
+    setActionMsg(
+      action === 'refresh' ? tr('jobQueue.refreshingEllipsis') : action === 'retry' ? tr('jobQueue.retryingEllipsis') :
+      action === 'cancel' ? tr('jobQueue.cancellingEllipsis') : action === 'force_steps' ? tr('jobQueue.forcingSteps') : tr('jobQueue.downloadingEllipsis')
+    )
+    const actionEndpoint = isLocal ? `${API}/api/folder-local-action` : `${API}/api/folder-hyp3-action`
+    fetch(actionEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        folder_path: folderPath, job_file: selected, action, processor_type: processorType,
+        ...(steps ? { steps } : {}),
+      }),
+    })
+      .then(r => r.json())
+      .then(({ job_id }) => {
+        setActiveJobId(job_id)
+        pollRef.current = setInterval(async () => {
+          const r = await fetch(`${API}/api/jobs/${job_id}`)
+          const job = await r.json()
+          setActionMsg(job.message ?? '')
+          setActionProgress(job.progress ?? 0)
+          if (job.status === 'done') {
+            clearInterval(pollRef.current!); setActionStat('done'); setActionProgress(100); setActiveJobId(null)
+            if (action === 'retry' || action === 'force_steps') loadFiles()
+          } else if (job.status === 'error') {
+            clearInterval(pollRef.current!); setActionStat('error'); setActiveJobId(null)
+          }
+        }, 1500)
+      })
+      .catch(e => { setActionStat('error'); setActionMsg(String(e)) })
+  }
+
+  function stopDownload() {
+    if (!activeJobId) return
+    fetch(`${API}/api/jobs/${activeJobId}/stop`, { method: 'POST' }).catch(() => {})
+  }
+
+  const busy = actionStat === 'running'
+  const rc = ROLE_COLORS.processor
+
+  const btnStyle = (active: boolean): React.CSSProperties => ({
+    flex: 1, padding: '6px 0', fontSize: 11, borderRadius: 4, cursor: busy ? 'default' : 'pointer',
+    background: active ? rc.bg : 'transparent',
+    color: active ? rc.color : t.text,
+    border: `1px solid ${active ? rc.border : t.border}`,
+    opacity: busy ? 0.6 : 1,
+  })
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+      {loading ? (
+        <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.loading')}</span>
+      ) : files.length === 0 ? (
+        <span style={{ color: t.textMuted, fontSize: 11 }}>{isLocal ? tr('jobQueue.noLocalJobFiles') : tr('jobQueue.noHyp3JobFiles')}</span>
+      ) : (
+        <>
+          {/* File selector */}
+          <div>
+            <div style={{ color: t.textMuted, fontSize: 10, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tr('jobQueue.jobFile')}</div>
+            <select
+              value={selected}
+              onChange={e => { setSelected(e.target.value); setActionStat('idle'); setActionMsg('') }}
+              style={{
+                width: '100%', background: t.inputBg, border: `1px solid ${t.inputBorder}`,
+                color: t.text, borderRadius: 4, padding: '4px 6px', fontSize: 11,
+                fontFamily: 'monospace', colorScheme: t.isDark ? 'dark' : 'light',
+              }}
+            >
+              {files.map(f => (
+                <option key={f.name} value={f.name}>{f.name} ({f.total} jobs)</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button disabled={busy} onClick={() => runAction('refresh')} style={btnStyle(false)}>
+              {tr('jobQueue.refresh')}
+            </button>
+            <button disabled={busy} onClick={() => runAction('retry')} style={btnStyle(false)}>
+              {tr('jobQueue.retry')}
+            </button>
+            {isLocal && (
+              <button disabled={busy} onClick={() => runAction('cancel')}
+                style={{ ...btnStyle(false), color: '#e53935', borderColor: '#e53935' }}>
+                {tr('searchFilters.cancel')}
+              </button>
+            )}
+            {!isLocal && (
+              currentAction === 'download' && actionStat === 'running' ? (
+                <button onClick={stopDownload} style={{ ...btnStyle(true), background: '#e53935', borderColor: '#e53935', color: '#fff' }}>
+                  {tr('scenePanel.stop')}
+                </button>
+              ) : (
+                <button disabled={busy} onClick={() => runAction('download')} style={btnStyle(true)}>
+                  {tr('jobQueue.download')}
+                </button>
+              )
+            )}
+          </div>
+
+          {/* Force specific step(s) — ISCE2_S1 only, mirrors CLI `--step` */}
+          {isLocal && availSteps.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ color: t.textMuted, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {tr('jobQueue.forceStepsToRerun')}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {availSteps.map((s, i) => (
+                  <label key={s} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+                    <input
+                      type="checkbox"
+                      checked={forceSteps.includes(s)}
+                      disabled={busy}
+                      onChange={e => setForceSteps(prev => e.target.checked ? [...prev, s] : prev.filter(x => x !== s))}
+                      style={{ accentColor: rc.bg, cursor: busy ? 'default' : 'pointer' }}
+                    />
+                    <span style={{ fontSize: 11, color: t.text, fontFamily: 'monospace' }}>
+                      <span style={{ color: t.textMuted, marginRight: 4 }}>{String(i + 1).padStart(2, '0')}</span>
+                      {s.replace(/^run_\d+_/, '')}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {forceSteps.length > 0 && (
+                <div style={{ fontSize: 10, color: '#ffb74d' }}>
+                  {tr('jobQueue.forceStepsWarning')}
+                </div>
+              )}
+              <button disabled={busy || forceSteps.length === 0}
+                onClick={() => { runAction('force_steps', forceSteps); setForceSteps([]) }}
+                style={{
+                  padding: '6px 0', fontSize: 11, borderRadius: 4,
+                  cursor: (busy || forceSteps.length === 0) ? 'default' : 'pointer',
+                  opacity: (busy || forceSteps.length === 0) ? 0.5 : 1,
+                  background: rc.bg, color: rc.color, border: `1px solid ${rc.border}`,
+                }}>
+                {tr('jobQueue.forceStepsCount', { count: forceSteps.length })}
+              </button>
+            </div>
+          )}
+
+          {/* View Result — the processed interferograms this processor produced */}
+          <button
+            onClick={() => onViewIfgToggle()}
+            style={{
+              width: '100%', padding: '6px 12px', fontSize: 11, textAlign: 'left',
+              background: ifgViewerOpen ? '#0d3b6e' : 'transparent',
+              color: ifgViewerOpen ? '#90caf9' : t.text,
+              border: `1px solid ${ifgViewerOpen ? '#1565c0' : t.border}`,
+              borderRadius: 4, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            {ifgViewerOpen ? tr('jobQueue.hideResults') : tr('jobQueue.viewResults')}
+          </button>
+
+          {/* Progress bar — shown during download */}
+          {currentAction === 'download' && actionStat === 'running' && (
+            <div style={{ background: t.bg2, borderRadius: 3, border: `1px solid ${t.divider}`, overflow: 'hidden', height: 6 }}>
+              <div style={{
+                height: '100%', width: `${actionProgress}%`,
+                background: ROLE_COLORS.processor.bg, transition: 'width 0.4s ease',
+              }} />
+            </div>
+          )}
+
+          {/* Status message */}
+          {actionMsg && (
+            <div style={{
+              fontSize: 10, fontFamily: 'monospace', padding: '5px 8px', borderRadius: 3,
+              background: t.bg2, border: `1px solid ${t.divider}`,
+              color: statusColor(actionStat, t.textMuted),
+              whiteSpace: 'pre', overflowX: 'auto', maxHeight: 300, overflowY: 'auto',
+            }}>{actionMsg}</div>
+          )}
+
+          {/* ── Analyzer section ── */}
+          {analyzers.length > 0 && (
+            <div style={{ borderTop: `1px solid ${t.divider}`, marginTop: 4, paddingTop: 8 }}>
+              <div style={{ color: t.textMuted, fontSize: 10, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tr('jobQueue.runAnalyzer')}</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <select
+                  value={selectedAnalyzer}
+                  onChange={e => { setSelectedAnalyzer(e.target.value); setAnalyzerStat('idle'); setAnalyzerMsg('') }}
+                  style={{
+                    flex: 1, fontSize: 11, padding: '3px 5px', borderRadius: 4,
+                    background: t.bg2, color: t.text, border: `1px solid ${t.border}`,
+                  }}
+                >
+                  {analyzers.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+                <button onClick={runInitAnalyzer} style={{
+                  fontSize: 11, padding: '3px 10px', borderRadius: 4, cursor: 'pointer',
+                  background: ROLE_COLORS.analyzer.bg, color: ROLE_COLORS.analyzer.color,
+                  border: `1px solid ${ROLE_COLORS.analyzer.border}`,
+                }}>{tr('jobQueue.init')}</button>
+              </div>
+              {analyzerMsg && (
+                <div style={{
+                  marginTop: 4, fontSize: 10, fontFamily: 'monospace', padding: '3px 6px', borderRadius: 3,
+                  background: t.bg2, border: `1px solid ${t.divider}`,
+                  color: analyzerStat === 'ok' ? '#4caf50' : analyzerStat === 'error' ? '#e53935' : t.textMuted,
+                }}>{analyzerMsg}</div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+
+// ── L3: MintPy Results Viewer ─────────────────────────────────────────────────
+
+interface MintpyViewerProps {
+  theme:          Theme
+  folderPath:     string
+  tsList:         string[]
+  hidden:         boolean
+  onClose:        () => void
+  onRasterSelect: (overlay: RasterOverlay | null) => void
+  rightOffset:    number
+}
+
+function MintpyViewerDrawer({ theme: t, folderPath, tsList, hidden, onClose, onRasterSelect, rightOffset }: MintpyViewerProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(260)
+  const [active,         setActive]         = useState(false)
+  const [decoding,       setDecoding]       = useState(false)
+  const [error,          setError]          = useState('')
+  const [boundsInfo,     setBoundsInfo]     = useState<string>('')
+  const [selectedTsFile, setSelectedTsFile] = useState<string | null>(tsList[0] ?? null)
+  const rc = ROLE_COLORS.analyzer
+
+  async function handleVelocityClick() {
+    if (active) { setActive(false); onRasterSelect(null); setBoundsInfo(''); return }
+    setDecoding(true); setError('')
+    try {
+      const resp = await fetch(`${API}/api/render-velocity?path=${encodeURIComponent(folderPath)}`)
+      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.detail ?? `HTTP ${resp.status}`) }
+      const d = await resp.json()
+      const [W, S, E, N] = d.bounds as number[]
+      setBoundsInfo(`W:${W?.toFixed(3)} S:${S?.toFixed(3)} E:${E?.toFixed(3)} N:${N?.toFixed(3)}`)
+      const pngBytes  = Uint8Array.from(atob(d.png_b64), c => c.charCodeAt(0))
+      const imgUrl    = URL.createObjectURL(new Blob([pngBytes], { type: 'image/png' }))
+      const pixelData = new Float32Array(Uint8Array.from(atob(d.pixel_b64), c => c.charCodeAt(0)).buffer)
+      onRasterSelect({
+        id:        `mintpy:${folderPath}:velocity`,
+        url:       imgUrl,
+        bounds:    d.bounds as [number, number, number, number],
+        pixelData,
+        width:     d.pixel_width,
+        height:    d.pixel_height,
+        nodata:    null,
+        type:      'velocity',
+        label:     tr('jobQueue.velocityUnit', { unit: d.unit ?? 'm/year' }),
+        vmin:      d.vmin,
+        vmax:      d.vmax,
+        source:    { kind: 'mintpy', folderPath, tsFile: selectedTsFile },
+      })
+      setActive(true)
+    } catch (e) { setError(String(e)) }
+    setDecoding(false)
+  }
+
+  return (
+    <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={113} onHandleMouseDown={onHandleMouseDown} hidden={hidden}>
+      <DrawerHeader theme={t} onClose={onClose}>
+        <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.results')}</span>
+      </DrawerHeader>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {tsList.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 10, color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {tr('jobQueue.timeSeriesFile')}
+            </span>
+            {tsList.map(f => (
+              <button key={f} onClick={() => setSelectedTsFile(f)} style={{
+                width: '100%', padding: '5px 10px', borderRadius: 4, textAlign: 'left',
+                fontSize: 10, fontFamily: 'monospace', cursor: 'pointer',
+                background: selectedTsFile === f ? rc.bg : 'transparent',
+                color: selectedTsFile === f ? rc.color : t.textMuted,
+                border: `1px solid ${selectedTsFile === f ? rc.border : t.border}`,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }} title={f}>
+                {selectedTsFile === f ? '● ' : '○ '}{f}
+              </button>
+            ))}
+          </div>
+        )}
+        {error && <span style={{ color: '#e53935', fontSize: 10 }}>{error}</span>}
+        {boundsInfo && (
+          <span style={{ fontSize: 9, color: t.textMuted, fontFamily: 'monospace', wordBreak: 'break-all' }}>{boundsInfo}</span>
+        )}
+        {active && (
+          <div style={{ padding: '8px 10px', borderRadius: 4, fontSize: 10, lineHeight: 1.6,
+            background: t.bg2, border: `1px solid ${t.divider}`, color: t.textMuted }}>
+            {tr('jobQueue.clickVelocityHint')}
+          </div>
+        )}
+      </div>
+
+      <div style={{ padding: '10px 14px', borderTop: `1px solid ${t.border}`, flexShrink: 0 }}>
+        <button onClick={handleVelocityClick} disabled={decoding} style={{
+          width: '100%', padding: '8px 12px', borderRadius: 4,
+          background: active ? rc.bg : t.btnActiveBg,
+          color: active ? rc.color : t.btnActiveFg,
+          border: `1px solid ${active ? rc.border : t.btnActiveBorder}`,
+          cursor: decoding ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600,
+        }}>
+          {decoding ? tr('jobQueue.loading') : active ? tr('jobQueue.hideVelocity') : tr('jobQueue.plot')}
+        </button>
+      </div>
+    </DrawerShell>
+  )
+}
+
+
+// ── L3: Dolphin (ISCE3_Dolphin_PL) Results Viewer ─────────────────────────────
+
+interface DolphinViewerProps {
+  theme:          Theme
+  folderPath:     string
+  epochs:         Array<{ date: string; file: string }>
+  hasVelocity:    boolean
+  hidden:         boolean
+  onClose:        () => void
+  onRasterSelect: (overlay: RasterOverlay | null) => void
+  rightOffset:    number
+}
+
+function DolphinViewerDrawer({ theme: t, folderPath, epochs, hasVelocity, hidden, onClose, onRasterSelect, rightOffset }: DolphinViewerProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(260)
+  const [active,   setActive]   = useState(false)
+  const [decoding, setDecoding] = useState(false)
+  const [error,    setError]    = useState('')
+  // selected product: '' = velocity, else a displacement epoch filename
+  const [sel,      setSel]      = useState<string>('')
+  const rc = ROLE_COLORS.analyzer
+
+  async function plot(product: string) {
+    setDecoding(true); setError('')
+    try {
+      const q = product ? `&file=${encodeURIComponent(product)}` : ''
+      const resp = await fetch(`${API}/api/dolphin-velocity?path=${encodeURIComponent(folderPath)}${q}`)
+      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.detail ?? `HTTP ${resp.status}`) }
+      const d = await resp.json()
+      const pngBytes  = Uint8Array.from(atob(d.png_b64), c => c.charCodeAt(0))
+      const imgUrl    = URL.createObjectURL(new Blob([pngBytes], { type: 'image/png' }))
+      const pixelData = new Float32Array(Uint8Array.from(atob(d.pixel_b64), c => c.charCodeAt(0)).buffer)
+      onRasterSelect({
+        id: `dolphin:${folderPath}:${product || 'velocity'}`, url: imgUrl,
+        bounds: d.bounds as [number, number, number, number], pixelData,
+        width: d.pixel_width, height: d.pixel_height, nodata: null,
+        type: product ? 'displacement' : 'velocity', label: d.label,
+        vmin: d.vmin, vmax: d.vmax,
+        source: { kind: 'dolphin', folderPath },   // map click → dolphin-ts-pixel
+      })
+      setActive(true); setSel(product)
+    } catch (e) { setError(String(e)) }
+    setDecoding(false)
+  }
+
+  const btn = (label: string, product: string) => (
+    <button key={product} onClick={() => plot(product)} disabled={decoding} style={{
+      width: '100%', padding: '5px 10px', borderRadius: 4, textAlign: 'left',
+      fontSize: 10, fontFamily: 'monospace', cursor: decoding ? 'wait' : 'pointer',
+      background: active && sel === product ? rc.bg : 'transparent',
+      color: active && sel === product ? rc.color : t.textMuted,
+      border: `1px solid ${active && sel === product ? rc.border : t.border}`,
+      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    }} title={label}>{active && sel === product ? '● ' : '○ '}{label}</button>
+  )
+
+  return (
+    <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={113} onHandleMouseDown={onHandleMouseDown} hidden={hidden}>
+      <DrawerHeader theme={t} onClose={onClose}>
+        <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.results')}</span>
+      </DrawerHeader>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {hasVelocity && btn(tr('jobQueue.dolphinVelocity'), '')}
+        {epochs.length > 0 && (
+          <span style={{ fontSize: 10, color: t.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>
+            {tr('jobQueue.dolphinDisplacement')}
+          </span>
+        )}
+        {epochs.map(e => btn(e.date, e.file))}
+        {error && <span style={{ color: '#e53935', fontSize: 10 }}>{error}</span>}
+        {active && (
+          <div style={{ padding: '8px 10px', borderRadius: 4, fontSize: 10, lineHeight: 1.6,
+            background: t.bg2, border: `1px solid ${t.divider}`, color: t.textMuted, marginTop: 4 }}>
+            {tr('jobQueue.clickVelocityHint')}
+          </div>
+        )}
+      </div>
+    </DrawerShell>
+  )
+}
+
+
+// ── L3: MintPy Overview Drawer ────────────────────────────────────────────────
+
+// label/title here are English fallbacks; render site translates via
+// DIAG_ITEM_LABEL_KEYS/DIAG_ITEM_TITLE_KEYS (module scope can't call useTranslation).
+const DIAG_ITEMS = [
+  { name: 'avgSpatialCoh',             label: 'Spatial Coh.',  title: 'Avg Spatial Coherence' },
+  { name: 'avgPhaseVelocity',          label: 'Phase Vel.',    title: 'Avg Phase Velocity' },
+  { name: 'numTriNonzeroIntAmbiguity', label: 'Unw. Errors',  title: 'Unwrapping Error Count' },
+  { name: 'maskConnComp',              label: 'Mask',          title: 'Connected Component Mask' },
+] as const
+const DIAG_ITEM_LABEL_KEYS: Record<string, string> = {
+  avgSpatialCoh:             'jobQueue.diag.spatialCoh',
+  avgPhaseVelocity:          'jobQueue.diag.phaseVel',
+  numTriNonzeroIntAmbiguity: 'jobQueue.diag.unwErrors',
+  maskConnComp:              'jobQueue.diag.mask',
+}
+const DIAG_ITEM_TITLE_KEYS: Record<string, string> = {
+  avgSpatialCoh:             'jobQueue.diag.avgSpatialCoherence',
+  avgPhaseVelocity:          'jobQueue.diag.avgPhaseVelocity',
+  numTriNonzeroIntAmbiguity: 'jobQueue.diag.unwrappingErrorCount',
+  maskConnComp:              'jobQueue.diag.connectedComponentMask',
+}
+
+interface MintpyOverviewProps {
+  theme:          Theme
+  folderPath:     string
+  hidden:         boolean
+  onClose:        () => void
+  onRasterSelect: (overlay: RasterOverlay | null) => void
+  rightOffset:    number
+}
+
+function MintpyOverviewDrawer({ theme: t, folderPath, hidden, onClose, onRasterSelect, rightOffset }: MintpyOverviewProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(240)
+  const [active,   setActive]   = useState<string | null>(null)
+  const [decoding, setDecoding] = useState(false)
+  const [error,    setError]    = useState('')
+  const rc = ROLE_COLORS.analyzer
+
+  async function handleDiagClick(name: string, label: string) {
+    if (active === name) { setActive(null); onRasterSelect(null); return }
+    setDecoding(true); setError('')
+    try {
+      const resp = await fetch(`${API}/api/render-mintpy-diag?path=${encodeURIComponent(folderPath)}&name=${name}`)
+      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.detail ?? `HTTP ${resp.status}`) }
+      const d = await resp.json()
+      const pngBytes  = Uint8Array.from(atob(d.png_b64), c => c.charCodeAt(0))
+      const imgUrl    = URL.createObjectURL(new Blob([pngBytes], { type: 'image/png' }))
+      const pixelData = new Float32Array(Uint8Array.from(atob(d.pixel_b64), c => c.charCodeAt(0)).buffer)
+      onRasterSelect({
+        id:        `mintpy:${folderPath}:${name}`,
+        url:       imgUrl,
+        bounds:    d.bounds as [number, number, number, number],
+        pixelData,
+        width:     d.pixel_width,
+        height:    d.pixel_height,
+        nodata:    null,
+        type:      name,
+        label:     d.label ?? label,
+        vmin:      d.vmin,
+        vmax:      d.vmax,
+        source:    { kind: 'mintpy', folderPath, tsFile: null },
+      })
+      setActive(name)
+    } catch (e) { setError(String(e)) }
+    setDecoding(false)
+  }
+
+  return (
+    <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={113} onHandleMouseDown={onHandleMouseDown} hidden={hidden}>
+      <DrawerHeader theme={t} onClose={onClose}>
+        <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.overview')}</span>
+      </DrawerHeader>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {error && <span style={{ color: '#e53935', fontSize: 10 }}>{error}</span>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {DIAG_ITEMS.map((item) => (
+            <button key={item.name} onClick={() => handleDiagClick(item.name, tr(DIAG_ITEM_LABEL_KEYS[item.name], { defaultValue: item.label }))}
+              disabled={decoding} title={tr(DIAG_ITEM_TITLE_KEYS[item.name], { defaultValue: item.title })} style={{
+                width: '100%', padding: '6px 12px', borderRadius: 4, fontSize: 11,
+                textAlign: 'left', cursor: decoding ? 'wait' : 'pointer',
+                background: active === item.name ? rc.bg : 'transparent',
+                color:      active === item.name ? rc.color : t.text,
+                border:     `1px solid ${active === item.name ? rc.border : t.border}`,
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+              {tr(DIAG_ITEM_TITLE_KEYS[item.name], { defaultValue: item.title })}
+            </button>
+          ))}
+        </div>
+        {active && (
+          <span style={{ fontSize: 9, color: t.textMuted }}>
+            {(() => { const it = DIAG_ITEMS.find(d => d.name === active); return it ? tr(DIAG_ITEM_TITLE_KEYS[it.name], { defaultValue: it.title }) : null })()}
+          </span>
+        )}
+      </div>
+    </DrawerShell>
+  )
+}
+
+
+// ── Coherence Decay Maps Drawer ───────────────────────────────────────────────
+
+interface CohMapEntry {
+  season:         string
+  pol:            string
+  shape:          [number, number]
+  n_valid_pixels: number
+  file:           string
+  stats: {
+    gamma_inf: { mean: number; min: number; max: number }
+    gamma0:    { mean: number; min: number; max: number }
+    tau:       { mean: number; min: number; max: number }
+  }
+  error?: string
+}
+
+interface CohDecayMapsProps {
+  theme:          Theme
+  folderPath:     string
+  onClose:        () => void
+  onRasterSelect: (overlay: RasterOverlay | null) => void
+  rightOffset:    number
+}
+
+function CohDecayMapsDrawer({ theme: t, folderPath, onClose, onRasterSelect, rightOffset }: CohDecayMapsProps) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(260)
+
+  const [maps,     setMaps]     = useState<CohMapEntry[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState('')
+  const [decoding, setDecoding] = useState(false)
+  // active key: "season:pol:band"
+  const [activeKey, setActiveKey] = useState<string | null>(null)
+
+  // Band definitions
+  const BANDS = [
+    { band: 1, label: tr('jobQueue.bands.psFloorLabel'),     desc: tr('jobQueue.bands.psFloorDesc') },
+    { band: 2, label: tr('jobQueue.bands.initCohLabel'),     desc: tr('jobQueue.bands.initCohDesc') },
+    { band: 3, label: tr('jobQueue.bands.decayLabel'),       desc: tr('jobQueue.bands.decayDesc') },
+  ] as const
+
+  useEffect(() => {
+    setLoading(true)
+    fetch(`${API}/api/coherence-maps?path=${encodeURIComponent(folderPath)}`)
+      .then(r => r.json())
+      .then(d => { setMaps(d.available ?? []); setLoading(false) })
+      .catch(e => { setError(String(e)); setLoading(false) })
+  }, [folderPath])
+
+  async function handleBandClick(entry: CohMapEntry, band: 1 | 2 | 3) {
+    const key = `${entry.season}:${entry.pol}:${band}`
+    if (activeKey === key) {
+      setActiveKey(null)
+      onRasterSelect(null)
+      return
+    }
+    setDecoding(true)
+    setActiveKey(key)
+    try {
+      const url = `${API}/api/render-coh-map?path=${encodeURIComponent(folderPath)}&season=${entry.season}&pol=${entry.pol}&band=${band}`
+      const resp = await fetch(url)
+      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.detail ?? resp.statusText) }
+      const d = await resp.json()
+
+      const pngBytes  = Uint8Array.from(atob(d.png_b64),   c => c.charCodeAt(0))
+      const imgUrl    = URL.createObjectURL(new Blob([pngBytes], { type: 'image/png' }))
+      const rawBuf    = Uint8Array.from(atob(d.pixel_b64), c => c.charCodeAt(0)).buffer
+      const pixelData = new Float32Array(rawBuf)
+
+      const bandMeta = BANDS.find(b => b.band === band)!
+      onRasterSelect({
+        id:        `coh:${entry.season}:${entry.pol}:${band}`,
+        url:       imgUrl,
+        bounds:    d.bounds as [number, number, number, number],
+        pixelData,
+        width:     d.pixel_width,
+        height:    d.pixel_height,
+        nodata:    d.nodata,
+        type:      d.type,
+        label:     `${entry.season} ${entry.pol.toUpperCase()} · ${bandMeta.label}`,
+        vmin:      d.vmin,
+        vmax:      d.vmax,
+      })
+    } catch (e) {
+      setError(String(e))
+      setActiveKey(null)
+    }
+    setDecoding(false)
+  }
+
+  const SEASON_COLORS: Record<string, string> = {
+    winter: '#90caf9', spring: '#a5d6a7', summer: '#ffcc80', fall: '#ffab91',
+  }
+
+  return (
+    <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={113} onHandleMouseDown={onHandleMouseDown}>
+      {/* Header */}
+      <DrawerHeader theme={t} onClose={onClose}>
+        <div>
+          <span style={{ color: t.text, fontWeight: 600, fontSize: 12 }}>{tr('jobQueue.coherenceDecayMaps')}</span>
+          {maps.length > 0 && (
+            <span style={{ color: t.textMuted, fontSize: 10, marginLeft: 8 }}>{tr('jobQueue.seasonsCount', { count: maps.length })}</span>
+          )}
+        </div>
+      </DrawerHeader>
+
+      {/* Band legend */}
+      <div style={{
+        padding: '8px 14px', borderBottom: `1px solid ${t.border}`,
+        background: t.bg2, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 3,
+      }}>
+        {BANDS.map(b => (
+          <div key={b.band} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: '#90caf9',
+              minWidth: 16, textAlign: 'right', fontFamily: 'monospace',
+            }}>{b.band}</span>
+            <span style={{ fontSize: 10, color: t.text }}>{b.label}</span>
+            <span style={{ fontSize: 9, color: t.textMuted, marginLeft: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>— {b.desc}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {loading ? (
+          <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.loading')}</span>
+        ) : maps.length === 0 ? (
+          <div style={{ color: t.textMuted, fontSize: 11 }}>
+            <div>{tr('jobQueue.noDecayMaps')}</div>
+            <div style={{ marginTop: 4, fontSize: 10 }}>
+              {tr('jobQueue.runPairQualityFirst')} <code>decay_maps/</code> {tr('jobQueue.insideFolder')}
+            </div>
+          </div>
+        ) : (
+          maps.map(entry => {
+            const seasonColor = SEASON_COLORS[entry.season] ?? '#ccc'
+            if (entry.error) return (
+              <div key={entry.file} style={{ color: '#e53935', fontSize: 10 }}>{entry.file}: {entry.error}</div>
+            )
+            return (
+              <div key={`${entry.season}:${entry.pol}`} style={{
+                border: `1px solid ${t.border}`, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
+              }}>
+                {/* Season header */}
+                <div style={{
+                  padding: '6px 10px', background: t.bg2,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  borderBottom: `1px solid ${t.border}`,
+                }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: seasonColor,
+                    textTransform: 'capitalize',
+                  }}>{entry.season}</span>
+                  <span style={{ fontSize: 9, color: t.textMuted }}>{entry.pol.toUpperCase()}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 9, color: t.textMuted }}>
+                    {entry.shape[0]}×{entry.shape[1]} px
+                  </span>
+                </div>
+
+                {/* Stats rows */}
+                <div style={{ padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {(['gamma_inf', 'gamma0', 'tau'] as const).map((key, i) => {
+                    const s = entry.stats[key]
+                    const bandNum = (i + 1) as 1 | 2 | 3
+                    const bLabel = BANDS[i].label
+                    const unit   = key === 'tau' ? ' d' : ''
+                    const isActive = activeKey === `${entry.season}:${entry.pol}:${bandNum}`
+                    return (
+                      <button key={key}
+                        onClick={() => !decoding && handleBandClick(entry, bandNum)}
+                        disabled={decoding}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '4px 6px', borderRadius: 3, cursor: decoding ? 'wait' : 'pointer',
+                          background: isActive ? 'rgba(144,202,249,0.12)' : 'transparent',
+                          border: `1px solid ${isActive ? '#90caf9' : 'transparent'}`,
+                          textAlign: 'left', width: '100%',
+                          transition: 'background 0.15s',
+                        }}
+                        title={BANDS[i].desc}
+                      >
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, color: isActive ? '#90caf9' : t.textMuted,
+                          minWidth: 14, fontFamily: 'monospace',
+                        }}>{bandNum}</span>
+                        <span style={{ fontSize: 10, color: isActive ? t.text : t.textMuted, minWidth: 80 }}>
+                          {bLabel}
+                        </span>
+                        <span style={{ marginLeft: 'auto', fontSize: 10, color: t.text, fontFamily: 'monospace' }}>
+                          {s.mean.toFixed(key === 'tau' ? 0 : 3)}{unit}
+                        </span>
+                        <span style={{ fontSize: 9, color: t.textMuted, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                          [{s.min.toFixed(key === 'tau' ? 0 : 2)}–{s.max.toFixed(key === 'tau' ? 0 : 2)}{unit}]
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })
+        )}
+
+        {error && <div style={{ color: '#e53935', fontSize: 10 }}>{error}</div>}
+        {decoding && <div style={{ color: t.textMuted, fontSize: 10 }}>{tr('jobQueue.renderingEllipsis')}</div>}
+      </div>
+
+      {/* Clear button */}
+      {activeKey && (
+        <div style={{ padding: '10px 14px', borderTop: `1px solid ${t.border}`, flexShrink: 0 }}>
+          <button
+            onClick={() => { setActiveKey(null); onRasterSelect(null) }}
+            style={{
+              width: '100%', padding: '7px 12px', fontSize: 11,
+              background: 'transparent', color: t.textMuted,
+              border: `1px solid ${t.border}`, borderRadius: 4, cursor: 'pointer',
+            }}
+          >
+            {tr('jobQueue.clearMapOverlay')}
+          </button>
+        </div>
+      )}
+    </DrawerShell>
+  )
+}
+
+
+// ── L2: Role drawer ───────────────────────────────────────────────────────────
+
+interface L2Props {
+  theme:             Theme
+  job:               JobFolder
+  role:              string
+  cls:               string
+  hidden:            boolean
+  mapClickSignal:    number
+  aoiWkt:            string | null
+  onClose:           () => void
+  onFolderRefresh:   () => void
+  onRasterSelect:    (overlay: RasterOverlay | null) => void
+  rightOffset:       number
+}
+
+function JobRoleDrawer({ theme: t, job, role, cls, hidden, mapClickSignal, aoiWkt, onClose, onFolderRefresh, onRasterSelect, rightOffset }: L2Props) {
+  const { t: tr } = useTranslation()
+  const { width, onHandleMouseDown } = useResizable(240)
+  const rc = ROLE_COLORS[role] ?? ROLE_FALLBACK
+
+  // Downloader-specific state
+  // Whether this downloader exposes download_orbit. Previously the orbit
+  // controls were gated on `cls === 'S1_SLC'`, which hid them for every other
+  // downloader that supports orbits (S1_Burst does). Driven by the
+  // supports_orbit capability flag from /api/workflows instead.
+  const [supportsOrbit, setSupportsOrbit] = useState(false)
+  useEffect(() => {
+    fetch(`${API}/api/workflows`).then(r => r.json())
+      .then(d => setSupportsOrbit(!!d.downloaders?.[cls]?.supports_orbit))
+      .catch(() => {})
+  }, [cls])
+  const [details,      setDetails]      = useState<FolderDetails | null>(null)
+  const [detLoading,   setDetLoading]   = useState(false)
+  const [netEditorOpen, setNetEditorOpen] = useState(false)
+  const [pairsOpen,    setPairsOpen]    = useState(false)
+  const [procOpen,     setProcOpen]     = useState(false)
+  const [dlJobId,      setDlJobId]      = useState<string | null>(() => _dlJobs.get(job.path) ?? null)
+  const [dlStatus,     setDlStatus]     = useState<string>('')
+  const [orbitJobId,   setOrbitJobId]   = useState<string | null>(() => _orbitJobs.get(job.path) ?? null)
+  const [orbitStatus,  setOrbitStatus]  = useState<string>('')
+  const [ifgViewerOpen,     setIfgViewerOpen]     = useState(false)
+  const [slcViewerOpen,     setSlcViewerOpen]     = useState(false)
+  const [cohMapOpen,        setCohMapOpen]        = useState(false)
+  const [mintpyViewerOpen,     setMintpyViewerOpen]     = useState(false)
+  const [mintpyViewerEverOpen, setMintpyViewerEverOpen] = useState(false)
+  const [mintpyOverviewOpen,   setMintpyOverviewOpen]   = useState(false)
+  const [mintpyHasData,     setMintpyHasData]     = useState(false)
+  const [mintpyTsList,      setMintpyTsList]      = useState<string[]>([])
+  const [mintpyHasOverview, setMintpyHasOverview] = useState(false)
+  const [mintpyHasNetwork,  setMintpyHasNetwork]  = useState(false)
+  const [mintpyNetOpen,     setMintpyNetOpen]     = useState(false)
+  const [mintpyFolder,      setMintpyFolder]      = useState(job.path)
+  // ISCE3_Dolphin_PL produces GeoTIFF products (velocity + displacement epochs)
+  const [dolphinViewerOpen, setDolphinViewerOpen] = useState(false)
+  const [dolphinHasData,    setDolphinHasData]    = useState(false)
+  const [dolphinHasVel,     setDolphinHasVel]     = useState(false)
+  const [dolphinEpochs,     setDolphinEpochs]     = useState<Array<{ date: string; file: string }>>([])
+
+  // Close all L3/L4 sub-panels when the map is clicked
+  useEffect(() => {
+    if (mapClickSignal === 0) return
+    setPairsOpen(false)
+
+    setProcOpen(false)
+    setIfgViewerOpen(false)
+    setSlcViewerOpen(false)
+    setCohMapOpen(false)
+    setMintpyViewerOpen(false)
+    setDolphinViewerOpen(false)
+    setNetEditorOpen(false)
+  }, [mapClickSignal])
+
+  function loadDetails() {
+    setDetLoading(true)
+    fetch(`${API}/api/folder-details?path=${encodeURIComponent(job.path)}`)
+      .then(r => r.json())
+      .then(d => { setDetails(d); setDetLoading(false) })
+      .catch(() => setDetLoading(false))
+  }
+
+  useEffect(() => {
+    if (role !== 'downloader') return
+    loadDetails()
+  }, [job.path, role])
+
+  useEffect(() => {
+    if (role !== 'analyzer') return
+    fetch(`${API}/api/mintpy-check?path=${encodeURIComponent(job.path)}`)
+      .then(r => r.json())
+      .then(d => {
+        const tsList: string[] = Array.isArray(d.timeseries_files) ? d.timeseries_files : []
+        setMintpyTsList(tsList)
+        setMintpyHasData(d.has_velocity && tsList.length > 0)
+        setMintpyHasOverview(!!d.has_overview)
+        setMintpyHasNetwork(!!d.has_network)
+        if (d.mintpy_folder) setMintpyFolder(d.mintpy_folder)
+      })
+      .catch(() => {})
+    // Dolphin (ISCE3_Dolphin_PL) GeoTIFF products — separate from MintPy .h5
+    fetch(`${API}/api/dolphin-check?path=${encodeURIComponent(job.path)}`)
+      .then(r => r.json())
+      .then(d => {
+        setDolphinHasData(!!d.exists)
+        setDolphinHasVel(!!d.velocity)
+        setDolphinEpochs(Array.isArray(d.epochs) ? d.epochs : [])
+      })
+      .catch(() => {})
+  }, [job.path, role])
+
+  // Poll download job
+  useEffect(() => {
+    if (!dlJobId) return
+    _dlJobs.set(job.path, dlJobId)
+    const id = setInterval(() => {
+      fetch(`${API}/api/jobs/${dlJobId}`)
+        .then(r => r.json())
+        .then(d => {
+          setDlStatus(d.message ?? '')
+          if (d.status === 'done' || d.status === 'error') {
+            clearInterval(id)
+            _dlJobs.delete(job.path)
+            setDlJobId(null)
+          }
+        })
+        .catch(() => { clearInterval(id); _dlJobs.delete(job.path); setDlJobId(null) })
+    }, 1500)
+    return () => clearInterval(id)
+  }, [dlJobId])
+
+  function handleDownload() {
+    setDlStatus(tr('scenePanel.starting'))
+    fetch(`${API}/api/folder-download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder_path: job.path }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.job_id) setDlJobId(d.job_id) })
+      .catch(e => setDlStatus(String(e)))
+  }
+
+  // Poll orbit download job
+  useEffect(() => {
+    if (!orbitJobId) return
+    _orbitJobs.set(job.path, orbitJobId)
+    const id = setInterval(() => {
+      fetch(`${API}/api/jobs/${orbitJobId}`)
+        .then(r => r.json())
+        .then(d => {
+          setOrbitStatus(d.message ?? '')
+          if (d.status === 'done' || d.status === 'error') {
+            clearInterval(id)
+            _orbitJobs.delete(job.path)
+            setOrbitJobId(null)
+          }
+        })
+        .catch(() => { clearInterval(id); _orbitJobs.delete(job.path); setOrbitJobId(null) })
+    }, 1500)
+    return () => clearInterval(id)
+  }, [orbitJobId])
+
+  function handleDownloadOrbit() {
+    setOrbitStatus(tr('scenePanel.starting'))
+    fetch(`${API}/api/folder-download-orbit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folder_path: job.path }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.job_id) setOrbitJobId(d.job_id) })
+      .catch(e => setOrbitStatus(String(e)))
+  }
+
+  function handleStopDownload() {
+    if (!dlJobId) return
+    fetch(`${API}/api/jobs/${dlJobId}/stop`, { method: 'POST' }).catch(() => {})
+    _dlJobs.delete(job.path)
+    setDlJobId(null)
+    setDlStatus(tr('scenePanel.stopped'))
+  }
+
+  function handleStopOrbit() {
+    if (!orbitJobId) return
+    fetch(`${API}/api/jobs/${orbitJobId}/stop`, { method: 'POST' }).catch(() => {})
+    _orbitJobs.delete(job.path)
+    setOrbitJobId(null)
+    setOrbitStatus(tr('scenePanel.stopped'))
+  }
+
+  const cfgRows = role === 'downloader' && details?.downloader_config
+    ? CFG_FIELDS
+        .map(({ key, label }) => {
+          const raw = details.downloader_config![key]
+          const trLabel = tr(CFG_FIELD_LABEL_KEYS[key] ?? `_unmapped.${key}`, { defaultValue: label })
+          return { label: trLabel, val: fmtVal(key, raw), full: String(raw ?? '') }
+        })
+        .filter(r => r.val !== '')
+    : []
+
+  const { copiedKey: copiedCfgKey, copy: copyCfgVal } = useCopyFeedback()
+
+  return (
+    <>
+
+      {/* Interactive network editor */}
+      {!hidden && netEditorOpen && (
+        <NetworkEditor
+          theme={t}
+          folderPath={job.path}
+          onClose={() => setNetEditorOpen(false)}
+          onSaved={() => { setNetEditorOpen(false); loadDetails() }}
+          initParamsOpen={!details?.has_pairs}
+        />
+      )}
+
+      {/* MintPy post-modify_network network editor */}
+      {!hidden && mintpyNetOpen && (
+        <NetworkEditor
+          theme={t}
+          folderPath={mintpyFolder}
+          onClose={() => setMintpyNetOpen(false)}
+          onSaved={() => setMintpyNetOpen(false)}
+          overrideDataUrl={`${API}/api/mintpy-network-data?path=${encodeURIComponent(mintpyFolder)}`}
+          saveUrl="/api/mintpy-save-network"
+          analyzerType={cls}
+        />
+      )}
+
+      {/* L3 pairs drawer */}
+      {!hidden && pairsOpen && (
+        <PairsDrawer
+          theme={t}
+          folderPath={job.path}
+          onClose={() => setPairsOpen(false)}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      {/* L3 MintPy overview drawer */}
+      {!hidden && mintpyOverviewOpen && (
+        <MintpyOverviewDrawer
+          theme={t}
+          folderPath={mintpyFolder}
+          hidden={false}
+          onClose={() => setMintpyOverviewOpen(false)}
+          onRasterSelect={onRasterSelect}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      {/* L3 MintPy results viewer — kept mounted once opened so collapsed state survives */}
+      {mintpyViewerEverOpen && (
+        <MintpyViewerDrawer
+          theme={t}
+          folderPath={mintpyFolder}
+          tsList={mintpyTsList}
+          hidden={hidden}
+          onClose={() => { setMintpyViewerOpen(false); setMintpyViewerEverOpen(false) }}
+          onRasterSelect={onRasterSelect}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      {/* L3 Dolphin (ISCE3_Dolphin_S1_PL / ISCE3_Dolphin_NISAR_PL) results viewer */}
+      {!hidden && dolphinViewerOpen && (
+        <DolphinViewerDrawer
+          theme={t}
+          folderPath={job.path}
+          epochs={dolphinEpochs}
+          hasVelocity={dolphinHasVel}
+          hidden={hidden}
+          onClose={() => setDolphinViewerOpen(false)}
+          onRasterSelect={onRasterSelect}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      {/* L3 interferogram viewer */}
+      {!hidden && ifgViewerOpen && (
+        <IfgViewerDrawer
+          theme={t}
+          folderPath={job.path}
+          onClose={() => setIfgViewerOpen(false)}
+          onRasterSelect={onRasterSelect}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      {/* L3 raw downloaded-data viewer */}
+      {!hidden && slcViewerOpen && (
+        <SlcViewerDrawer
+          theme={t}
+          folderPath={job.path}
+          onClose={() => setSlcViewerOpen(false)}
+          onRasterSelect={onRasterSelect}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      {/* L3 coherence decay maps viewer */}
+      {!hidden && cohMapOpen && (
+        <CohDecayMapsDrawer
+          theme={t}
+          folderPath={job.path}
+          onClose={() => setCohMapOpen(false)}
+          onRasterSelect={onRasterSelect}
+          rightOffset={rightOffset + width}
+        />
+      )}
+
+      {/* Process modal */}
+      {!hidden && procOpen && (
+        <ProcessModal
+          theme={t}
+          folderPath={job.path}
+          downloaderType={job.workflow.downloader || cls}
+          aoiWkt={aoiWkt}
+          onClose={() => setProcOpen(false)}
+          onDone={() => { setProcOpen(false); loadDetails() }}
+          onSubmitted={loadDetails}
+        />
+      )}
+
+      <DrawerShell theme={t} rightOffset={rightOffset} width={width} zIndex={112} onHandleMouseDown={onHandleMouseDown} hidden={hidden}>
+        {/* Header */}
+        <DrawerHeader theme={t} onClose={onClose} padding="12px 16px">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 3,
+              background: rc.bg, color: rc.color, border: `1px solid ${rc.border}`,
+              textTransform: 'capitalize',
+            }}>{tr(`jobQueue.role.${role}`, { defaultValue: role })}</span>
+            <span style={{ color: t.text, fontWeight: 700, fontSize: 13 }}>{cls}</span>
+          </div>
+        </DrawerHeader>
+
+        {/* Folder context */}
+        <div style={{
+          padding: '6px 16px', borderBottom: `1px solid ${t.divider}`,
+          background: t.bg2, flexShrink: 0,
+          display: 'flex', alignItems: 'baseline', gap: 4,
+        }}>
+          <span style={{ color: t.textMuted, fontSize: 10, flexShrink: 0 }}>{tr('jobQueue.folderColon')} </span>
+          <span
+            title={job.name}
+            style={{
+              color: t.text, fontSize: 11, fontFamily: 'monospace',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              minWidth: 0, flex: 1,
+            }}
+          >{job.name}</span>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+          {/* ── Downloader: config params ── */}
+          {role === 'downloader' && (
+            detLoading ? (
+              <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.loading')}</span>
+            ) : cfgRows.length > 0 ? (
+              <div style={{ border: `1px solid ${t.border}`, borderRadius: 4, overflow: 'hidden' }}>
+                {cfgRows.map(({ label, val, full }, i) => (
+                  <div key={label} onClick={() => copyCfgVal(label, full)}
+                    style={{
+                      display: 'flex', gap: 8, padding: '5px 10px',
+                      background: i % 2 === 0 ? t.bg : t.bg2,
+                      borderBottom: i < cfgRows.length - 1 ? `1px solid ${t.divider}` : 'none',
+                      cursor: 'copy',
+                    }}>
+                    <span style={{ color: t.textMuted, fontSize: 10, width: 72, flexShrink: 0 }}>{label}</span>
+                    <span style={{
+                      color: copiedCfgKey === label ? '#4caf50' : t.text,
+                      fontSize: 10, fontFamily: 'monospace',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      transition: 'color 0.2s',
+                    }} title={val}>{val}{copiedCfgKey === label ? ' ✓' : ''}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null
+          )}
+
+          {/* ── Downloader: edit network (always visible for downloader jobs) ── */}
+          {role === 'downloader' && (
+            <button
+              onClick={() => setNetEditorOpen(true)}
+              style={{
+                width: '100%', padding: '7px 12px', fontSize: 11, textAlign: 'left',
+                background: netEditorOpen ? '#1a2e1a' : 'transparent',
+                color: netEditorOpen ? '#a5d6a7' : t.text,
+                border: `1px solid ${netEditorOpen ? '#2e7d32' : t.border}`,
+                borderRadius: 4, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/>
+                <line x1="7" y1="11" x2="17" y2="6"/><line x1="7" y1="13" x2="17" y2="18"/>
+              </svg>
+              {tr('jobQueue.editNetwork')}
+            </button>
+          )}
+
+          {/* ── Downloader: view pairs (L3 drawer) ── */}
+          {role === 'downloader' && details?.has_pairs && (
+            <button
+              onClick={() => setPairsOpen(o => !o)}
+              style={{
+                width: '100%', padding: '7px 12px', fontSize: 11, textAlign: 'left',
+                background: pairsOpen ? rc.bg : 'transparent',
+                color: pairsOpen ? rc.color : t.text,
+                border: `1px solid ${pairsOpen ? rc.border : t.border}`,
+                borderRadius: 4, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              {pairsOpen ? tr('jobQueue.hidePairs') : tr('jobQueue.viewPairs')}
+            </button>
+          )}
+
+          {/* ── Downloader: coherence decay maps viewer ── */}
+          {role === 'downloader' && (
+            <button
+              onClick={() => setCohMapOpen(o => !o)}
+              style={{
+                width: '100%', padding: '7px 12px', fontSize: 11, textAlign: 'left',
+                background: cohMapOpen ? '#1a1a3e' : 'transparent',
+                color: cohMapOpen ? '#b39ddb' : t.text,
+                border: `1px solid ${cohMapOpen ? '#7c4dff' : t.border}`,
+                borderRadius: 4, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M3 9h18M9 21V9"/>
+                <circle cx="15" cy="15" r="2"/>
+              </svg>
+              {cohMapOpen ? tr('jobQueue.hideDecayMaps') : tr('jobQueue.decayMaps')}
+            </button>
+          )}
+
+          {/* ── Downloader: view raw downloaded data (georeferenced quicklook) ── */}
+          {role === 'downloader' && (
+            <button
+              onClick={() => setSlcViewerOpen(o => !o)}
+              style={{
+                width: '100%', padding: '7px 12px', fontSize: 11, textAlign: 'left',
+                background: slcViewerOpen ? '#0d3b6e' : 'transparent',
+                color: slcViewerOpen ? '#90caf9' : t.text,
+                border: `1px solid ${slcViewerOpen ? '#1565c0' : t.border}`,
+                borderRadius: 4, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              {slcViewerOpen ? tr('jobQueue.hideData') : tr('jobQueue.viewData')}
+            </button>
+          )}
+
+          {/* Select Pairs is now inside Edit Network (⚙ Parameters panel) */}
+
+          {/* ── Downloader: process ── */}
+          {role === 'downloader' && (
+            <button
+              onClick={() => setProcOpen(o => !o)}
+              style={{
+                width: '100%', padding: '7px 12px', fontSize: 11, textAlign: 'left',
+                background: procOpen ? '#4a2500' : 'transparent',
+                color: procOpen ? '#ffcc80' : t.text,
+                border: `1px solid ${procOpen ? '#e65100' : t.border}`,
+                borderRadius: 4, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                <path d="M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              </svg>
+              {tr('jobQueue.process')}
+            </button>
+          )}
+
+          {/* ── Downloader: download button ── */}
+          {role === 'downloader' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {dlJobId ? (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <button
+                    onClick={handleStopDownload}
+                    style={{
+                      flex: '0 0 auto', padding: '7px 12px', fontSize: 11,
+                      background: '#e53935', color: '#fff',
+                      border: '1px solid #e53935',
+                      borderRadius: 4, cursor: 'pointer',
+                    }}
+                  >
+                    {tr('jobQueue.stopSquare')}
+                  </button>
+                  {dlStatus && (
+                    <span style={{ fontSize: 10, color: t.textMuted, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dlStatus}</span>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleDownload}
+                    style={{
+                      width: '100%', padding: '7px 12px', fontSize: 11,
+                      background: rc.bg, color: rc.color,
+                      border: `1px solid ${rc.border}`,
+                      borderRadius: 4, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 8,
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    {tr('jobQueue.download')}
+                  </button>
+                  {dlStatus && (
+                    <span style={{ fontSize: 10, color: t.textMuted, fontFamily: 'monospace' }}>{dlStatus}</span>
+                  )}
+                </>
+              )}
+              {supportsOrbit && (
+                <>
+                  {orbitJobId ? (
+                    <button
+                      onClick={handleStopOrbit}
+                      style={{
+                        width: '100%', padding: '7px 12px', fontSize: 11,
+                        background: '#e53935', color: '#fff',
+                        border: '1px solid #e53935',
+                        borderRadius: 4, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                      }}
+                    >
+                      {tr('scenePanel.stop')}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleDownloadOrbit}
+                      style={{
+                        width: '100%', padding: '7px 12px', fontSize: 11,
+                        background: 'transparent', color: t.text,
+                        border: `1px solid ${t.border}`,
+                        borderRadius: 4, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-30 12 12)"/>
+                        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(30 12 12)"/>
+                        <circle cx="12" cy="12" r="2"/>
+                      </svg>
+                      {tr('jobQueue.downloadOrbitFiles')}
+                    </button>
+                  )}
+                  {orbitStatus && (
+                    <span style={{ fontSize: 10, color: t.textMuted, fontFamily: 'monospace' }}>{orbitStatus}</span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── Processor: HyP3 job actions ── */}
+          {role === 'processor' && (
+            <ProcessorPanel
+              theme={t}
+              folderPath={job.path}
+              processorType={cls}
+              aoiWkt={aoiWkt}
+              onFolderRefresh={onFolderRefresh}
+              ifgViewerOpen={ifgViewerOpen}
+              onViewIfgToggle={() => setIfgViewerOpen(o => !o)}
+            />
+          )}
+
+          {/* ── Analyzer: MintPy step runner ── */}
+          {role === 'analyzer' && (
+            <>
+              <AnalyzerPanel theme={t} folderPath={job.path} analyzerType={cls} />
+              {mintpyHasNetwork && (
+                <button
+                  onClick={() => setMintpyNetOpen(o => !o)}
+                  style={{
+                    width: '100%', padding: '6px 12px', fontSize: 11, textAlign: 'left',
+                    background: mintpyNetOpen ? ROLE_COLORS.analyzer.bg : 'transparent',
+                    color: mintpyNetOpen ? ROLE_COLORS.analyzer.color : t.text,
+                    border: `1px solid ${mintpyNetOpen ? ROLE_COLORS.analyzer.border : t.border}`,
+                    borderRadius: 4, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                  {mintpyNetOpen ? tr('jobQueue.hideNetwork') : tr('jobQueue.editNetwork')}
+                </button>
+              )}
+              {mintpyHasOverview && (
+                <button
+                  onClick={() => setMintpyOverviewOpen(o => !o)}
+                  style={{
+                    width: '100%', padding: '6px 12px', fontSize: 11, textAlign: 'left',
+                    background: mintpyOverviewOpen ? ROLE_COLORS.analyzer.bg : 'transparent',
+                    color: mintpyOverviewOpen ? ROLE_COLORS.analyzer.color : t.text,
+                    border: `1px solid ${mintpyOverviewOpen ? ROLE_COLORS.analyzer.border : t.border}`,
+                    borderRadius: 4, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                  </svg>
+                  {mintpyOverviewOpen ? tr('jobQueue.hideOverview') : tr('jobQueue.overview')}
+                </button>
+              )}
+              {mintpyHasData && (
+                <button
+                  onClick={() => { setMintpyViewerOpen(o => !o); setMintpyViewerEverOpen(true) }}
+                  style={{
+                    width: '100%', padding: '6px 12px', fontSize: 11, textAlign: 'left',
+                    background: mintpyViewerOpen ? ROLE_COLORS.analyzer.bg : 'transparent',
+                    color: mintpyViewerOpen ? ROLE_COLORS.analyzer.color : t.text,
+                    border: `1px solid ${mintpyViewerOpen ? ROLE_COLORS.analyzer.border : t.border}`,
+                    borderRadius: 4, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                  {mintpyViewerOpen ? tr('jobQueue.hideResults') : tr('jobQueue.viewResults')}
+                </button>
+              )}
+              {dolphinHasData && (
+                <button
+                  onClick={() => setDolphinViewerOpen(o => !o)}
+                  style={{
+                    width: '100%', padding: '6px 12px', fontSize: 11, textAlign: 'left',
+                    background: dolphinViewerOpen ? ROLE_COLORS.analyzer.bg : 'transparent',
+                    color: dolphinViewerOpen ? ROLE_COLORS.analyzer.color : t.text,
+                    border: `1px solid ${dolphinViewerOpen ? ROLE_COLORS.analyzer.border : t.border}`,
+                    borderRadius: 4, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                  {dolphinViewerOpen ? tr('jobQueue.hideResults') : tr('jobQueue.viewResults')}
+                </button>
+              )}
+            </>
+          )}
+
+          {/* ── Other roles: placeholder ── */}
+          {role !== 'downloader' && role !== 'processor' && role !== 'analyzer' && (
+            <span style={{ color: t.textMuted, fontSize: 11 }}>{tr('jobQueue.actionsComingSoon')}</span>
+          )}
+        </div>
+      </DrawerShell>
+    </>
+  )
+}
+
+// ── Main Drawer ───────────────────────────────────────────────────────────────
+
+export default function JobQueueDrawer({ theme: t, workdir, mapClickSignal, aoiWkt, onClose, onMinimize, onRasterSelect }: Props) {
+  const { t: tr } = useTranslation()
+  const { width: l1Width, onHandleMouseDown: onL1Handle } = useResizable(260)
+  const [jobs,    setJobs]    = useState<JobFolder[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState('')
+  const [l2,        setL2]        = useState<{ job: JobFolder; role: string; cls: string } | null>(null)
+  const [l2Visible, setL2Visible] = useState(false)
+  const [browsePath, setBrowsePath] = useState<string | null>(null)  // null = workdir root
+
+  const effectivePath = browsePath ?? workdir
+
+  // path=undefined → use current browsePath; path=null → root; path=string → that path
+  const loadJobs = (path?: string | null) => {
+    setLoading(true)
+    setError('')
+    const target = path !== undefined ? path : (browsePath ?? null)
+    const url = target
+      ? `${API}/api/browse-subfolders?path=${encodeURIComponent(target)}`
+      : `${API}/api/job-folders`
+    fetch(url)
+      .then(r => r.json())
+      .then(d => { setJobs(d.jobs ?? []); setLoading(false) })
+      .catch(e => { setError(String(e)); setLoading(false) })
+  }
+
+  const navigateTo = (path: string) => {
+    setBrowsePath(path)
+    if (l2?.job && !path.startsWith(l2.job.path)) { setL2(null); setL2Visible(false) }
+    loadJobs(path)
+  }
+
+  const navigateUp = () => {
+    if (!browsePath || browsePath === workdir) { setBrowsePath(null); loadJobs(null); return }
+    const parent = browsePath.split('/').slice(0, -1).join('/') || '/'
+    const next = parent === workdir || !parent.startsWith(workdir) ? null : parent
+    setBrowsePath(next)
+    loadJobs(next)  // pass null/string directly — no stale state read
+  }
+
+  useEffect(() => { setBrowsePath(null); loadJobs(null) }, [workdir])
+
+  return (
+    <>
+      {/* Backdrop — click minimizes the drawer (hides panel, keeps the Jobs tag) */}
+      <div
+        onClick={() => { setL2(null); setL2Visible(false); onMinimize() }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 110 }}
+      />
+
+      {/* L2 drawer — always mounted while l2 is set; hidden via CSS when not visible or minimized */}
+      {l2 && (
+        <JobRoleDrawer
+          theme={t}
+          job={l2.job}
+          role={l2.role}
+          cls={l2.cls}
+          hidden={!l2Visible}
+          mapClickSignal={mapClickSignal}
+          aoiWkt={aoiWkt}
+          rightOffset={l1Width}
+          onClose={() => { setL2(null); setL2Visible(false) }}
+          onFolderRefresh={loadJobs}
+          onRasterSelect={onRasterSelect}
+        />
+      )}
+
+      {/* Main drawer */}
+      <DrawerShell theme={t} rightOffset={0} width={l1Width} zIndex={111} onHandleMouseDown={onL1Handle} boxShadow="-4px 0 24px rgba(0,0,0,0.3)">
+        {/* Header */}
+        <DrawerHeader theme={t} onClose={() => { setL2(null); setL2Visible(false); onClose() }} padding="10px 16px" gap={6}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {browsePath && (
+                <button onClick={navigateUp} title={tr('jobQueue.goUp')} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: t.accent, fontSize: 14, padding: '0 2px', flexShrink: 0,
+                }}>↑</button>
+              )}
+              <span style={{ color: t.text, fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{tr('jobQueue.jobFolders')}</span>
+            </div>
+            <div style={{
+              color: t.textMuted, fontSize: 10, marginTop: 1,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }} title={effectivePath}>
+              {browsePath
+                ? (() => {
+                    const rel = browsePath.startsWith(workdir)
+                      ? browsePath.slice(workdir.length).replace(/^\//, '')
+                      : browsePath
+                    return rel || workdir
+                  })()
+                : workdir}
+            </div>
+          </div>
+        </DrawerHeader>
+
+        {/* Content */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '10px 0' }}>
+          {loading ? (
+            <div style={{ color: t.textMuted, fontSize: 12, textAlign: 'center', padding: '40px 0' }}>
+              {tr('jobQueue.loading')}
+            </div>
+          ) : error ? (
+            <div style={{ color: '#e53935', fontSize: 12, padding: '16px' }}>{error}</div>
+          ) : jobs.length === 0 ? (
+            <div style={{ color: t.textMuted, fontSize: 12, textAlign: 'center', padding: '40px 16px' }}>
+              {tr('jobQueue.noSubfolders')}
+            </div>
+          ) : jobs.map(job => {
+            if (job.type === 'file') {
+              const kb = job.size != null ? (job.size < 1024 * 1024
+                ? `${(job.size / 1024).toFixed(1)} KB`
+                : `${(job.size / 1024 / 1024).toFixed(1)} MB`) : ''
+              return (
+                <div key={job.path} style={{
+                  padding: '4px 16px', borderBottom: `1px solid ${t.divider}`,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  <span style={{ fontSize: 12 }}>📄</span>
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', color: t.text, flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    title={job.path}>{job.name}</span>
+                  {kb && <span style={{ fontSize: 10, color: t.textMuted, flexShrink: 0 }}>{kb}</span>}
+                </div>
+              )
+            }
+            const wfRoles = (['downloader', 'processor', 'analyzer'] as const).filter(r => job.workflow[r])
+            const hasWorkflow = wfRoles.length > 0
+            return (
+              <div key={job.path} style={{ padding: '8px 16px', borderBottom: `1px solid ${t.divider}` }}>
+                {/* Folder name row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasWorkflow ? 5 : 0 }}>
+                  <button
+                    title={job.path}
+                    onClick={() => navigateTo(job.path)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: t.accent,
+                      fontSize: 12, fontFamily: 'monospace', textAlign: 'left',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
+                      minWidth: 0,
+                      padding: 0,
+                    }}
+                  >
+                    {'📁 '}{job.name}
+                  </button>
+                  <button
+                    title={tr('jobQueue.removeJobFolder')}
+                    onClick={() => {
+                      if (!confirm(tr('jobQueue.confirmDeleteFolder', { name: job.name }))) return
+                      fetch(`${API}/api/job-folder?path=${encodeURIComponent(job.path)}`, { method: 'DELETE' })
+                        .then(r => { if (r.ok) { if (l2?.job.path === job.path) { setL2(null); setL2Visible(false) } loadJobs() } })
+                        .catch(() => {})
+                    }}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: t.textMuted, padding: '0 2px', fontSize: 14, lineHeight: 1, flexShrink: 0,
+                    }}
+                  >🗑</button>
+                </div>
+
+                {/* Clickable role tags — ordered downloader → processor → analyzer */}
+                {hasWorkflow && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                    {wfRoles.map((role, idx) => {
+                      const cls      = job.workflow[role]
+                      const rc       = ROLE_COLORS[role] ?? ROLE_FALLBACK
+                      const isActive = l2?.job.path === job.path && l2?.role === role
+                      return (
+                        <div key={role} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {idx > 0 && (
+                            <span style={{ color: t.textMuted, fontSize: 10, userSelect: 'none' }}>→</span>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (isActive && l2Visible) { setL2Visible(false) }
+                              else { setL2({ job, role, cls }); setL2Visible(true) }
+                            }}
+                            title={`${tr(`jobQueue.role.${role}`, { defaultValue: role })}: ${cls}`}
+                            style={{
+                              fontSize: 10, fontWeight: 600,
+                              padding: '2px 7px', borderRadius: 3,
+                              background: isActive ? rc.color : rc.bg,
+                              color:      isActive ? rc.bg    : rc.color,
+                              border:     `1px solid ${rc.border}`,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {cls}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: '10px 16px', borderTop: `1px solid ${t.border}`,
+          background: t.bg2, flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {browsePath && (
+              <button onClick={navigateUp} disabled={loading} style={{
+                padding: '6px 10px', fontSize: 12,
+                background: 'transparent', color: loading ? t.textMuted : t.text,
+                border: `1px solid ${t.border}`, borderRadius: 5, cursor: loading ? 'wait' : 'pointer',
+              }}>{tr('jobQueue.upArrow')}</button>
+            )}
+            <button
+              onClick={() => loadJobs()}
+              disabled={loading}
+              style={{
+                flex: 1, padding: '6px 0', fontSize: 12,
+                background: 'transparent', color: loading ? t.textMuted : t.accent,
+                border: `1px solid ${loading ? t.border : t.btnActiveBorder}`,
+                borderRadius: 5, cursor: loading ? 'wait' : 'pointer',
+              }}
+            >
+              {loading ? tr('jobQueue.loading') : tr('jobQueue.refresh')}
+            </button>
+          </div>
+        </div>
+      </DrawerShell>
+    </>
+  )
+}

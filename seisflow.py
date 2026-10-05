@@ -17,10 +17,10 @@ from runtime_support import runtime_path, verify_vendor, digest, native_environm
 from pipeline_contracts import load_contract
 from knowledge_access import Knowledge, add_cli as add_knowledge_cli, cli as knowledge_cli
 
-STAGES = ['preprocess','picking','association','location','relocation','detection','post_detection_relocation','focal_mechanism']
+STAGES = ['preprocess','picking','association','location','relocation','detection','post_detection_relocation','focal_mechanism','insar']
 ENVKEY = {'preprocess':'science_python', 'picking':'science_python','association':'science_python',
           'location':'science_python','relocation':'science_python','detection':'mess_python',
-          'post_detection_relocation':'science_python','focal_mechanism':'science_python'}
+          'post_detection_relocation':'science_python','focal_mechanism':'science_python','insar':'insarhub_python'}
 
 def write_json(path, value):
     path = Path(path)
@@ -42,7 +42,7 @@ def write_reverse_csv(path, rows):
             w.writerow({k: r.get(k, '') for k in keys})
 
 def configure(args):
-    values = {k: str(Path(getattr(args,k)).expanduser().resolve()) for k in ['science_python','validator_python','mess_python']}
+    values = {k: str(Path(getattr(args,k)).expanduser().resolve()) for k in ['science_python','validator_python','mess_python','insarhub_python']}
     if any(not Path(p).is_file() for p in values.values()):
         raise ValueError('All explicitly selected interpreters must exist')
     path = Path(args.out).resolve() if args.out else ROOT / 'runtime.local.json'
@@ -62,7 +62,8 @@ def doctor(args):
     check('platform', lambda: platform.platform() if platform.system() == 'Linux' and platform.machine() == 'x86_64'
           else (_ for _ in ()).throw(ValueError('Release native binaries require Linux x86-64')))
     packages = {'science_python':['numpy','pandas','scipy','obspy','torch','torchvision','sklearn','numba','pyproj','matplotlib'],
-                'validator_python':['jsonschema'], 'mess_python':['numpy','pandas','scipy','obspy','torch','numba','matplotlib']}
+                'validator_python':['jsonschema'], 'mess_python':['numpy','pandas','scipy','obspy','torch','numba','matplotlib'],
+                'insarhub_python':['numpy','asf_search','hyp3_sdk','rasterio','osgeo.gdal']}
     for key, names in packages.items():
         def inspect(key=key, names=names):
             python = runtime_path(key)
@@ -374,10 +375,42 @@ class Runner:
                 self.native(stage,'6_parse_mechanisms.py',
                     ['--out-dir',out/'OUT','--catalog-out',out/'mechanisms_catalog.csv',
                      '--qc-out',out/'qc_summary.json'],[out/'mechanisms_catalog.csv'])
-        if stage in ('detection','post_detection_relocation','focal_mechanism'):
+            elif stage=='insar':
+                if self.state['stages'].get('relocation',{}).get('status')=='EMPTY':
+                    return self.mark_empty(stage,'NO_RELOCATED_EVENTS')
+                if not cfg.get(stage):
+                    raise ValueError('InSAR settings are required; use a NEW run with the current example configuration')
+                catalog = self.base/'post_detection_relocation'/'joint_relocated_catalog.csv'
+                if not catalog.is_file():
+                    rdoc,_=load_contract(self.base/'relocation','relocation')
+                    tier=cfg[stage].get('catalog_tier','strict')
+                    catalog=self.base/'relocation'/rdoc['outputs']['catalogs'][tier]
+                self.native(stage,'1_select_events.py',
+                    ['--catalog',catalog,'--ml-min',cfg[stage].get('ml_min',4.5),
+                     '--buffer-deg',cfg[stage].get('buffer_deg',0.3),
+                     '--pre-days',cfg[stage].get('pre_days',90),
+                     '--post-days',cfg[stage].get('post_days',90),
+                     '--cluster-days',cfg[stage].get('cluster_days',30),
+                     '--cluster-km',cfg[stage].get('cluster_km',30.0),
+                     '--out',out/'insar_jobs.json'],
+                    [out/'insar_jobs.json'])
+                if cfg[stage].get('confirmed') is not True:
+                    print((out/'insar_jobs.json').read_text()[:4000], flush=True)
+                    raise ValueError('A user decision is required: review insar_jobs.json (AOI, windows, per-event brackets) with the user, then set insar.confirmed=true in pipeline.json; no scene search was launched')
+                self.native(stage,'2_run_downloader.py',
+                    ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work'],())
+                if cfg[stage].get('pairs_confirmed') is not True:
+                    raise ValueError('A user decision is required: review the pair network and quality scores in insar_work with the user (coseismic pairs must respect per-event brackets), then set insar.pairs_confirmed=true; no HyP3 jobs were submitted')
+                self.native(stage,'3_run_processor.py',
+                    ['--workdir-root',out/'insar_work','--action',cfg[stage].get('processor_action','submit')],())
+                self.native(stage,'4_collect_products.py',
+                    ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work',
+                     '--out',out/'insar_products.csv'],[out/'insar_products.csv'])
+        if stage in ('detection','post_detection_relocation','focal_mechanism','insar'):
             primary = {'detection': [out/'output/mess/catalog.csv',out/'output/mess/catalog_cc08.csv'],
                        'post_detection_relocation': [out/'joint_relocated_catalog.csv'],
-                       'focal_mechanism': [out/'mechanisms_catalog.csv']}[stage]
+                       'focal_mechanism': [out/'mechanisms_catalog.csv'],
+                       'insar': [out/'insar_jobs.json']}[stage]
             if any(not p.is_file() or p.stat().st_size == 0 for p in primary):
                 return self.mark_empty(stage,'NO_PRIMARY_OUTPUT')
             self.state['stages'][stage]={'status':'COMPLETE','contract_status':'LAUNCHER_OUTPUTS_VERIFIED','scientific_status':'NOT_TESTED'}
@@ -395,7 +428,7 @@ def main():
     ap.add_argument('--runtime',help='Explicit runtime.local.json, relative to current directory')
     commands=ap.add_subparsers(dest='command',required=True)
     p=commands.add_parser('configure')
-    for name in ['science-python','validator-python','mess-python']: p.add_argument('--'+name,required=True)
+    for name in ['science-python','validator-python','mess-python','insarhub-python']: p.add_argument('--'+name,required=True)
     p.add_argument('--out')
     p=commands.add_parser('doctor'); p.add_argument('--out')
     p=commands.add_parser('init'); p.add_argument('--workdir',required=True)

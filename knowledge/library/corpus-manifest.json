@@ -268,6 +268,56 @@
       "source_path": "raw/sources/skhash-manual-v1.1.pdf",
       "text_path": "raw/assets/extracted/skhash-manual-v1.1.md",
       "summary_path": "wiki/sources/skhash-manual-v1.1.md"
+    },
+    {
+      "id": "li-2026-insarhub",
+      "original_filename": "li-2026-insarhub.md",
+      "filename": "li-2026-insarhub.md",
+      "title": "InSARHub: A Modular Python Framework for Automated InSAR and Time-Series Processing with a Built-in Web GUI",
+      "authors": [
+        "Jiawei Li",
+        "Sayyed Mohammad Javad Mirzadeh",
+        "Ryan Smith"
+      ],
+      "year": 2026,
+      "venue": "Journal of Open Source Software (software DOI 10.5281/zenodo.20190966)",
+      "doi": "",
+      "topic": "seismic-processing",
+      "entity": "insarhub",
+      "version_note": "JOSS-style markdown paper from the v0.4.2 repository; single logical page.",
+      "pdf_pages": 1,
+      "bytes": 14274,
+      "sha256": "f65be6cb3e7978f3386ea85d0c5ae347ca539c88ed5c704ba905dd589abbc565",
+      "text_sha256": "c5d44e5ea5f5372420d3371a63a24d19e799c5d67ec37511a69c0ff43c6ad0e4",
+      "extracted_characters": 14552,
+      "source_path": "raw/sources/li-2026-insarhub.md",
+      "text_path": "raw/assets/extracted/li-2026-insarhub.md",
+      "summary_path": "wiki/sources/li-2026-insarhub.md"
+    },
+    {
+      "id": "insarhub-docs-v042",
+      "original_filename": "insarhub-docs-v042-cli.md",
+      "filename": "insarhub-docs-v042-cli.md",
+      "title": "InSARHub v0.4.2 documentation: installation, account setup, CLI workflows",
+      "authors": [
+        "Jiawei Li",
+        "Sayyed Mohammad Javad Mirzadeh",
+        "Ryan Smith"
+      ],
+      "year": 2026,
+      "venue": "Repository documentation (v0.4.2 docs/quickstart)",
+      "doi": "",
+      "topic": "seismic-processing",
+      "entity": "insarhub",
+      "version_note": "Version-matched to the vendored v0.4.2: install / api_setup / cli / running concatenated as four logical pages.",
+      "pdf_pages": 4,
+      "bytes": 8037,
+      "sha256": "1a94b2f16f814d79fd2bf5c3a3109bdd809ad214f4725f76f0527199ffeb9473",
+      "text_sha256": "22ec6688fa297198c70d7b89216cae866f947fcfa3418b6bd9bbecc6a2ade9ac",
+      "extracted_characters": 27864,
+      "source_path": "raw/sources/insarhub-docs-v042-cli.md",
+      "text_path": "raw/assets/extracted/insarhub-docs-v042.md",
+      "summary_path": "wiki/sources/insarhub-docs-v042.md"
     }
   ]
 }

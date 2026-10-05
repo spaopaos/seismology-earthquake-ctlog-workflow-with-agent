@@ -1,0 +1,1684 @@
+# -*- coding: utf-8 -*-
+"""
+ISCE2_Base — shared infrastructure for ISCE2-backed local processors.
+
+Handles ISCE2 discovery, run-file status tracking, sequential step execution
+(with per-step parallelism), job persistence, and monitoring.  Concrete
+subclasses (e.g. ISCE2_S1) supply submit() and any sensor-specific helpers.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import io
+import json
+import logging
+import os
+import re
+import signal
+import subprocess
+import sys
+import threading
+import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import redirect_stdout
+from pathlib import Path
+
+from colorama import Fore, Style
+
+from insarhub.core import LocalProcessor
+from insarhub.config.paths import ISCEPaths
+from insarhub.utils.tool import Slurmjob_Config
+from insarhub.utils.slurm_manager import build_cmd_sbatch_script, build_sliding_window_manager, chain_submit_lines, manager_walltime, MANAGER_CPUS_PER_TASK, MANAGER_MEM, SLURM_DEAD_STATES, slurm_active_jobs, slurm_job_states
+
+logger = logging.getLogger(__name__)
+
+# Status model moved to insarhub.utils.status (backend-neutral); imported here so
+# ISCE2 code and the other backends that import these from isce2_base keep
+# working. New code should import from insarhub.utils.status directly.
+from insarhub.utils.status import (  # noqa: F401  (re-exported)
+    _PENDING, _RUNNING, _SUCCEEDED, _FAILED, _STEP_NUM_RE,
+    _resolve_step_names, _clear_step_markers, _status_file,
+    _read_status, _write_status,
+)
+
+JOBS_FILE = "isce_jobs.json"
+
+# HPC/sbatch resource helpers moved to insarhub.utils.hpc (backend-neutral);
+# re-exported so ISCE2 code and other backends importing them from isce2_base
+# keep working. New code should import from insarhub.utils.hpc directly.
+from insarhub.utils.hpc import (  # noqa: F401  (re-exported)
+    _SBATCH_DEFAULT_TEMPLATE, _manager_partition, _manager_time,
+    _merge_sbatch_opts, load_or_init_sbatch_options,
+)
+
+
+# ── ISCE2 discovery ───────────────────────────────────────────────────────────
+
+_CONTAINER_HINT = (
+    "\nAlternatively, skip installing ISCE2 locally and run this processor "
+    "inside a container instead: pass --container <path-or-image> (the "
+    "container needs `insarhub` installed alongside ISCE2 — see the "
+    "--container docs)."
+)
+
+
+def _check_isce2(isce_home: Path | None) -> Path:
+    """Return the resolved path to topsApp.py, raising if ISCE2 is missing."""
+    if isce_home:
+        for c in [isce_home / "applications" / "topsApp.py",
+                  isce_home / "topsApp.py"]:
+            if c.exists():
+                return c
+        raise EnvironmentError(
+            f"ISCE2 not found under isce_home='{isce_home}'. "
+            "Check the path or set $ISCE_HOME." + _CONTAINER_HINT
+        )
+    env_home = os.environ.get("ISCE_HOME")
+    if env_home:
+        return _check_isce2(Path(env_home))
+    import shutil
+    which = shutil.which("topsApp.py")
+    if which:
+        return Path(which)
+    raise EnvironmentError(
+        "ISCE2 is not installed or not findable. "
+        "Install ISCE2 and either set $ISCE_HOME or add its applications/ "
+        "directory to $PATH, or pass isce_home= to the config." + _CONTAINER_HINT
+    )
+
+
+def _find_topsstack(isce_home: Path | None) -> tuple[Path, Path]:
+    """Return (stackSentinel.py path, PYTHONPATH directory to add).
+
+    The returned pythonpath entry is the *parent* of the topsStack package dir
+    so that ``from topsStack.Stack import …`` resolves in subprocesses.
+    """
+    def _search(base: Path) -> Path | None:
+        for rel in [
+            "share/isce2/topsStack/stackSentinel.py",
+            "contrib/stack/topsStack/stackSentinel.py",
+            "components/contrib/stack/topsStack/stackSentinel.py",
+        ]:
+            p = base / rel
+            if p.exists():
+                return p
+        return None
+
+    candidates: list[Path] = []
+    if isce_home:
+        candidates.append(Path(isce_home))
+    env_home = os.environ.get("ISCE_HOME")
+    if env_home:
+        candidates.append(Path(env_home))
+    try:
+        import isce as _isce
+        # <env>/lib/pythonX.Y/site-packages/isce → go up 4 levels to env root
+        candidates.append(Path(_isce.__file__).parent.parent.parent.parent)
+    except ImportError:
+        pass
+    import shutil
+    tops = shutil.which("topsApp.py")
+    if tops:
+        candidates.append(Path(tops).parent.parent)
+
+    for base in candidates:
+        s = _search(base)
+        if s:
+            return s, s.parent.parent   # topsStack/../ = share/isce2 or contrib/stack
+
+    if not candidates:
+        raise EnvironmentError(
+            "ISCE2 not found and no base path available to download topsStack into. "
+            "Set $ISCE_HOME or pass isce_home= to the config." + _CONTAINER_HINT
+        )
+    from insarhub.utils.tool import _download_isce_stacktool
+    s = _download_isce_stacktool(candidates[0])
+    return s, s.parent.parent
+
+
+# ── Base class ────────────────────────────────────────────────────────────────
+
+class ISCE2_Base(LocalProcessor):
+    """Shared infrastructure for ISCE2-backed local processors.
+
+    Subclasses must implement ``submit()``.  All monitoring, persistence, and
+    step-execution machinery lives here.
+    """
+
+    JOBS_FILE = JOBS_FILE  # "isce_jobs.json" -- module constant, exposed for cli/main.py
+    JOBS_SUBDIR = "isce"   # matches ISCEPaths(workdir).isce_dir
+
+    def __init__(self, config):
+        super().__init__(config)
+        if self.config.container and not os.environ.get("INSARHUB_CONTAINER_CHILD"):
+            # HOST side of a container run: submit() just re-invokes the whole
+            # pipeline inside the container, so there is no need (and no way, if
+            # the host has no ISCE2) to discover topsStack/ISCE2 here. But the
+            # CONTAINER side (INSARHUB_CONTAINER_CHILD set) is where the stages
+            # actually run -- it MUST discover the image's own install, or
+            # _fix_cmd/_step_executor dereference these None paths
+            # ("'NoneType' has no attribute 'parent'") and no run command resolves.
+            self._stack_bin = self._pythonpath_add = self._isce_app_bin = None
+        else:
+            _isce_home = Path(self.config.isce_home) if self.config.isce_home else None
+            self._stack_bin, self._pythonpath_add = _find_topsstack(_isce_home)
+            self._isce_app_bin = _check_isce2(_isce_home)
+
+        self.workdir: Path = Path(self.config.workdir).expanduser().resolve()
+        self.workdir.mkdir(parents=True, exist_ok=True)
+        self._paths = ISCEPaths(self.workdir)
+        self.isce_dir: Path = self._paths.isce_dir
+        self.isce_dir.mkdir(parents=True, exist_ok=True)
+        self._run_files_dir = self._paths.run_files_dir
+
+        self.jobs: dict[str, dict] = {}
+        self._executor_thread: threading.Thread | None = None
+
+        if self.config.saved_job_path:
+            self._load(Path(self.config.saved_job_path))
+
+    # ── Persistence ───────────────────────────────────────────────────────────
+
+    def _load(self, path: Path) -> None:
+        if not path.exists():
+            raise FileNotFoundError(f"Job file not found: {path}")
+        self.jobs = json.loads(path.read_text()).get("jobs", {})
+
+    def save(self, save_path: Path | str | None = None, silent: bool = False) -> Path:
+        if not self.jobs:
+            raise ValueError("No jobs to save. Call submit() first.")
+        path = (Path(save_path).expanduser().resolve() if save_path
+                else self.isce_dir / JOBS_FILE)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(
+            {"jobs": self.jobs, "workdir": str(self.workdir)}, indent=2
+        ))
+        if not silent:
+            print(f"{Fore.GREEN}Job file saved to {path}.{Style.RESET_ALL}")
+        return path
+
+    # ── Sequential step executor ──────────────────────────────────────────────
+
+    def _isce_env_lines(self) -> list[str]:
+        """export PYTHONPATH/PATH lines every ISCE child sbatch script needs."""
+        env = os.environ.copy()
+        pythonpath = str(self._pythonpath_add) + os.pathsep + env.get("PYTHONPATH", "")
+        path = (str(self._stack_bin.parent) + os.pathsep
+                + str(self._isce_app_bin.parent) + os.pathsep
+                + env.get("PATH", ""))
+        return [f"export PYTHONPATH={pythonpath!r}", f"export PATH={path!r}"]
+
+    def _step_slurm_kwargs(self, step_cfg: dict) -> dict:
+        """Resource kwargs for a step's CHILD jobs. build_sliding_window_manager()
+        derives the lightweight manager's own kwargs from this automatically
+        (dropping time/cpus_per_task/mem/ntasks/nodes) -- see its docstring."""
+        _slurm_fields = {f.name for f in dataclasses.fields(Slurmjob_Config)}
+        _skip = {"job_name", "output_file", "error_file", "dependency",
+                 "command", "modules", "conda_env", "export_env", "array"}
+        return {k: v for k, v in step_cfg.items() if k in _slurm_fields and k not in _skip}
+
+    def _build_cmd_sbatch_script(
+        self, step: str, cmd: str, cmd_idx: int, log_dir: Path, step_cfg: dict,
+        sbatch_dir: Path | None = None,
+    ) -> Path:
+        """Generate a single-command sbatch script for one line of a step's run file."""
+        return build_cmd_sbatch_script(
+            job_name=f"i{self._run_tag(step)}_{cmd_idx:04d}",
+            cmd=cmd, cmd_idx=cmd_idx, log_dir=log_dir,
+            slurm_kwargs=self._step_slurm_kwargs(step_cfg),
+            env_lines=self._isce_env_lines(), sbatch_dir=sbatch_dir,
+            file_prefix=step, label=step,
+        )
+
+    def _build_step_manager_script(
+        self,
+        step: str,
+        commands: list[str],
+        log_dir: Path,
+        step_cfg: dict,
+        sbatch_dir: Path,
+        max_concurrent: int,
+        next_manager_script: Path | None = None,
+        next_job_id_file: Path | None = None,
+    ) -> Path:
+        """Generate child sbatch scripts + one manager script that submits them in batches.
+
+        The manager runs on a compute node with minimal resources (1 CPU, 2 GB RAM)
+        and the most walltime its partition allows (see slurm_manager's
+        manager_walltime -- a manager must outlive every child it supervises).  It submits
+        up to *max_concurrent* child jobs at a time, waits for each batch to finish,
+        checks for failures, then advances to the next batch.  On completion it writes
+        SUCCEEDED / FAILED to the step status file so refresh() picks it up normally.
+
+        If *next_manager_script* is given, this manager submits it itself right after
+        writing SUCCEEDED (recording the new job id in *next_job_id_file*) instead of
+        Python pre-submitting every step's manager up front with a SLURM
+        ``--dependency`` chain — that left every not-yet-running manager sitting in
+        the queue as its own submitted job, eating into the QOS submitted-jobs-per-user
+        limit for no benefit. Chaining from inside the script means only one manager
+        (the currently running one) is ever actually submitted at a time.
+        """
+        status_file = self._run_files_dir / f"{step}.status"
+        write_status_fn = (
+            f'STATUS_FILE="{status_file}"\n'
+            'write_status() { printf "%s" "$1" > "$STATUS_FILE"; }'
+        )
+        return build_sliding_window_manager(
+            job_name_base=f"i{self._run_tag(step)}",
+            commands=commands, log_dir=log_dir, sbatch_dir=sbatch_dir,
+            max_concurrent=max_concurrent,
+            slurm_kwargs=self._step_slurm_kwargs(step_cfg),
+            env_lines=self._isce_env_lines(), write_status_fn=write_status_fn,
+            manager_partition=_manager_partition(self.config.sbatch_options_per_step or {}),
+            manager_time=_manager_time(self.config.sbatch_options_per_step or {}),
+            next_manager_script=next_manager_script, next_job_id_file=next_job_id_file,
+            file_prefix=step, label=step,
+        )
+
+    @staticmethod
+    def _parse_time_secs(t: str) -> int:
+        """Parse SLURM time string (HH:MM:SS, MM:SS, or integer minutes) → seconds."""
+        t = str(t).strip()
+        parts = t.split(":")
+        try:
+            if len(parts) == 3:
+                return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+            if len(parts) == 2:
+                return int(parts[0]) * 60 + int(parts[1])
+            return int(parts[0]) * 60
+        except ValueError:
+            return 0
+
+    @staticmethod
+    def _fmt_secs(s: int) -> str:
+        h, rem = divmod(s, 3600)
+        m, sec = divmod(rem, 60)
+        return f"{h:02d}:{m:02d}:{sec:02d}"
+
+    def _dry_run_path_checks(self) -> bool:
+        """Print path validation table. Returns True if all required paths OK."""
+        cfg = self.config
+        W, G, R, B, E = Fore.YELLOW, Fore.GREEN, Fore.RED, Style.BRIGHT, Style.RESET_ALL
+        print(f"\n{B}{'─'*60}{E}")
+        print(f"{B}  DRY-RUN VALIDATION{E}")
+        print(f"{'─'*60}")
+        checks = [
+            ("workdir",   self.workdir,                                           True),
+            ("isce_dir",  self.isce_dir,                                          True),
+            ("run_files", self._run_files_dir,                                    True),
+            ("slc_dir",   Path(str(cfg.slc_dir))   if cfg.slc_dir   else None,   True),
+            ("orbit_dir", Path(str(cfg.orbit_dir)) if cfg.orbit_dir else None,   False),
+            ("dem_path",  Path(str(cfg.dem_path))  if cfg.dem_path  else None,   False),
+        ]
+        all_ok = True
+        for label, p, required in checks:
+            if p is None:
+                print(f"  {W}{'?' if required else '-'}{E}  {label:<12}  not set")
+                if required:
+                    all_ok = False
+                continue
+            exists = p.exists()
+            sym = (G + "✓" + E) if exists else (R + "✗" + E)
+            note = ""
+            if exists and label == "slc_dir":
+                n = len(list(p.glob("*.SAFE"))) + len(list(p.glob("*.zip")))
+                note = f"  ({n} SLC file(s))"
+            elif exists and label == "orbit_dir":
+                note = f"  ({len(list(p.glob('*.EOF')))} orbit file(s))"
+            elif not exists and required:
+                all_ok = False
+            print(f"  {sym}  {label:<12}  {p}{note}")
+        return all_ok
+
+    def _hpc_dry_run_summary(self, pending_steps: list[str]) -> None:
+        """Validate config paths and print a per-step HPC submission summary."""
+        W, G, R, B, E = Fore.YELLOW, Fore.GREEN, Fore.RED, Style.BRIGHT, Style.RESET_ALL
+
+        all_ok = self._dry_run_path_checks()
+
+        # ── Per-step table ────────────────────────────────────────────────────
+        print(f"\n{B}{'─'*60}{E}")
+        print(f"{B}  {'STEP':<44} {'JOBS':>5}  {'TIME':>9}  {'CPUS':>5}  {'MEM':>6}{E}")
+        print(f"{'─'*60}")
+
+        total_jobs = 0
+        total_secs = 0
+        issues: list[str] = []
+
+        for step in pending_steps:
+            script = Path(self.jobs[step]["script"])
+            commands = [
+                l.strip() for l in script.read_text().splitlines()
+                if l.strip() and not l.strip().startswith("#")
+            ]
+            n_cmds = len(commands)
+            step_cfg = self._sbatch_opts_for_step(step)
+            t_str  = step_cfg.get("time",          "??:??:??")
+            cpus   = step_cfg.get("cpus_per_task", "?")
+            mem    = step_cfg.get("mem",            "?")
+
+            secs = self._parse_time_secs(t_str)
+            total_secs += secs
+            total_jobs += n_cmds
+
+            # flag suspicious values
+            step_issues = []
+            if secs == 0:
+                step_issues.append("time=0?")
+                issues.append(f"{step}: time invalid ({t_str})")
+            try:
+                if int(str(cpus)) < 1:
+                    step_issues.append("cpus<1?")
+            except ValueError:
+                pass
+
+            flag = f"  {W}⚠ {', '.join(step_issues)}{E}" if step_issues else ""
+            print(f"  {step:<44} {n_cmds:>5}  {t_str:>9}  {str(cpus):>5}  {str(mem):>6}{flag}")
+
+        # ── Totals ────────────────────────────────────────────────────────────
+        print(f"{'─'*60}")
+        print(f"  {'TOTAL':<44} {total_jobs:>5}  {self._fmt_secs(total_secs):>9}")
+        print(f"\n  Steps run sequentially; commands within each step run in parallel.")
+        print(f"  {B}Estimated wall time ≈ {self._fmt_secs(total_secs)}{E}  "
+              f"(sum of per-step time limits)")
+
+        if issues:
+            print(f"\n{W}  Warnings:{E}")
+            for iss in issues:
+                print(f"    {W}⚠{E}  {iss}")
+
+        verdict = (f"{G}  ✓ All paths OK — ready to submit.{E}"
+                   if all_ok else
+                   f"{R}  ✗ Fix missing required paths before submitting.{E}")
+        print(f"\n{verdict}")
+        print(f"  Run without --dry-run to submit jobs.\n")
+
+    def _step_executor_hpc(self, pending_steps: list[str]) -> None:
+        """Submit HPC jobs for all pending steps using a hybrid manager strategy.
+
+        Steps are first grouped by consecutive equal command counts:
+        - Single-step groups → one sbatch *manager* job that submits child jobs in batches.
+        - Multi-step groups  → one sbatch *group manager* job that submits group-task scripts
+          (each task runs command index i for all grouped steps sequentially) in batches.
+
+        Both paths submit at most max_concurrent_hpc jobs to the queue at any time.
+
+        Only the FIRST group's manager is submitted from here. Every manager script
+        chain-submits the next group's manager itself right after it succeeds (see
+        _chain_submit_lines) — so at most one manager is ever sitting in the SLURM
+        queue at a time, instead of every group's manager being pre-submitted up
+        front with a ``--dependency=afterok`` chain (which counted against the
+        account's QOS submitted-jobs-per-user limit for jobs that were doing nothing
+        but waiting on a dependency).
+        """
+        dry_run = getattr(self.config, "dry_run", False)
+        if dry_run:
+            self._hpc_dry_run_summary(pending_steps)
+            return
+
+        max_concurrent = getattr(self.config, "max_concurrent_hpc", 12)
+
+        # ── Pass 1: classify groups, skip ones that are already done/empty ─────
+        to_build: list[list[str]] = []
+        cmds_by_group: list[dict[str, list[str]]] = []
+        for group in self._group_steps(pending_steps):
+            group_cmds: dict[str, list[str]] = {}
+            for step in group:
+                Path(self.jobs[step]["log_dir"]).mkdir(parents=True, exist_ok=True)
+                group_cmds[step] = [
+                    self._fix_cmd(l.strip())
+                    for l in Path(self.jobs[step]["script"]).read_text().splitlines()
+                    if l.strip() and not l.strip().startswith("#")
+                ]
+
+            for step in group:
+                if not group_cmds[step]:
+                    _write_status(self._run_files_dir, step, _SUCCEEDED)
+                    self.jobs[step].update(
+                        status=_SUCCEEDED, slurm_job_ids=[], hpc_manager=False, hpc_array=False
+                    )
+            group = [s for s in group if group_cmds[s]]
+            if not group:
+                continue
+
+            remaining = []
+            for step in group:
+                cmds    = group_cmds[step]
+                log_dir = Path(self.jobs[step]["log_dir"])
+                if all((log_dir / f"cmd_{i:04d}.done").exists() for i in range(len(cmds))):
+                    _write_status(self._run_files_dir, step, _SUCCEEDED)
+                    self.jobs[step].update(
+                        status=_SUCCEEDED, slurm_job_ids=[], hpc_manager=False, hpc_array=False
+                    )
+                    print(f"  {Fore.GREEN}  ✓ {step}  (all commands already done){Style.RESET_ALL}")
+                else:
+                    remaining.append(step)
+            group = remaining
+            if not group:
+                continue
+
+            to_build.append(group)
+            cmds_by_group.append(group_cmds)
+
+        if not to_build:
+            self.save(silent=True)
+            print(f"\n{Fore.GREEN}All steps already complete.{Style.RESET_ALL}")
+            return
+
+        # ── Pass 2: precompute every group's (manager_script, job_id_file) path
+        #    up front so each group's trailer can point at the next one ────────
+        manager_paths = [self._manager_paths_for_group(g) for g in to_build]
+
+        # ── Pass 3: build every manager script (none submitted yet) ────────────
+        for i, group in enumerate(to_build):
+            group_cmds = cmds_by_group[i]
+            next_script, next_jobfile = (
+                manager_paths[i + 1] if i + 1 < len(to_build) else (None, None)
+            )
+
+            if len(group) == 1:
+                step     = group[0]
+                commands = group_cmds[step]
+                step_cfg = self._sbatch_opts_for_step(step)
+                sbatch_dir = self._run_files_dir / f"{step}_sbatch"
+                sbatch_dir.mkdir(parents=True, exist_ok=True)
+
+                self._build_step_manager_script(
+                    step, commands, Path(self.jobs[step]["log_dir"]),
+                    step_cfg, sbatch_dir, max_concurrent,
+                    next_manager_script=next_script, next_job_id_file=next_jobfile,
+                )
+                self.jobs[step].update(
+                    slurm_job_ids=[], hpc_manager=True, hpc_array=False,
+                    n_cmds=len(commands), status=_PENDING,
+                    job_id_file=str(manager_paths[i][1]),
+                )
+                self.jobs[step].pop("slurm_job_id", None)
+                _write_status(self._run_files_dir, step, _PENDING)
+
+            else:
+                n_cmds     = len(group_cmds[group[0]])
+                step_cfgs  = [self._sbatch_opts_for_step(s) for s in group]
+                merged_cfg = self._merge_group_cfg(step_cfgs)
+                task_dir   = self._run_files_dir / f"{group[0]}_group"
+                task_dir.mkdir(parents=True, exist_ok=True)
+                for step in group:
+                    Path(self.jobs[step]["log_dir"]).mkdir(parents=True, exist_ok=True)
+
+                self._build_group_manager_script(
+                    group, task_dir, max_concurrent, merged_cfg, n_cmds,
+                    next_manager_script=next_script, next_job_id_file=next_jobfile,
+                )
+                for step in group:
+                    self.jobs[step].update(
+                        slurm_job_ids=[], hpc_manager=False, hpc_array=True,
+                        group_task_dir=str(task_dir), n_cmds=n_cmds, status=_PENDING,
+                        job_id_file=str(manager_paths[i][1]),
+                    )
+                    self.jobs[step].pop("slurm_job_id", None)
+                    _write_status(self._run_files_dir, step, _PENDING)
+
+        # ── Submit only the first group's manager; the rest chain-submit ───────
+        first_script = manager_paths[0][0]
+        result = subprocess.run(f"sbatch {first_script}", shell=True, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"  {Fore.RED}sbatch failed for {to_build[0]}: "
+                  f"{result.stderr.strip()}{Style.RESET_ALL}")
+            for step in to_build[0]:
+                _write_status(self._run_files_dir, step, _FAILED, "manager submission failed")
+                self.jobs[step]["status"] = _FAILED
+            self.save(silent=True)
+            return
+        m = re.search(r"\d+", result.stdout)
+        job_id = m.group() if m else "unknown"
+        for step in to_build[0]:
+            self.jobs[step]["slurm_job_ids"] = [job_id]
+
+        for i, group in enumerate(to_build):
+            names     = " + ".join(group) if len(group) > 1 else group[0]
+            n_cmds    = len(cmds_by_group[i][group[0]])
+            n_batches = (n_cmds + max_concurrent - 1) // max_concurrent
+            tag       = f"[{job_id}]" if i == 0 else "(chained, queued after previous group)"
+            kind      = "group manager" if len(group) > 1 else "manager"
+            print(f"  {Fore.CYAN}  ▶ [{names}]  →  {kind} {tag}  "
+                  f"({n_cmds} {'tasks × ' + str(len(group)) + ' steps' if len(group) > 1 else 'cmd'}, "
+                  f"{n_batches} batch(es), max {max_concurrent} concurrent){Style.RESET_ALL}")
+
+        self.save(silent=True)
+        print(f"\n{Fore.GREEN}First job queued [{job_id}] — {len(to_build)} step-group(s) total, "
+              f"chaining automatically. "
+              f"SSH session can now be closed — use 'refresh' to check status.{Style.RESET_ALL}")
+
+    def _step_executor(self, pending_steps: list[str]) -> None:
+        """Run steps in order; parallelise independent commands within each step."""
+        if getattr(self.config, "hpc_mode", False):
+            self._step_executor_hpc(pending_steps)
+            return
+
+        dry_run = getattr(self.config, "dry_run", False)
+
+        if dry_run:
+            W, G, B, E = Fore.YELLOW, Fore.GREEN, Style.BRIGHT, Style.RESET_ALL
+            all_ok = self._dry_run_path_checks()
+            # ── Step summary table ────────────────────────────────────────────
+            print(f"\n{B}{'─'*60}{E}")
+            print(f"{B}  {'STEP':<44} {'CMDS':>5}  {'DONE':>5}{E}")
+            print(f"{'─'*60}")
+            total_cmds = total_done = 0
+            for step in pending_steps:
+                script  = Path(self.jobs[step]["script"])
+                log_dir = Path(self.jobs[step]["log_dir"])
+                cmds = [l.strip() for l in script.read_text().splitlines()
+                        if l.strip() and not l.strip().startswith("#")]
+                done = sum(1 for i in range(len(cmds))
+                           if (log_dir / f"cmd_{i:04d}.done").exists())
+                total_cmds += len(cmds)
+                total_done += done
+                done_tag = f"  {G}(all done){E}" if done == len(cmds) else (
+                           f"  {W}({done}/{len(cmds)} done){E}" if done else "")
+                print(f"  {step:<44} {len(cmds):>5}  {done:>5}{done_tag}")
+            print(f"{'─'*60}")
+            print(f"  {'TOTAL':<44} {total_cmds:>5}  {total_done:>5}")
+            # ── Command listing ───────────────────────────────────────────────
+            print(f"\n{B}  COMMANDS{E}")
+            for step in pending_steps:
+                script  = Path(self.jobs[step]["script"])
+                log_dir = Path(self.jobs[step]["log_dir"])
+                cmds = [self._fix_cmd(l.strip()) for l in script.read_text().splitlines()
+                        if l.strip() and not l.strip().startswith("#")]
+                print(f"\n{Fore.CYAN}  ▶ {step}{E}  ({len(cmds)} command(s))")
+                for i, cmd in enumerate(cmds):
+                    done_file = log_dir / f"cmd_{i:04d}.done"
+                    tag = f"  {W}(done){E}" if done_file.exists() else ""
+                    print(f"      cmd_{i:04d}  {cmd[:120]}{tag}")
+            verdict = (f"{G}  ✓ All paths OK — ready to run.{E}" if all_ok
+                       else f"{Fore.RED}  ✗ Fix missing required paths before running.{E}")
+            print(f"\n{verdict}")
+            print(f"  Run without --dry-run to execute.\n")
+            self.save(silent=True)
+            return
+
+        # Persist the jobs file up front, BEFORE the (possibly hours-long) loop.
+        # In container mode this executor runs synchronously inside submit(), so
+        # without this the jobs file was only written at line ~648 (after every
+        # step) -- meanwhile `refresh` found no isce_jobs.json and reported
+        # "Run submit first" for the whole run. The per-step .status markers
+        # already update live; refresh just needs the jobs file to exist so it
+        # knows the step list. (In forked local mode the parent also saves, so
+        # this is redundant-but-harmless there.)
+        self.save(silent=True)
+
+        for step in pending_steps:
+            status, _ = _read_status(self._run_files_dir, step)
+            if status == _SUCCEEDED and self.config.skip_existing:
+                continue
+
+            script  = Path(self.jobs[step]["script"])
+            log_dir = Path(self.jobs[step]["log_dir"])
+            commands = [
+                self._fix_cmd(line.strip())
+                for line in script.read_text().splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
+
+            print(f"\n{Fore.CYAN}  ▶ {step}{Style.RESET_ALL}  ({len(commands)} command(s))")
+            # Inside a container, os.getpid() is a PID in the *container's*
+            # own PID namespace -- meaningless to a host-side os.kill(pid, 0)
+            # liveness check (refresh() runs on the host). This is true even
+            # with `docker run --pid=host` on Docker Desktop (Windows/Mac/
+            # WSL2): its containers run inside Docker Desktop's own VM, which
+            # shares a PID namespace with *that* VM, not with the user's
+            # actual host shell. INSARHUB_HOST_PID (set by
+            # _reinvoke_via_container, only present when running as a
+            # container re-invocation) is the PID of the *host-side* process
+            # blocking on `docker run` -- a real, host-checkable stand-in for
+            # "is this container job still alive".
+            running_pid = os.environ.get("INSARHUB_HOST_PID") or str(os.getpid())
+            _write_status(self._run_files_dir, step, _RUNNING, running_pid)
+            self.jobs[step]["status"] = _RUNNING
+
+            success = self._run_step(script, log_dir)
+
+            if success:
+                _write_status(self._run_files_dir, step, _SUCCEEDED)
+                self.jobs[step]["status"] = _SUCCEEDED
+                print(f"  {Fore.GREEN}✓ {step}{Style.RESET_ALL}")
+            else:
+                _write_status(self._run_files_dir, step, _FAILED)
+                self.jobs[step]["status"] = _FAILED
+                print(f"  {Fore.RED}✗ {step} FAILED — logs: {log_dir}{Style.RESET_ALL}")
+                break
+
+        self.save(silent=True)
+
+    def _fix_cmd(self, cmd: str) -> str:
+        """Resolve bare .py script names to absolute paths and prefix with sys.executable.
+
+        Also strips a trailing shell ``&``: stackSentinel's run files background
+        each command (``cmd &`` … ``wait``) for shell-level parallelism, but we
+        run every line ourselves under a ThreadPoolExecutor (see _run_step). A
+        backgrounded command run via ``subprocess.run("... &", shell=True)``
+        returns INSTANTLY with rc=0, orphaning the real work and masking every
+        failure as success -- e.g. the secondary SLC unpacks were killed before
+        they finished, leaving empty ``secondarys/*/`` dirs but a SUCCEEDED
+        step, which then cascaded into a confusing failure many steps later.
+        Removing the ``&`` makes each command run synchronously in its thread
+        and report its real exit code. (A bare ``wait`` line, left as-is, is a
+        harmless no-op run this way.)
+        """
+        import sys
+        cmd = cmd.strip()
+        if cmd.endswith("&"):
+            cmd = cmd[:-1].rstrip()
+        parts = cmd.split(None, 1)
+        if not parts or not parts[0].endswith(".py"):
+            return cmd
+        script_name = parts[0]
+        rest = parts[1] if len(parts) > 1 else ""
+        # If already an absolute path, just ensure it runs under sys.executable
+        if os.path.isabs(script_name):
+            return f"{sys.executable} {cmd}"
+        # Resolve: topsStack dir → ISCE2 applications dir → PATH
+        for search_dir in (self._stack_bin.parent, self._isce_app_bin.parent):
+            candidate = search_dir / script_name
+            if candidate.exists():
+                resolved = str(candidate)
+                break
+        else:
+            import shutil
+            found = shutil.which(script_name)
+            resolved = found if found else script_name
+        return f"{sys.executable} {resolved} {rest}".strip()
+
+    def _sbatch_opts_for_step(self, step_name: str) -> dict:
+        """Return merged Slurmjob_Config kwargs for step_name from sbatch_options_per_step.
+
+        Merges 'default' dict with the step-specific dict (step overrides default).
+        Falls back gracefully if values are missing or still in old string format.
+        """
+        per_step: dict = getattr(self.config, "sbatch_options_per_step", {}) or {}
+        m = re.match(r"run_(\d+)", step_name)
+        return _merge_sbatch_opts(per_step, m.group(1) if m else "")
+
+    @staticmethod
+    def _parse_mem_mb(mem: str) -> int:
+        s = str(mem).strip().upper()
+        try:
+            if s.endswith("T"):
+                return int(float(s[:-1]) * 1024 * 1024)
+            if s.endswith("G"):
+                return int(float(s[:-1]) * 1024)
+            if s.endswith("M"):
+                return int(float(s[:-1]))
+            return int(s)
+        except ValueError:
+            return 4096
+
+    @staticmethod
+    def _fmt_mem_mb(mb: int) -> str:
+        return f"{mb // 1024}G" if mb % 1024 == 0 else f"{mb}M"
+
+    def _merge_group_cfg(self, step_cfgs: list[dict]) -> dict:
+        """Merge resource configs for a group task: max cpus/mem, summed time across steps."""
+        result = dict(step_cfgs[0])
+        for cfg in step_cfgs[1:]:
+            result["cpus_per_task"] = max(
+                int(result.get("cpus_per_task", 1)),
+                int(cfg.get("cpus_per_task", 1)),
+            )
+            result["mem"] = self._fmt_mem_mb(max(
+                self._parse_mem_mb(result.get("mem", "4G")),
+                self._parse_mem_mb(cfg.get("mem", "4G")),
+            ))
+        # task runs all steps sequentially — walltime = sum of per-step times
+        total_seconds = sum(self._parse_time_s(c.get("time", "02:00:00")) for c in step_cfgs)
+        result["time"] = self._fmt_time_s(total_seconds)
+        return result
+
+    @staticmethod
+    def _parse_time_s(t: str) -> int:
+        """Parse HH:MM:SS or D-HH:MM:SS → total seconds."""
+        t = t.strip()
+        days = 0
+        if "-" in t:
+            d, t = t.split("-", 1)
+            days = int(d)
+        parts = t.split(":")
+        try:
+            if len(parts) == 3:
+                h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
+            elif len(parts) == 2:
+                h, m, s = 0, int(parts[0]), int(parts[1])  # SLURM MM:SS
+            else:
+                h, m, s = 0, int(parts[0]), 0  # minutes only
+        except (ValueError, IndexError):
+            return 7200  # default 2h on parse error
+        return days * 86400 + h * 3600 + m * 60 + s
+
+    @staticmethod
+    def _fmt_time_s(seconds: int) -> str:
+        """Format total seconds → HH:MM:SS (or D-HH:MM:SS if ≥ 1 day)."""
+        d, rem = divmod(seconds, 86400)
+        h, rem = divmod(rem, 3600)
+        m, s   = divmod(rem, 60)
+        if d:
+            return f"{d}-{h:02d}:{m:02d}:{s:02d}"
+        return f"{h:02d}:{m:02d}:{s:02d}"
+
+    def _group_steps(self, pending_steps: list[str]) -> list[list[str]]:
+        """Partition pending steps into groups of consecutive steps with equal command counts.
+
+        Groups with 2+ steps are submitted as a SLURM job array (one task per command
+        index, each task runs all steps in the group sequentially).  Single-step groups
+        fall back to the manager-per-step path.
+        """
+        counts: dict[str, int] = {}
+        for step in pending_steps:
+            script = Path(self.jobs[step]["script"])
+            counts[step] = (
+                sum(1 for l in script.read_text().splitlines()
+                    if l.strip() and not l.strip().startswith("#"))
+                if script.exists() else 0
+            )
+
+        groups: list[list[str]] = []
+        current: list[str] = []
+        current_count: int | None = None
+
+        for step in pending_steps:
+            c = counts[step]
+            if c <= 0:
+                if current:
+                    groups.append(current)
+                groups.append([step])
+                current = []
+                current_count = None
+            elif current_count is None or c == current_count:
+                current.append(step)
+                current_count = c
+            else:
+                groups.append(current)
+                current = [step]
+                current_count = c
+
+        if current:
+            groups.append(current)
+        return groups
+
+    @staticmethod
+    def _run_tag(step: str) -> str:
+        """Short run-number tag for a step name, e.g. 'run_02_unpack_secondary_slc' -> '02'."""
+        m = re.search(r"run_(\d+)", step)
+        return m.group(1) if m else step[:4]
+
+    @classmethod
+    def _group_tag(cls, group_steps: list[str]) -> str:
+        """Short tag spanning a group's run numbers, e.g. '02-03' for a 2-step group."""
+        first, last = cls._run_tag(group_steps[0]), cls._run_tag(group_steps[-1])
+        return first if first == last else f"{first}-{last}"
+
+    def _manager_paths_for_group(self, group: list[str]) -> tuple[Path, Path]:
+        """Deterministic (manager_script, chained_job_id_file) paths for a group —
+        computed before the script itself is built, so an earlier group's script can
+        embed the next group's path in its own chain-submit trailer."""
+        if len(group) == 1:
+            step = group[0]
+            sbatch_dir = self._run_files_dir / f"{step}_sbatch"
+            return (sbatch_dir / "manager.sbatch",
+                    Path(self.jobs[step]["log_dir"]) / "chained_job_id.txt")
+        task_dir = self._run_files_dir / f"{group[0]}_group"
+        return task_dir / "manager.sbatch", task_dir / "chained_job_id.txt"
+
+    def _build_group_manager_script(
+        self,
+        group_steps: list[str],
+        task_dir: Path,
+        max_concurrent: int,
+        merged_cfg: dict,
+        n_cmds: int,
+        next_manager_script: Path | None = None,
+        next_job_id_file: Path | None = None,
+    ) -> Path:
+        """Generate N group-task scripts + one manager that submits them in batches.
+
+        Each group-task script (task_{i:04d}.sbatch) runs command index *i* for every
+        step in *group_steps* sequentially, writing .done/.fail to each step's log_dir.
+        The manager submits up to *max_concurrent* task scripts at a time, polls squeue,
+        and advances when a batch finishes — identical to the single-step manager pattern.
+        No SLURM job arrays are used, so the queue only ever holds the manager + ≤max_concurrent
+        task jobs.
+
+        See _build_step_manager_script for why *next_manager_script*/*next_job_id_file*
+        exist: this manager chain-submits the next group's manager itself on success
+        instead of Python pre-submitting every group up front with a dependency chain.
+        """
+        import dataclasses
+        from insarhub.utils.tool import Slurmjob_Config
+
+        env = os.environ.copy()
+        pythonpath = str(self._pythonpath_add) + os.pathsep + env.get("PYTHONPATH", "")
+        path_env   = (str(self._stack_bin.parent) + os.pathsep
+                      + str(self._isce_app_bin.parent) + os.pathsep
+                      + env.get("PATH", ""))
+
+        # Write cleaned command files per step
+        cmd_files: dict[str, str] = {}
+        log_dirs:  dict[str, str] = {}
+        for step in group_steps:
+            cmds = [
+                self._fix_cmd(l.strip())
+                for l in Path(self.jobs[step]["script"]).read_text().splitlines()
+                if l.strip() and not l.strip().startswith("#")
+            ]
+            cf = task_dir / f"{step}_commands.txt"
+            cf.write_text("\n".join(cmds) + "\n")
+            cmd_files[step] = str(cf)
+            log_dirs[step]  = str(Path(self.jobs[step]["log_dir"]))
+
+        _slurm_fields = {f.name for f in dataclasses.fields(Slurmjob_Config)}
+        _skip_all = {"job_name", "output_file", "error_file", "dependency",
+                     "command", "modules", "conda_env", "export_env", "array",
+                     "time", "cpus_per_task", "mem", "ntasks", "nodes"}
+
+        # ── Generate N group-task scripts ─────────────────────────────────────
+        for i in range(n_cmds):
+            idx      = f"{i:04d}"
+            line_no  = i + 1
+            task_done = str(task_dir / f"cmd_{idx}.done")
+            task_fail = str(task_dir / f"cmd_{idx}.fail")
+
+            task_cfg = Slurmjob_Config(
+                job_name=f"i{self._group_tag(group_steps)}_{idx}",
+                output_file=str(task_dir / f"task_{idx}_slurm_%j.out"),
+                error_file=str(task_dir  / f"task_{idx}_slurm_%j.err"),
+                time=merged_cfg.get("time", "24:00:00"),
+                ntasks=1,
+                cpus_per_task=merged_cfg.get("cpus_per_task", 2),
+                mem=merged_cfg.get("mem", "8G"),
+                nodes=1,
+                **{k: v for k, v in merged_cfg.items()
+                   if k in _slurm_fields and k not in _skip_all},
+            )
+
+            tlines = ["#!/bin/bash"]
+            tlines += task_cfg.to_header_lines()
+            tlines += [
+                "",
+                "set -eo pipefail",
+                "set +u",
+                "",
+                f"export PYTHONPATH={pythonpath!r}",
+                f"export PATH={path_env!r}",
+                "",
+                f'IDX="{idx}"',
+                f"LINE={line_no}",
+                f'TASK_DONE="{task_done}"',
+                f'TASK_FAIL="{task_fail}"',
+                "",
+                "run_step() {",
+                '    local step_name="$1" log_dir="$2" cmd_file="$3"',
+                '    local done_file="$log_dir/cmd_${IDX}.done"',
+                '    local fail_file="$log_dir/cmd_${IDX}.fail"',
+                '    local log_file="$log_dir/cmd_${IDX}.log"',
+                '    if [[ -f "$done_file" ]]; then',
+                '        echo "  [$(date)] ${step_name} cmd_${IDX} already done, skipping"; return 0',
+                "    fi",
+                '    local cmd',
+                '    cmd=$(sed -n "${LINE}p" "$cmd_file")',
+                '    if [[ -z "${cmd:-}" ]]; then',
+                '        echo "  No command at line ${LINE} in ${cmd_file}"',
+                '        echo "1" > "$fail_file"; echo "1" > "$TASK_FAIL"; exit 1',
+                "    fi",
+                '    local _t0=$(date +%s)',
+                '    echo "  [$(date)] START ${step_name} cmd_${IDX}"',
+                '    eval "$cmd" > "$log_file" 2>&1',
+                "    local rc=$?",
+                '    local _elapsed=$(( $(date +%s) - _t0 ))',
+                '    if [[ $rc -eq 0 ]]; then',
+                '        touch "$done_file"; rm -f "$fail_file"',
+                '        echo "  [$(date)] DONE  ${step_name} cmd_${IDX} elapsed=${_elapsed}s"',
+                "    else",
+                '        echo "$rc" > "$fail_file"',
+                '        echo "$rc" > "$TASK_FAIL"',
+                '        echo "  [$(date)] FAIL  ${step_name} cmd_${IDX} elapsed=${_elapsed}s rc=$rc"',
+                "        exit $rc",
+                "    fi",
+                "}",
+                "",
+                f'_task_t0=$(date +%s)',
+                f'echo "[$(date)] START group task {idx}: {" ".join(group_steps)}"',
+                "",
+            ]
+            for step in group_steps:
+                tlines.append(f'run_step "{step}" "{log_dirs[step]}" "{cmd_files[step]}"')
+            tlines += [
+                "",
+                f'touch "{task_done}"',
+                f'_task_elapsed=$(( $(date +%s) - _task_t0 ))',
+                f'echo "[$(date)] DONE  group task {idx} total elapsed=${{_task_elapsed}}s"',
+                "exit 0",
+            ]
+
+            task_script = task_dir / f"task_{idx}.sbatch"
+            task_script.write_text("\n".join(tlines) + "\n")
+            task_script.chmod(0o755)
+
+        # ── Generate manager script ───────────────────────────────────────────
+        # Same fixed sizing as every other job manager (see slurm_manager's
+        # MANAGER_* constants / manager_walltime): one idle core supervising
+        # child jobs, on whichever partition sbatch_options.json's "manager"
+        # entry names, for the longest that partition permits.
+        _mgr_kwargs = {k: v for k, v in merged_cfg.items()
+                       if k in _slurm_fields and k not in _skip_all
+                       and k not in ("time", "cpus_per_task", "mem", "ntasks", "nodes")}
+        _mgr_part = _manager_partition(self.config.sbatch_options_per_step or {})
+        if _mgr_part:
+            _mgr_kwargs["partition"] = _mgr_part
+        mgr_cfg = Slurmjob_Config(
+            job_name=f"i{self._group_tag(group_steps)}_grp",
+            output_file=str(task_dir / "manager_%j.out"),
+            error_file=str(task_dir  / "manager_%j.err"),
+            time=manager_walltime(_mgr_kwargs.get("partition")),
+            ntasks=1,
+            cpus_per_task=MANAGER_CPUS_PER_TASK,
+            mem=MANAGER_MEM,
+            nodes=1,
+            **_mgr_kwargs,
+        )
+
+        child_entries = [f'  "{task_dir}/task_{i:04d}.sbatch"' for i in range(n_cmds)]
+
+        mlines = ["#!/bin/bash"]
+        mlines += mgr_cfg.to_header_lines()
+        mlines += [
+            "",
+            "set -o pipefail",
+            "",
+            f'TASK_DIR="{task_dir}"',
+            f'N_CMDS={n_cmds}',
+            f'MAX_CONCURRENT={max_concurrent}',
+            "",
+            "CHILD_SCRIPTS=(",
+        ] + child_entries + [
+            ")",
+            "",
+            'SUBMITTED_FILE="$TASK_DIR/submitted_child_jobs.txt"',
+            '> "$SUBMITTED_FILE"',
+            "",
+            f'echo "[$(date)] Group manager: {n_cmds} tasks, max_concurrent={max_concurrent}"',
+            f'echo "  Steps: {" ".join(group_steps)}"',
+            "",
+            "# sliding-window: build pending list (skip already-done tasks)",
+            "PENDING_IDXS=()",
+            f"for (( i=0; i<{n_cmds}; i++ )); do",
+            "    IDX=$(printf '%04d' $i)",
+            '    if [[ -f "$TASK_DIR/cmd_${IDX}.done" ]]; then',
+            '        echo "  task_${IDX} SKIPPED (already done)"',
+            "    else",
+            "        PENDING_IDXS+=($i)",
+            "    fi",
+            "done",
+            "",
+            "PENDING_PTR=0",
+            "FAIL_COUNT=0",
+            "declare -A JID_TO_IDX",
+            "",
+            "submit_one() {",
+            "    local raw_idx=${PENDING_IDXS[$PENDING_PTR]}",
+            "    local IDX; IDX=$(printf '%04d' $raw_idx)",
+            '    local result; result=$(sbatch "${CHILD_SCRIPTS[$raw_idx]}" 2>&1)',
+            "    local rc=$?",
+            "    if [[ $rc -ne 0 ]]; then",
+            '        echo "  sbatch FAILED task_${IDX}: $result"; exit 1',
+            "    fi",
+            "    local JID; JID=$(echo \"$result\" | grep -oE '[0-9]+' | tail -1)",
+            '    JID_TO_IDX[$JID]=$raw_idx',
+            '    echo "$JID" >> "$SUBMITTED_FILE"',
+            '    echo "  [$(date)] task_${IDX} -> job $JID"',
+            "    (( PENDING_PTR++ ))",
+            "}",
+            "",
+            "# fill initial window",
+            "while [[ ${#JID_TO_IDX[@]} -lt MAX_CONCURRENT && $PENDING_PTR -lt ${#PENDING_IDXS[@]} ]]; do",
+            "    submit_one",
+            "done",
+            "",
+            "# poll: retire finished tasks, refill slot immediately",
+            "while [[ ${#JID_TO_IDX[@]} -gt 0 ]]; do",
+            "    sleep 30",
+            "    for JID in \"${!JID_TO_IDX[@]}\"; do",
+            "        squeue --noheader --jobs=\"$JID\" 2>/dev/null | grep -q . && continue",
+            "        raw_idx=${JID_TO_IDX[$JID]}",
+            "        IDX=$(printf '%04d' $raw_idx)",
+            '        if [[ -f "$TASK_DIR/cmd_${IDX}.done" ]]; then',
+            '            echo "  [$(date)] task_${IDX} SUCCEEDED"',
+            '        elif [[ -f "$TASK_DIR/cmd_${IDX}.fail" ]]; then',
+            '            echo "  [$(date)] task_${IDX} FAILED"',
+            "            FAIL_COUNT=$(( FAIL_COUNT + 1 ))",
+            "        else",
+            '            echo "WARNING: task_${IDX} no marker — marking failed"',
+            '            echo "unknown" > "$TASK_DIR/cmd_${IDX}.fail"',
+            "            FAIL_COUNT=$(( FAIL_COUNT + 1 ))",
+            "        fi",
+            "        unset 'JID_TO_IDX[$JID]'",
+            "        if [[ $FAIL_COUNT -eq 0 && $PENDING_PTR -lt ${#PENDING_IDXS[@]} ]]; then",
+            "            submit_one",
+            "        fi",
+            "    done",
+            "    echo \"  [$(date)] running=${#JID_TO_IDX[@]} pending=$(( ${#PENDING_IDXS[@]} - PENDING_PTR ))\"",
+            "done",
+            "",
+            "if [[ $FAIL_COUNT -gt 0 ]]; then",
+            '    echo "[$(date)] $FAIL_COUNT task(s) failed. Aborting."',
+            "    exit 1",
+            "fi",
+            f'echo "[$(date)] All {n_cmds} group tasks done."',
+        ]
+        mlines += chain_submit_lines(next_manager_script, next_job_id_file)
+        mlines += ["exit 0"]
+
+        manager_script = task_dir / "manager.sbatch"
+        manager_script.write_text("\n".join(mlines) + "\n")
+        manager_script.chmod(0o755)
+        return manager_script
+
+    def _run_step(self, script: Path, log_dir: Path) -> bool:
+        """Execute all commands in a run script in parallel, return True if all pass."""
+        commands = [
+            self._fix_cmd(line.strip())
+            for line in script.read_text().splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        if not commands:
+            return True
+
+        n = len(commands)
+        w = self.config.max_workers
+        print(f"    {n} command(s), max_workers={w}")
+
+        env = os.environ.copy()
+        env["PYTHONPATH"] = (str(self._pythonpath_add)
+                             + os.pathsep + env.get("PYTHONPATH", ""))
+        # Both topsStack scripts (SentinelWrapper.py etc.) and ISCE2 application
+        # scripts (looks.py etc.) are called by name in the generated run files.
+        env["PATH"] = (str(self._stack_bin.parent)
+                       + os.pathsep + str(self._isce_app_bin.parent)
+                       + os.pathsep + env.get("PATH", ""))
+
+        failed = 0
+        with ThreadPoolExecutor(max_workers=w) as pool:
+            futures: dict = {}
+            for i, cmd in enumerate(commands):
+                done_file = log_dir / f"cmd_{i:04d}.done"
+                if done_file.exists():
+                    print(f"      cmd_{i:04d}  {Fore.YELLOW}SKIPPED  {Style.RESET_ALL}")
+                    continue
+                futures[pool.submit(self._run_cmd, cmd, log_dir, i, env)] = i
+
+            for fut in as_completed(futures):
+                i = futures[fut]
+                rc = fut.result()
+                if rc == 0:
+                    print(f"      cmd_{i:04d}  {Fore.GREEN}SUCCEEDED{Style.RESET_ALL}")
+                else:
+                    failed += 1
+                    print(f"      cmd_{i:04d}  {Fore.RED}FAILED    (rc={rc}){Style.RESET_ALL}")
+
+        return failed == 0
+
+    def _run_cmd(self, cmd: str, log_dir: Path, idx: int, env: dict) -> int:
+        log_file  = log_dir / f"cmd_{idx:04d}.log"
+        done_file = log_dir / f"cmd_{idx:04d}.done"
+        with open(log_file, "w") as lf:
+            result = subprocess.run(
+                cmd, shell=True,
+                cwd=str(self.isce_dir),
+                stdout=lf, stderr=subprocess.STDOUT,
+                env=env,
+            )
+        if result.returncode == 0:
+            done_file.touch()
+            (log_dir / f"cmd_{idx:04d}.fail").unlink(missing_ok=True)
+        else:
+            (log_dir / f"cmd_{idx:04d}.fail").write_text(str(result.returncode))
+        return result.returncode
+
+    # ── Refresh ───────────────────────────────────────────────────────────────
+
+    # Thin aliases -- the actual SLURM-query logic is shared with GMTSAR_S1
+    # via slurm_manager.py (processor-agnostic: just squeue/sacct wrappers).
+    _SLURM_DEAD_STATES = SLURM_DEAD_STATES
+    _slurm_active_jobs = staticmethod(slurm_active_jobs)
+    _slurm_job_states = staticmethod(slurm_job_states)
+
+    def refresh(self, ls: str | bool | None = None) -> dict[str, dict]:
+        """Read file-based status for all steps and print a coloured table.
+
+        By default only the one-line-per-step summary is printed — no
+        per-command cmd_XXXX detail. Pass ls=True to show per-command detail
+        for every step (the old always-verbose behavior), or ls="01" (also
+        accepts "1", "run_01", etc.) to show it for just that one step.
+        """
+        # When submit() ran in the background or inside a container, staging (and
+        # the job list) happens in the worker, not on this host object -- so
+        # self.jobs is still empty here even though the run is live. The worker
+        # writes the authoritative job list to <isce_dir>/isce_jobs.json (see
+        # save()); fall back to it so refresh() reflects the running job. Only
+        # when self.jobs is empty: the CLI/GUI already load a (possibly custom)
+        # saved_job_path before calling refresh(), and must not have it silently
+        # replaced by the default file.
+        if not self.jobs:
+            default_jobs = self.isce_dir / JOBS_FILE
+            if default_jobs.exists():
+                try:
+                    self._load(default_jobs)
+                except (json.JSONDecodeError, OSError):
+                    pass  # mid-write / unreadable -- fall back to whatever we have
+        if not self.jobs:
+            raise ValueError(
+                "No jobs loaded. Call submit() first, or (if submit ran in a "
+                f"container/background) wait for {self.isce_dir / JOBS_FILE} to be written."
+            )
+
+        ls_step: str | None = None
+        if isinstance(ls, str):
+            resolved, unknown = _resolve_step_names([ls], list(self.jobs.keys()))
+            if unknown:
+                raise ValueError(
+                    f"Unknown step for --ls: {unknown}. "
+                    f"Valid steps: {sorted(self.jobs.keys())}"
+                )
+            ls_step = next(iter(resolved))
+        show_all_cmds = ls is True
+
+        _has_slurm_ids = any(
+            meta.get("slurm_job_ids") or meta.get("slurm_job_id")
+            for meta in self.jobs.values()
+        )
+        hpc = getattr(self.config, "hpc_mode", False) or _has_slurm_ids
+        active_slurm: dict[str, str] = {}
+        sacct_states: dict[str, str] = {}
+        if hpc:
+            active_slurm = self._slurm_active_jobs()
+            pending_ids: list[str] = []
+            for meta in self.jobs.values():
+                if meta.get("status") == _PENDING:
+                    # support both old single-id and new list format
+                    ids = meta.get("slurm_job_ids") or (
+                        [meta["slurm_job_id"]] if meta.get("slurm_job_id") else []
+                    )
+                    pending_ids.extend(ids)
+            if pending_ids:
+                sacct_states = self._slurm_job_states(pending_ids)
+
+        counts: dict[str, int] = defaultdict(int)
+        color_map = {
+            _SUCCEEDED: Fore.GREEN,
+            _FAILED:    Fore.RED,
+            _RUNNING:   Fore.CYAN,
+            _PENDING:   Fore.YELLOW,
+        }
+
+        print(f"\n{Style.BRIGHT}{'  ':<3} {'STEP':<45} {'STATUS'}{Style.RESET_ALL}")
+        print("-" * 65)
+
+        for step, meta in sorted(self.jobs.items()):
+            status, detail = _read_status(self._run_files_dir, step)
+            if hpc and status == _PENDING:
+                job_ids: list[str] = meta.get("slurm_job_ids") or (
+                    [meta["slurm_job_id"]] if meta.get("slurm_job_id") else []
+                )
+                if not job_ids:
+                    # Chained group not yet submitted by Python -- the previous
+                    # group's manager writes the job id here once it chain-submits
+                    # this one (see _chain_submit_lines / _step_executor_hpc).
+                    jf = meta.get("job_id_file")
+                    if jf and Path(jf).exists():
+                        jid_txt = Path(jf).read_text().strip()
+                        if jid_txt.isdigit():
+                            job_ids = [jid_txt]
+                            meta["slurm_job_ids"] = job_ids
+                if job_ids:
+                    if any(active_slurm.get(jid) == "RUNNING" for jid in job_ids):
+                        status = _RUNNING
+                    elif any(jid in active_slurm for jid in job_ids):
+                        status = _PENDING  # queued in SLURM but not yet running
+                    else:
+                        dead = [jid for jid in job_ids
+                                if jid in sacct_states
+                                and sacct_states[jid] in self._SLURM_DEAD_STATES]
+                        if dead:
+                            detail = f"SLURM {sacct_states[dead[0]]} (job {dead[0]})"
+                            status = _FAILED
+                            _write_status(self._run_files_dir, step, _FAILED, detail)
+                        else:
+                            log_dir_p = Path(meta["log_dir"])
+                            fail_count = len(list(log_dir_p.glob("cmd_*.fail")))
+                            done_count = len(list(log_dir_p.glob("cmd_*.done")))
+                            if fail_count > 0:
+                                detail = f"{fail_count} command(s) failed"
+                                status = _FAILED
+                                _write_status(self._run_files_dir, step, _FAILED, detail)
+                            elif meta.get("hpc_manager") or meta.get("hpc_array"):
+                                # Use stored n_cmds if available; fall back to file count
+                                n_cmds = meta.get("n_cmds", 0)
+                                if not n_cmds:
+                                    if meta.get("hpc_manager"):
+                                        _sbatch_dir = Path(str(log_dir_p).replace("_logs", "_sbatch"))
+                                        n_cmds = len(list(_sbatch_dir.glob(f"{step}_????.sbatch"))) if _sbatch_dir.exists() else 0
+                                    else:
+                                        _task_dir = Path(meta.get("group_task_dir", ""))
+                                        n_cmds = len(list(_task_dir.glob("task_????.sbatch"))) if _task_dir.exists() else 0
+                                if n_cmds > 0 and done_count >= n_cmds:
+                                    status = _SUCCEEDED
+                                    _write_status(self._run_files_dir, step, _SUCCEEDED)
+                                else:
+                                    # Job gone from SLURM, commands incomplete or count unknown
+                                    status = _FAILED
+                                    _write_status(self._run_files_dir, step, _FAILED,
+                                                  "job ended but commands incomplete")
+                            elif done_count >= len(job_ids):
+                                status = _SUCCEEDED
+                                _write_status(self._run_files_dir, step, _SUCCEEDED)
+            meta["status"] = status
+            counts[status] += 1
+            color  = color_map.get(status, "")
+            suffix = f"  ({detail})" if detail and status == _FAILED else ""
+            if hpc:
+                job_ids_d: list[str] = meta.get("slurm_job_ids") or (
+                    [meta["slurm_job_id"]] if meta.get("slurm_job_id") else []
+                )
+                if meta.get("hpc_array") and len(job_ids_d) == 1:
+                    job_id_tag = f"  [group-mgr {job_ids_d[0]}]"
+                elif meta.get("hpc_manager") and len(job_ids_d) == 1:
+                    job_id_tag = f"  [manager {job_ids_d[0]}]"
+                elif len(job_ids_d) == 1:
+                    job_id_tag = f"  [job {job_ids_d[0]}]"
+                elif len(job_ids_d) > 1:
+                    job_id_tag = f"  [{len(job_ids_d)} jobs: {job_ids_d[0]}…{job_ids_d[-1]}]"
+                else:
+                    job_id_tag = ""
+            else:
+                job_id_tag = ""
+            print(f"  - {step:<43}  {color}{status}{suffix}{Style.RESET_ALL}{job_id_tag}")
+
+            # Per-command lines for multi-command steps (HPC new/old format, and
+            # local) — suppressed unless --ls was given (bare, or for this step).
+            if not (show_all_cmds or step == ls_step):
+                continue
+            log_dir_p = Path(meta.get("log_dir", ""))
+            if log_dir_p.exists():
+                cmd_job_ids: list[str] = meta.get("slurm_job_ids") or []
+                if len(cmd_job_ids) > 1:
+                    # New HPC format: one job per command — show job IDs
+                    for i, jid in enumerate(cmd_job_ids):
+                        done_f = log_dir_p / f"cmd_{i:04d}.done"
+                        fail_f = log_dir_p / f"cmd_{i:04d}.fail"
+                        if done_f.exists():
+                            cmd_st, cmd_color = _SUCCEEDED, Fore.GREEN
+                        elif fail_f.exists():
+                            cmd_st, cmd_color = _FAILED, Fore.RED
+                        elif active_slurm.get(jid) == "RUNNING":
+                            cmd_st, cmd_color = _RUNNING, Fore.CYAN
+                        elif jid in active_slurm:
+                            cmd_st, cmd_color = _PENDING, Fore.YELLOW  # SLURM PD
+                        else:
+                            cmd_st, cmd_color = _PENDING, Fore.YELLOW
+                        print(f"      cmd_{i:04d}  {cmd_color}{cmd_st:<9}{Style.RESET_ALL}  [job {jid}]")
+                elif meta.get("hpc_manager") or meta.get("hpc_array"):
+                    # Manager/group-manager mode: slurm_job_ids has only the manager ID.
+                    # Per-command status derived from .done/.fail files only.
+                    # All commands without a marker are concurrently in-flight (RUNNING).
+                    n_cmds_m = meta.get("n_cmds", 0)
+                    if not n_cmds_m:
+                        if meta.get("hpc_manager"):
+                            sbatch_dir_m = Path(str(log_dir_p).replace("_logs", "_sbatch"))
+                            n_cmds_m = len(list(sbatch_dir_m.glob(f"{step}_????.sbatch"))) if sbatch_dir_m.exists() else 0
+                        else:
+                            task_dir_m = Path(meta.get("group_task_dir", ""))
+                            n_cmds_m = len(list(task_dir_m.glob("task_????.sbatch"))) if task_dir_m.exists() else 0
+                    for i in range(n_cmds_m):
+                        done_f = log_dir_p / f"cmd_{i:04d}.done"
+                        fail_f = log_dir_p / f"cmd_{i:04d}.fail"
+                        if done_f.exists():
+                            cmd_st, cmd_color = _SUCCEEDED, Fore.GREEN
+                        elif fail_f.exists():
+                            cmd_st, cmd_color = _FAILED, Fore.RED
+                        elif status == _RUNNING:
+                            cmd_st, cmd_color = _RUNNING, Fore.CYAN
+                        else:
+                            cmd_st, cmd_color = _PENDING, Fore.YELLOW
+                        print(f"      cmd_{i:04d}  {cmd_color}{cmd_st:<9}{Style.RESET_ALL}")
+                else:
+                    # Local sequential mode: only one command runs at a time.
+                    script_path = Path(meta.get("script", ""))
+                    if script_path.exists():
+                        cmds = [
+                            l.strip() for l in script_path.read_text().splitlines()
+                            if l.strip() and not l.strip().startswith("#")
+                        ]
+                    else:
+                        cmds = []
+                    if len(cmds) > 1:
+                        first_active = next(
+                            (i for i in range(len(cmds))
+                             if not (log_dir_p / f"cmd_{i:04d}.done").exists()
+                             and not (log_dir_p / f"cmd_{i:04d}.fail").exists()),
+                            None
+                        )
+                        for i in range(len(cmds)):
+                            done_f = log_dir_p / f"cmd_{i:04d}.done"
+                            fail_f = log_dir_p / f"cmd_{i:04d}.fail"
+                            if done_f.exists():
+                                cmd_st, cmd_color = _SUCCEEDED, Fore.GREEN
+                            elif fail_f.exists():
+                                cmd_st, cmd_color = _FAILED, Fore.RED
+                            elif status == _RUNNING and i == first_active:
+                                cmd_st, cmd_color = _RUNNING, Fore.CYAN
+                            else:
+                                cmd_st, cmd_color = _PENDING, Fore.YELLOW
+                            print(f"      cmd_{i:04d}  {cmd_color}{cmd_st:<9}{Style.RESET_ALL}")
+
+        print()
+        print(f"  {Fore.GREEN}Succeeded : {counts[_SUCCEEDED]}{Style.RESET_ALL}  "
+              f"{Fore.CYAN}Running : {counts[_RUNNING]}{Style.RESET_ALL}  "
+              f"{Fore.YELLOW}Pending : {counts[_PENDING]}{Style.RESET_ALL}  "
+              f"{Fore.RED}Failed : {counts[_FAILED]}{Style.RESET_ALL}")
+
+        self.save(silent=True)
+        return self.jobs
+
+    # ── Retry ─────────────────────────────────────────────────────────────────
+
+    def retry(self) -> dict:
+        """Re-run the first failed step and all subsequent steps."""
+        # not INSARHUB_CONTAINER_CHILD: the container-side retry must run locally,
+        # never `docker run` again inside the docker-less image (see submit()).
+        if getattr(self.config, "container", None) and not os.environ.get("INSARHUB_CONTAINER_CHILD"):
+            self._reinvoke_via_container("retry")
+            return self.jobs
+
+        failed = [n for n, m in sorted(self.jobs.items()) if m["status"] == _FAILED]
+        if not failed:
+            self.refresh()
+            failed = [n for n, m in sorted(self.jobs.items()) if m["status"] == _FAILED]
+        if not failed:
+            print(f"{Fore.GREEN}No failed steps.{Style.RESET_ALL}")
+            return {}
+
+        first_failed = failed[0]
+        to_retry = sorted(n for n in self.jobs if n >= first_failed)
+        for step in to_retry:
+            _write_status(self._run_files_dir, step, _PENDING)
+            self.jobs[step]["status"] = _PENDING
+
+        print(f"{Fore.YELLOW}Retrying {len(to_retry)} step(s) "
+              f"from {first_failed}…{Style.RESET_ALL}")
+
+        hpc_mode = getattr(self.config, "hpc_mode", False) or any(
+            m.get("slurm_job_ids") or m.get("hpc_manager") or m.get("hpc_array")
+            for m in self.jobs.values()
+        )
+        dry_run  = getattr(self.config, "dry_run", False)
+        if hpc_mode and hasattr(self.config, "hpc_mode"):
+            self.config.hpc_mode = True  # _step_executor reads config.hpc_mode directly
+        if hpc_mode or dry_run:
+            self._step_executor(to_retry)
+        else:
+            self._start_local_background(to_retry)
+        return self.jobs
+
+    # ── Container re-invocation ───────────────────────────────────────────────
+
+    def _reinvoke_via_container(self, action: str, steps: list[str] | None = None) -> None:
+        """Re-run this same `insarhub processor ... {action}` CLI call inside
+        self.config.container instead of on the host.
+
+        The container image is expected to have `insarhub` (plus ISCE2/topsStack)
+        installed — the container-side process runs the identical InSARHub code,
+        so refresh()/retry()/cancel() need no container-awareness of their own:
+        they just read the same status files this container-side process writes
+        to the shared (bind-mounted) workdir.
+        """
+        import dataclasses
+
+        from insarhub.utils.config_io import write_insarhub_config
+        from insarhub.utils.container import wrap_container_cmd
+
+        cfg_dict = {
+            f.name: getattr(self.config, f.name)
+            for f in dataclasses.fields(self.config)
+            if f.name not in ("container", "workdir", "saved_job_path")
+        }
+        write_insarhub_config(self.workdir, {
+            "processor": {"type": type(self).name, "config": cfg_dict}
+        })
+
+        step_args = f" --step {' '.join(steps)}" if steps else ""
+
+        def _build_cli_cmd(host_pid: int | None = None) -> str:
+            # INSARHUB_CONTAINER_CHILD tells _start_local_background() (running
+            # inside the container) not to fork+detach again: this call already
+            # forks and blocks on `docker run` below, so backgrounding is
+            # already handled at the host level -- see that method's docstring.
+            # INSARHUB_HOST_PID (only known once we're the forked child, after
+            # os.fork()) is this host-side process's own PID -- a real,
+            # host-checkable liveness marker for _step_executor to record
+            # instead of a container-namespace PID that's meaningless from the
+            # host's side (see _step_executor's comment for why).
+            env_prefix = "INSARHUB_CONTAINER_CHILD=1"
+            if host_pid is not None:
+                env_prefix += f" INSARHUB_HOST_PID={host_pid}"
+            return (f"{env_prefix} insarhub processor "
+                    f"-N {type(self).name} -w {self.workdir} {action}{step_args}")
+
+        self._run_files_dir.mkdir(parents=True, exist_ok=True)
+        self.isce_dir.mkdir(parents=True, exist_ok=True)
+        log_file = self._paths.executor_log
+        pid_file = self._paths.executor_pid
+        if os.name == "posix":
+            pid = os.fork()
+            if pid == 0:  # child — detach and run
+                try:
+                    os.setsid()
+                    own_pid = os.getpid()
+                    # Redirect stdout/stderr FIRST, before any work, so even a
+                    # failure in command construction lands in executor.log.
+                    # os._exit() below never flushes Python's buffered stderr,
+                    # so an uncaught exception here used to be silently lost,
+                    # leaving an empty executor.log and a "success" submit.
+                    with open(log_file, "w") as _lf:
+                        # dup2 onto raw fds 1/2, not sys.stdout.fileno() -- that raises
+                        # io.UnsupportedOperation whenever sys.stdout has been replaced
+                        # (pytest capture, Jupyter/Colab, contextlib.redirect_stdout),
+                        # killing the forked executor before any stage runs.
+                        os.dup2(_lf.fileno(), 1)
+                        os.dup2(_lf.fileno(), 2)
+                    cli_cmd = _build_cli_cmd(host_pid=own_pid)
+                    wrapped = wrap_container_cmd(self.config.container, cli_cmd, self.workdir)
+                    subprocess.run(wrapped, shell=True)
+                except BaseException as exc:
+                    import traceback
+                    try:
+                        with open(log_file, "a") as _lf:
+                            _lf.write(f"\n[executor] container run failed: {exc}\n")
+                            traceback.print_exc(file=_lf)
+                            _lf.flush()
+                    except Exception:
+                        pass
+                finally:
+                    os._exit(0)
+            # parent
+            pid_file.write_text(str(pid))
+            print(f"{Fore.GREEN}Container executor running in background (PID {pid}).{Style.RESET_ALL}")
+            print(f"  log : {log_file}")
+            print(f"  Use 'refresh' to check status, 'cancel' to stop.")
+        else:
+            # Windows: no fork — run blocking. No separate host PID to hand
+            # off either: this call itself is already the thing the user is
+            # waiting on, so a container-namespace PID recorded inside never
+            # gets checked against a *different*, already-returned host process.
+            cli_cmd = _build_cli_cmd()
+            wrapped = wrap_container_cmd(self.config.container, cli_cmd, self.workdir)
+            subprocess.run(wrapped, shell=True)
+
+    # ── Background local execution ────────────────────────────────────────────
+
+    def _start_local_background(self, pending_steps: list[str]) -> None:
+        """Fork a detached process to run steps; parent returns immediately.
+
+        Skipped when re-invoked inside a container by _reinvoke_via_container:
+        that host-side call already forks and blocks on `docker run`, which is
+        what provides the "return control to the user, keep running" behavior.
+        Forking *again* here would let the container's own foreground process
+        (this one) exit right after the fork, and `docker run --rm` tears the
+        whole container down -- including this freshly-forked, barely-started
+        child -- as soon as its main process exits. Running _step_executor
+        directly instead keeps the container alive until the steps finish.
+        """
+        self.isce_dir.mkdir(parents=True, exist_ok=True)
+        pid_file = self._paths.executor_pid
+        log_file = self._paths.executor_log
+        if os.environ.get("INSARHUB_CONTAINER_CHILD"):
+            self._step_executor(pending_steps)
+            return
+        if os.name == "posix":
+            pid = os.fork()
+            if pid == 0:  # child — detach and run
+                try:
+                    os.setsid()
+                    # Redirect stdout/stderr FIRST, before any work, so a
+                    # failure lands in executor.log (os._exit below never
+                    # flushes Python's buffered stderr).
+                    with open(log_file, "w") as _lf:
+                        # dup2 onto raw fds 1/2, not sys.stdout.fileno() -- that raises
+                        # io.UnsupportedOperation whenever sys.stdout has been replaced
+                        # (pytest capture, Jupyter/Colab, contextlib.redirect_stdout),
+                        # killing the forked executor before any stage runs.
+                        os.dup2(_lf.fileno(), 1)
+                        os.dup2(_lf.fileno(), 2)
+                    self._step_executor(pending_steps)
+                except BaseException as exc:
+                    import traceback
+                    try:
+                        with open(log_file, "a") as _lf:
+                            _lf.write(f"\n[executor] local run failed: {exc}\n")
+                            traceback.print_exc(file=_lf)
+                            _lf.flush()
+                    except Exception:
+                        pass
+                finally:
+                    os._exit(0)
+            # parent
+            pid_file.write_text(str(pid))
+            print(f"{Fore.GREEN}Local executor running in background (PID {pid}).{Style.RESET_ALL}")
+            print(f"  log : {log_file}")
+            print(f"  Use 'refresh' to check status, 'cancel' to stop.")
+        else:
+            # Windows: no fork — run blocking
+            self._step_executor(pending_steps)
+
+    # ── Cancel ────────────────────────────────────────────────────────────────
+
+    def cancel(self) -> None:
+        """Cancel all running/pending jobs (HPC: scancel; local: SIGTERM by PID).
+
+        HPC mode is auto-detected from slurm_job_ids in isce_jobs.json —
+        no need to pass --hpc-mode on the cancel command.
+        """
+        _has_slurm_ids = any(
+            meta.get("slurm_job_ids") or meta.get("slurm_job_id")
+            for meta in self.jobs.values()
+        )
+        if getattr(self.config, "hpc_mode", False) or _has_slurm_ids:
+            all_ids: list[str] = []
+            for meta in self.jobs.values():
+                ids = meta.get("slurm_job_ids") or (
+                    [meta["slurm_job_id"]] if meta.get("slurm_job_id") else []
+                )
+                all_ids.extend(ids)
+                # Cancel child jobs already submitted by a running manager/group-manager
+                if meta.get("hpc_manager"):
+                    child_file = Path(meta.get("log_dir", "")) / "submitted_child_jobs.txt"
+                    if child_file.exists():
+                        all_ids.extend(
+                            l.strip() for l in child_file.read_text().splitlines() if l.strip()
+                        )
+                if meta.get("hpc_array"):
+                    child_file = Path(meta.get("group_task_dir", "")) / "submitted_child_jobs.txt"
+                    if child_file.exists():
+                        all_ids.extend(
+                            l.strip() for l in child_file.read_text().splitlines() if l.strip()
+                        )
+            valid_ids = [jid for jid in all_ids if jid and jid != "unknown"]
+            if not valid_ids:
+                print(f"{Fore.YELLOW}No SLURM job IDs found.{Style.RESET_ALL}")
+                return
+            result = subprocess.run(["scancel"] + valid_ids, capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"{Fore.GREEN}[{type(self).name}] cancelled {len(valid_ids)} job(s).{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.RED}scancel error: {result.stderr.strip()}{Style.RESET_ALL}")
+            for step, meta in self.jobs.items():
+                if meta.get("status") in (_PENDING, _RUNNING):
+                    meta["status"] = _FAILED
+                    _write_status(self._run_files_dir, step, _FAILED, "cancelled by user")
+            self.save(silent=True)
+        else:
+            pid_file = self._paths.executor_pid
+            if not pid_file.exists():
+                print(f"{Fore.YELLOW}No local executor running (no PID file).{Style.RESET_ALL}")
+                return
+            try:
+                pid = int(pid_file.read_text().strip())
+                try:
+                    os.killpg(os.getpgid(pid), signal.SIGTERM)
+                    print(f"{Fore.GREEN}Sent SIGTERM to executor (PID {pid}).{Style.RESET_ALL}")
+                except ProcessLookupError:
+                    print(f"{Fore.YELLOW}Process already finished.{Style.RESET_ALL}")
+                pid_file.unlink(missing_ok=True)
+                for step, meta in self.jobs.items():
+                    if meta.get("status") in (_RUNNING, _PENDING):
+                        meta["status"] = _FAILED
+                        _write_status(self._run_files_dir, step, _FAILED, "cancelled by user")
+                self.save(silent=True)
+            except Exception as e:
+                print(f"{Fore.RED}Cancel error: {e}{Style.RESET_ALL}", file=sys.stderr)
+
+    # ── Watch ─────────────────────────────────────────────────────────────────
+
+    def watch(self, refresh_interval: int = 60) -> None:
+        """Poll step status until all steps finish or one fails."""
+        total = len(self.jobs)
+        print(f"{Fore.GREEN}Watching {total} steps every {refresh_interval}s. "
+              f"Press Ctrl+C to stop.{Style.RESET_ALL}")
+        try:
+            while True:
+                with redirect_stdout(io.StringIO()):
+                    self.refresh()
+
+                succeeded = sum(1 for m in self.jobs.values() if m["status"] == _SUCCEEDED)
+                running   = sum(1 for m in self.jobs.values() if m["status"] == _RUNNING)
+                pending   = sum(1 for m in self.jobs.values() if m["status"] == _PENDING)
+                failed    = sum(1 for m in self.jobs.values() if m["status"] == _FAILED)
+
+                ts = time.strftime("%H:%M:%S")
+                print(f"[{ts}] "
+                      f"{Fore.GREEN}{succeeded}/{total} Done{Style.RESET_ALL}  "
+                      f"{Fore.CYAN}{running} Running{Style.RESET_ALL}  "
+                      f"{Fore.YELLOW}{pending} Pending{Style.RESET_ALL}  "
+                      f"{Fore.RED}{failed} Failed{Style.RESET_ALL}")
+
+                if running == 0 and pending == 0:
+                    if failed:
+                        print(f"\n{Fore.RED}Processing stopped at a failed step. "
+                              f"Call retry() to resume.{Style.RESET_ALL}")
+                    else:
+                        print(f"\n{Fore.GREEN}All steps completed!{Style.RESET_ALL}")
+                    break
+
+                time.sleep(refresh_interval)
+        except KeyboardInterrupt:
+            print(f"\n{Fore.YELLOW}Stopped watching by user.{Style.RESET_ALL}")

@@ -1,0 +1,593 @@
+# -*- coding: utf-8 -*-
+"""
+ISCE2_S1 — Sentinel-1 time-series InSAR processor backed by ISCE2 stackSentinel.
+
+stackSentinel.py (part of ISCE2's topsStack contrib package) generates a set of
+numbered run scripts from all SLCs in slc_dir, then executes them in order.
+Each run script contains independent commands that InSARHub runs in parallel up
+to max_workers.
+
+Interface mirrors Hyp3Base:
+  submit()  — generate run scripts with stackSentinel.py, start execution
+  refresh() — read per-step status, print table
+  retry()   — re-run failed step and everything after it
+  watch()   — poll until all steps finish
+  save()    — persist stack_jobs.json
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+import re
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+import numpy as np
+from colorama import Fore, Style
+
+from insarhub.config import ISCE2_S1_Config
+from insarhub.config.paths import ISCEPaths, MintPyPaths
+from insarhub.processor.isce2_base import (
+    ISCE2_Base,
+    _PENDING,
+    _SUCCEEDED,
+    _read_status,
+    _write_status,
+    _resolve_step_names,
+    _clear_step_markers,
+    _merge_sbatch_opts,
+)
+
+logger = logging.getLogger(__name__)
+
+_DATE_RE = re.compile(r"(\d{8})(?:T\d{6})?")
+
+_MARGIN = 0.1  # degrees added around SLC footprint when auto-deriving bbox
+
+
+def _bbox_from_slc_dir(slc_dir: Path) -> list[float] | None:
+    """Scan SAFE dirs and zips in slc_dir, parse manifest.safe corner coords.
+
+    Returns [S, N, W, E] with a small margin, or None if no manifests found.
+    """
+    import xml.etree.ElementTree as ET
+    import zipfile
+
+    all_lats: list[float] = []
+    all_lons: list[float] = []
+
+    def _parse_coords(text: str) -> None:
+        # manifest.safe uses "lat,lon lat,lon …" (space-separated pairs)
+        for token in text.split():
+            parts = token.split(",")
+            if len(parts) == 2:
+                try:
+                    all_lats.append(float(parts[0]))
+                    all_lons.append(float(parts[1]))
+                except ValueError:
+                    pass
+
+    def _read_manifest(xml_text: str) -> None:
+        try:
+            root = ET.fromstring(xml_text)
+            for coords in root.iter("{http://www.opengis.net/gml}coordinates"):
+                if coords.text:
+                    _parse_coords(coords.text.strip())
+        except ET.ParseError:
+            pass
+
+    for safe in slc_dir.glob("*.SAFE"):
+        manifest = safe / "manifest.safe"
+        if manifest.exists():
+            try:
+                _read_manifest(manifest.read_text())
+            except Exception:
+                pass
+
+    for zf_path in slc_dir.glob("*.zip"):
+        try:
+            with zipfile.ZipFile(zf_path, "r") as zf:
+                for name in zf.namelist():
+                    if name.endswith("manifest.safe"):
+                        _read_manifest(zf.read(name).decode())
+        except Exception:
+            pass
+
+    if not all_lats:
+        return None
+
+    return [
+        min(all_lats) - _MARGIN,
+        max(all_lats) + _MARGIN,
+        min(all_lons) - _MARGIN,
+        max(all_lons) + _MARGIN,
+    ]
+
+
+def _parse_date(name: str) -> str:
+    """Return YYYYMMDD from a date string or a Sentinel-1 scene/granule name."""
+    name = str(name).strip()
+    m = _DATE_RE.search(name)
+    if m:
+        return m.group(1)
+    raise ValueError(f"Cannot extract YYYYMMDD from: {name!r}")
+
+
+def _geotiff_to_isce_dem(tif_path: Path, out_dir: Path) -> Path:
+    """Convert a GeoTIFF DEM to ISCE2 binary + XML format.
+
+    dem_stitcher outputs GeoTIFF; ISCE2 needs a flat float32 binary file
+    with a sidecar .xml written by isceobj.
+    """
+    import rasterio
+    from isce.components.isceobj.Image import createDemImage  # type: ignore[import]
+
+    dem_out = out_dir / "dem.wgs84"
+    xml_out = out_dir / "dem.wgs84.xml"
+
+    if dem_out.exists() and xml_out.exists():
+        print(f"  Reusing converted DEM: {dem_out.name}")
+        return dem_out
+
+    print(f"  Converting GeoTIFF DEM → ISCE2 format: {tif_path.name} …")
+    with rasterio.open(tif_path) as ds:
+        arr = ds.read(1).astype(np.float32)
+        t = ds.transform
+        nodata = ds.nodata
+
+    if nodata is not None:
+        arr[arr == nodata] = -32768.0
+    arr[np.isnan(arr)] = -32768.0
+
+    arr.tofile(str(dem_out))
+
+    height, width = arr.shape
+    dem_img = createDemImage()
+    dem_img.filename      = str(dem_out)
+    dem_img.width         = width
+    dem_img.length        = height
+    dem_img.dataType      = "FLOAT"
+    dem_img.scheme        = "BIL"
+    dem_img.bands         = 1
+    dem_img.accessMode    = "READ"
+    dem_img.reference     = "WGS84"
+    dem_img.setFirstLongitude(t.c + 0.5 * t.a)
+    dem_img.setFirstLatitude(t.f  + 0.5 * t.e)
+    dem_img.setDeltaLongitude(t.a)
+    dem_img.setDeltaLatitude(t.e)
+    dem_img.renderHdr()
+
+    print(f"  DEM converted → {dem_out.name}  ({width}×{height} px)")
+    return dem_out
+
+
+def _prepare_dem(config: ISCE2_S1_Config, workdir: Path) -> Path:
+    """Return path to an ISCE2-format DEM, downloading GLO-30 if needed."""
+    raw = config.dem_path
+    dem_dir = ISCEPaths(workdir).dem_dir
+    _auto = raw is None or str(raw).strip().lower() in ("", "none", "auto")
+    _is_sentinel = (not _auto) and Path(str(raw)) == dem_dir
+
+    if not _auto and not _is_sentinel:
+        p = Path(str(raw))
+        if p.suffix.lower() in (".tif", ".tiff"):
+            return _geotiff_to_isce_dem(p, workdir)
+        if p.is_dir():
+            dem_dir = p
+        elif p.is_file():
+            return p
+        # explicit path given but doesn't exist yet — fall through to download into dem_dir
+
+    # Prefer the actual joint footprint of the SLCs that will be processed
+    # over config.bbox (the search AOI): ASF returns whole-scene footprints
+    # that merely *contain* the search AOI rather than match it exactly, and
+    # for a merged multi-frame stack the true combined footprint can extend
+    # well beyond any single AOI used to find those frames. Deriving from
+    # the real scenes on disk ensures the DEM actually covers every frame,
+    # not just whatever AOI happened to be used at search time. config.bbox
+    # is now only a fallback for when no SLCs are on disk yet to scan (e.g.
+    # a dry run before download, or --dem_path/manual pre-staging).
+    bbox: list[float] | None = None
+    for scan_dir in dict.fromkeys([  # ordered, deduplicated
+        Path(str(config.slc_dir)) if config.slc_dir else None,
+        workdir,
+    ]):
+        if scan_dir is None:
+            continue
+        bbox = _bbox_from_slc_dir(scan_dir)
+        if bbox:
+            print(
+                f"  Auto-derived bbox from SLCs in {scan_dir}: "
+                f"S={bbox[0]:.4f} N={bbox[1]:.4f} W={bbox[2]:.4f} E={bbox[3]:.4f}"
+            )
+            break
+
+    if bbox is None and config.bbox and len(config.bbox) == 4:
+        bbox = list(config.bbox)
+        print(f"  No SLCs found to derive a footprint from yet — falling back to configured bbox {bbox}.")
+
+    if bbox is None:
+        raise ValueError(
+            "No bbox could be derived for DEM download. "
+            "Provide --dem_path (ISCE2 binary DEM + .xml), --bbox 'S N W E', "
+            "or ensure SLC .SAFE/.zip files are in slc_dir or workdir."
+        )
+
+    dem_dir.mkdir(parents=True, exist_ok=True)
+    dem_out = dem_dir / "dem.wgs84"
+    xml_out = dem_dir / "dem.wgs84.xml"
+    if dem_out.exists() and xml_out.exists():
+        logger.info("Reusing existing ISCE2 DEM: %s", dem_out)
+        print(f"  Reusing existing DEM: {dem_out.name}")
+        return dem_out
+
+    try:
+        from isce.components.isceobj.Image import createDemImage  # type: ignore[import]
+        from dem_stitcher import stitch_dem
+
+        s, n, w, e = bbox
+        print(f"  Downloading GLO-30 DEM  bbox {bbox}…")
+        arr, profile = stitch_dem(
+            [w, s, e, n],
+            dem_name="glo_30",
+            dst_ellipsoidal_height=True,
+            dst_area_or_point="Point",
+        )
+        arr_f32 = arr.astype(np.float32)
+        arr_f32[np.isnan(arr_f32)] = -32768.0
+        arr_f32.tofile(str(dem_out))
+
+        height, width = arr_f32.shape
+        t = profile["transform"]
+        dem_img = createDemImage()
+        dem_img.filename   = str(dem_out)
+        dem_img.width      = width
+        dem_img.length     = height
+        dem_img.dataType   = "FLOAT"
+        dem_img.scheme     = "BIL"
+        dem_img.bands      = 1
+        dem_img.accessMode = "READ"
+        dem_img.reference  = "WGS84"
+        dem_img.setFirstLongitude(t.c + 0.5 * t.a)
+        dem_img.setFirstLatitude(t.f  + 0.5 * t.e)
+        dem_img.setDeltaLongitude(t.a)
+        dem_img.setDeltaLatitude(t.e)
+        dem_img.renderHdr()
+        print(f"  DEM saved → {dem_out.name}  ({width}×{height} px)")
+        return dem_out
+
+    except Exception as exc:
+        raise RuntimeError(
+            f"GLO-30 DEM download failed: {exc}. "
+            "Provide a pre-existing ISCE2-format DEM via dem_path=."
+        ) from exc
+
+
+# ── Main class ────────────────────────────────────────────────────────────────
+
+class ISCE2_S1(ISCE2_Base):
+    """Time-series InSAR processor using ISCE2 stackSentinel.
+
+    stackSentinel.py generates a numbered series of run scripts from all SLCs
+    in ``slc_dir``.  InSARHub executes the scripts sequentially (each step must
+    complete before the next starts) and parallelises the independent commands
+    *within* each step up to ``max_workers``.
+
+    Usage::
+
+        from insarhub.processor import ISCE2_S1
+        from insarhub.config import ISCE2_S1_Config
+
+        proc = ISCE2_S1(
+            pairs  = [("20200101", "20200113"), ("20200101", "20200125")],
+            config = ISCE2_S1_Config(
+                workdir   = '/data/stack',
+                slc_dir   = '/data/slcs',
+                orbit_dir = '/data/orbits',
+                bbox      = [33.0, 38.0, -120.0, -115.0],
+            ),
+        )
+        proc.submit()
+        proc.watch()
+    """
+
+    name                  = "ISCE2_S1"
+    description           = ("Time-series InSAR with ISCE2 stackSentinel. "
+                              "Requires ISCE2 with topsStack contrib.")
+    compatible_downloader = "S1_SLC"
+    default_config        = ISCE2_S1_Config
+
+    def __init__(self, pairs: list[tuple[str, str]], config: ISCE2_S1_Config | None = None):
+        super().__init__(config)
+        self.config: ISCE2_S1_Config = (
+            self.config if self.config is not None else ISCE2_S1_Config()
+        )
+        # Allow empty/dummy pairs when loading from a saved job file (refresh/watch/retry)
+        if not pairs and not self.jobs:
+            raise ValueError("pairs must be a non-empty list of (reference, secondary) tuples.")
+        self.pairs = pairs
+
+    # ── Submit ────────────────────────────────────────────────────────────────
+
+    def submit(self, steps: list[str] | None = None) -> dict:
+        """Generate run scripts and start sequential step execution.
+
+        steps: optional step name(s) (e.g. ["run_03_average_baseline"]) to
+            force back to PENDING and (re)run regardless of their saved
+            status, bypassing skip_existing for just those steps. Every
+            other step is left exactly as it is — not reset, not executed —
+            so this doesn't cascade into re-running downstream steps the way
+            retry() does. Default (None): normal behavior, run every step
+            not already SUCCEEDED.
+        """
+        # Stamp the folder with what produced it. Downloaders, analyzers and
+        # Hyp3_S1 all do this; ISCE2_S1, GMTSAR_S1 and the ISCE3 processors did
+        # not, so a workdir driven through the Python API ended up recording an
+        # analyzer and no processor -- the GUI then showed the folder with an
+        # analyzer badge and a blank processor. (The GUI and CLI write the same
+        # marker themselves, which is why only the Python API path was affected.)
+        #
+        # Written at submit(), not at construction as Hyp3Base does: building a
+        # processor merely to inspect it -- --list-options, a GUI defaults
+        # lookup, a --dry-run preview -- must not stamp a folder. Hyp3Base needs
+        # an explicit dry_run guard for exactly that reason.
+        try:
+            from insarhub.utils.tool import write_workflow_marker
+            _roles = {"processor": type(self).name}
+            _dl = getattr(type(self), "compatible_downloader", None)
+            if _dl and _dl != "all":
+                _roles["downloader"] = _dl
+            write_workflow_marker(self.config.workdir, **_roles)
+        except Exception:
+            # Never let bookkeeping stop a real run.
+            pass
+
+        # `not INSARHUB_CONTAINER_CHILD`: when this submit runs *inside* the
+        # container (re-invoked by _reinvoke_via_container, which sets that env
+        # var), config.container is still set, so without this guard it would
+        # run `docker run` AGAIN inside the image -- which has no docker CLI --
+        # giving "docker: not found". The child must run the stages locally.
+        # GMTSAR guards the same way; ISCE2/ISCE3 were missing it, which broke
+        # GUI container submits (the app persists `container` into the config the
+        # container-side re-reads). See ISCE3_Base.submit for the full trace.
+        if self.config.container and not os.environ.get("INSARHUB_CONTAINER_CHILD"):
+            self._reinvoke_via_container("submit", steps)
+            return self.jobs
+
+        dem_path = _prepare_dem(self.config, self.workdir)
+        aux_dir  = self._resolve_aux_dir()
+        self._generate_run_files(dem_path, aux_dir, pairs=self.pairs)
+
+        scripts = sorted(
+            p for p in self._run_files_dir.glob("run_*")
+            if p.is_file() and not p.suffix
+        )
+        if not scripts:
+            raise RuntimeError(
+                f"No run scripts found in {self._run_files_dir}. "
+                "Check stackSentinel.log for errors."
+            )
+
+        requested = None
+        if steps:
+            requested, unknown = _resolve_step_names(steps, [s.name for s in scripts])
+            if unknown:
+                raise ValueError(
+                    f"Unknown step(s): {unknown}. Give the full name or just its "
+                    f"number (e.g. '03' for run_03_average_baseline). "
+                    f"Valid steps: {sorted(s.name for s in scripts)}"
+                )
+
+        pending: list[str] = []
+        for script in scripts:
+            step = script.name
+            status, _ = _read_status(self._run_files_dir, step)
+
+            if requested is not None and step not in requested:
+                # --step given and this one wasn't named: leave it exactly as
+                # it is — record its current status, don't touch or run it.
+                if step not in self.jobs:
+                    self.jobs[step] = self._job_meta(step, script, status)
+                continue
+
+            if requested is None and status == _SUCCEEDED and self.config.skip_existing:
+                print(f"{Fore.YELLOW}  ✓ {step} already succeeded, skipping.{Style.RESET_ALL}")
+                if step not in self.jobs:
+                    self.jobs[step] = self._job_meta(step, script, _SUCCEEDED)
+                continue
+
+            log_dir = self._run_files_dir / f"{step}_logs"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            if requested is not None:
+                # Forced via --step: the per-command .done/.fail markers are
+                # what the manager scripts actually check to decide what to
+                # (re)submit — the step-level status alone isn't enough.
+                n_cleared = _clear_step_markers(self._run_files_dir, step)
+                if n_cleared:
+                    print(f"{Fore.CYAN}    cleared {n_cleared} stale per-command "
+                          f"marker(s) for {step}{Style.RESET_ALL}")
+            _write_status(self._run_files_dir, step, _PENDING)
+            self.jobs[step] = self._job_meta(step, script, _PENDING, log_dir)
+            pending.append(step)
+
+        if requested is not None:
+            print(f"{Fore.CYAN}  --step: forcing {sorted(requested)} to (re)run; "
+                  f"all other steps left untouched.{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Registered {len(pending)} pending step(s) "
+              f"({len(self.jobs)} total).{Style.RESET_ALL}")
+
+        hpc_mode = getattr(self.config, "hpc_mode", False) or any(
+            m.get("slurm_job_ids") or m.get("hpc_manager") or m.get("hpc_array")
+            for m in self.jobs.values()
+        )
+        if hpc_mode and hasattr(self.config, "hpc_mode"):
+            self.config.hpc_mode = True  # self-heal when called with a bare/default config
+        dry_run  = getattr(self.config, "dry_run", False)
+        if hpc_mode or dry_run:
+            # HPC/dry-run: sbatch calls are fast — run blocking so CLI doesn't
+            # exit before all jobs are submitted.
+            self._step_executor(sorted(pending))
+        else:
+            # Local mode: fork a detached background process so CLI returns
+            # immediately; use refresh/cancel/retry to control execution.
+            self._start_local_background(sorted(pending))
+        if not dry_run:
+            self.save()
+        return self.jobs
+
+    def _job_meta(self, step: str, script: Path, status: str,
+                  log_dir: Path | None = None) -> dict:
+        return {
+            "step":         step,
+            "script":       str(script),
+            "log_dir":      str(log_dir or self._run_files_dir / f"{step}_logs"),
+            "status":       status,
+            "submitted_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    def _resolve_aux_dir(self) -> Path:
+        p = Path(str(self.config.aux_dir)).expanduser().resolve() if self.config.aux_dir else self._paths.slc_dir
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    def _resolve_num_proc(self) -> tuple[int, int]:
+        """(numProcess, numProcess4topo) for stackSentinel.py.
+
+        In HPC mode, sbatch_options.json's cpus_per_task for steps 01/09/10
+        is the source of truth -- overriding config.num_proc/num_proc4topo
+        -- so ISCE2's own multiprocessing pool size always matches however
+        many cores the corresponding step manager actually allocates.
+        Mismatched values otherwise leave allocated cores idle (found via a
+        real p100_f466 run: num_proc4topo=1 left run_01 single-threaded on
+        a 3-swath, 25-burst stack regardless of what sbatch_options.json's
+        "01" cpus_per_task was set to) or oversubscribe them. num_proc uses
+        min(09, 10)'s cpus_per_task, not max, so ISCE2 never spawns more
+        workers than the more-constrained of the two steps' allocations.
+        Local mode has no sbatch_options.json, so config.num_proc/
+        num_proc4topo apply as given.
+        """
+        cfg = self.config
+        if not getattr(cfg, "hpc_mode", False):
+            return cfg.num_proc, cfg.num_proc4topo
+        per_step = getattr(cfg, "sbatch_options_per_step", {}) or {}
+        if not per_step:
+            return cfg.num_proc, cfg.num_proc4topo
+        topo_cpus = _merge_sbatch_opts(per_step, "01").get("cpus_per_task")
+        geo_cpus = [
+            c.get("cpus_per_task") for c in
+            (_merge_sbatch_opts(per_step, "09"), _merge_sbatch_opts(per_step, "10"))
+            if c.get("cpus_per_task") is not None
+        ]
+        num_proc4topo = int(topo_cpus) if topo_cpus is not None else cfg.num_proc4topo
+        num_proc = int(min(geo_cpus)) if geo_cpus else cfg.num_proc
+        return num_proc, num_proc4topo
+
+    def _build_inps_namespace(self, dem_path: Path, aux_dir: Path, orbit_dir_str: str):
+        import types
+        cfg = self.config
+        ns  = types.SimpleNamespace()
+
+        # paths
+        ns.slc_dirname             = str(cfg.slc_dir)
+        ns.orbit_dirname           = orbit_dir_str
+        ns.aux_dirname             = str(aux_dir)
+        ns.work_dir                = str(self.isce_dir)
+        ns.dem                     = str(dem_path)
+
+        # area / dates
+        ns.polarization            = cfg.polarization
+        ns.workflow                = cfg.workflow
+        ns.swath_num               = cfg.swath_num
+        ns.bbox                    = (f"{cfg.bbox[0]} {cfg.bbox[1]} {cfg.bbox[2]} {cfg.bbox[3]}"
+                                      if cfg.bbox else None)
+        ns.exclude_dates           = cfg.exclude_dates
+        ns.include_dates           = cfg.include_dates
+        ns.startDate               = cfg.start_date
+        ns.stopDate                = cfg.end_date
+
+        # coregistration
+        ns.coregistration          = cfg.coregistration
+        ns.reference_date          = cfg.reference_date
+        ns.snrThreshold            = str(cfg.snr_misreg_threshold)
+        ns.esdCoherenceThreshold   = str(cfg.esd_coherence_threshold)
+        ns.num_overlap_connections = str(cfg.num_overlap_connections)
+
+        # interferogram
+        ns.azimuthLooks            = str(cfg.looks_azimuth)
+        ns.rangeLooks              = str(cfg.looks_range)
+        ns.filtStrength            = str(cfg.filter_strength)
+        ns.unwMethod               = cfg.unw_method
+        ns.rmFilter                = cfg.rm_filter
+        ns.virtualMerge            = cfg.virtual_merge
+
+        # ionosphere
+        ns.param_ion               = cfg.param_ion
+        ns.num_connections_ion     = str(cfg.num_connections_ion)
+
+        # compute
+        ns.useGPU                  = cfg.use_gpu
+        ns.numProcess, ns.numProcess4topo = self._resolve_num_proc()
+        ns.text_cmd                = cfg.text_cmd
+
+        return ns
+
+    def _generate_run_files(self, dem_path: Path, aux_dir: Path,
+                             pairs: list[tuple[str, str]]) -> None:
+        if (self._run_files_dir.exists()
+                and any(p for p in self._run_files_dir.glob("run_*")
+                        if p.is_file() and not p.suffix)):
+            print(f"{Fore.YELLOW}  run_files/ already exists — reusing. "
+                  f"Delete it to regenerate with new settings.{Style.RESET_ALL}")
+            return
+
+        cfg       = self.config
+        orbit_dir = str(cfg.orbit_dir) if cfg.orbit_dir else str(self._paths.slc_dir)  # config always resolves this
+        Path(orbit_dir).mkdir(parents=True, exist_ok=True)
+
+        # ensure topsStack is importable
+        topsstack_parent = str(self._pythonpath_add)
+        if topsstack_parent not in sys.path:
+            sys.path.insert(0, topsstack_parent)
+
+        from topsStack.stackSentinel import (  # type: ignore[import]
+            checkCurrentStatus, interferogramStack,
+        )
+
+        inps = self._build_inps_namespace(dem_path, aux_dir, orbit_dir)
+        stack_pairs = [(_parse_date(r), _parse_date(s)) for r, s in pairs]
+
+        # stackSentinel writes SAFE_files.txt relative to CWD
+        orig_cwd = os.getcwd()
+        os.chdir(str(self.isce_dir))
+        try:
+            print(f"  Discovering SLCs in {cfg.slc_dir} …")
+            acquisitionDates, stackReferenceDate, secondaryDates, safe_dict, updateStack = (
+                checkCurrentStatus(inps)
+            )
+            print(f"  Using {len(stack_pairs)} user-supplied pair(s).")
+            print(f"  Writing run scripts for workflow '{cfg.workflow}' …")
+            interferogramStack(
+                inps, acquisitionDates, stackReferenceDate,
+                secondaryDates, safe_dict, stack_pairs, updateStack,
+            )
+        finally:
+            os.chdir(orig_cwd)
+
+        # Redirect MintPy output to workdir/mintpy/ (not isce/mintpy/)
+        mintpy_dir = MintPyPaths(self.workdir).mintpy_dir
+        for script in self._run_files_dir.glob("run_*"):
+            if not script.is_file() or script.suffix:
+                continue
+            text = script.read_text()
+            if "smallbaselineApp.py" in text:
+                patched = re.sub(
+                    r"(smallbaselineApp\.py)(\s+)(\S+\.cfg)",
+                    rf"\1\2\3 --dir {mintpy_dir}",
+                    text,
+                )
+                if patched != text:
+                    script.write_text(patched)
+
+        print("  run_files/ generated.")

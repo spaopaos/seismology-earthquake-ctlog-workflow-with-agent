@@ -1,8 +1,8 @@
 {
   "format_version": "1.0",
-  "page_count": 35,
-  "source_count": 10,
-  "source_pdf_pages": 262,
+  "page_count": 38,
+  "source_count": 12,
+  "source_pdf_pages": 267,
   "export_transform": "Wiki links converted to ordinary relative Markdown links; original PDFs/texts unchanged",
   "live_source_identity": "daa288a9e69c8ba485f386ac94590fbbca810fe8c5289ef21ed28a6143231fa1",
   "original_files": {
@@ -75,5 +75,5 @@
     "raw/sources/.cache/zhou-2024-autoba.pdf.txt": "60f0c786d625472a0f20bf2782d57bf2310e005679cf84007a4686d4f9db526a",
     "raw/sources/.cache/zhu-2019-phasenet.pdf.txt": "5be2fec7cae4a30583526c7710f6d7b07f212bedb92291fbdd85ab57a0c3e755"
   },
-  "revision_note": "2026-10-06: focal-mechanism revision added the SKHASH paper and v1.1 manual (2 sources, 3 pages) directly into this snapshot; existing pages/PDFs unchanged except the version-and-evidence-gaps addendum."
+  "revision_note": "2026-10-06: added SKHASH paper+manual and the InSARHub paper+docs (markdown originals, logical page anchors); pre-existing PDF sources unchanged."
 }

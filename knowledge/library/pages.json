@@ -666,5 +666,57 @@
     "original_sha256": "0fcd358534a2ea07a9a376b55bc5e001a246aa71dfd0decd77ecbacc93644280",
     "evidence_scope": "version-matched manual for the vendored v1.1 source; four compatibility patches recorded separately",
     "sha256": "0fcd358534a2ea07a9a376b55bc5e001a246aa71dfd0decd77ecbacc93644280"
+  },
+  "insarhub": {
+    "id": "insarhub",
+    "title": "InSARHub",
+    "type": "entity",
+    "path": "wiki/entities/insarhub.md",
+    "source_ids": [
+      "li-2026-insarhub",
+      "insarhub-docs-v042"
+    ],
+    "related": [
+      "li-2026-insarhub",
+      "insarhub-docs-v042",
+      "uncertainty-and-quality-control",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "5e47d9348f961ec17e16dd3248cbb7f6e39c772df97d0771085aec00f1cd3dde",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "5e47d9348f961ec17e16dd3248cbb7f6e39c772df97d0771085aec00f1cd3dde"
+  },
+  "li-2026-insarhub": {
+    "id": "li-2026-insarhub",
+    "title": "InSARHub: A Modular Python Framework for Automated InSAR and Time-Series Processing with a Built-in Web GUI",
+    "type": "source",
+    "path": "wiki/sources/li-2026-insarhub.md",
+    "source_ids": [
+      "li-2026-insarhub"
+    ],
+    "related": [
+      "insarhub",
+      "insarhub-docs-v042",
+      "version-and-evidence-gaps"
+    ],
+    "original_sha256": "bce4c06b796f8b2641aa42567e238c55182449001e4571b4c8bad81a672483cc",
+    "evidence_scope": "background_and_source_synthesis; not version-matched execution instructions",
+    "sha256": "bce4c06b796f8b2641aa42567e238c55182449001e4571b4c8bad81a672483cc"
+  },
+  "insarhub-docs-v042": {
+    "id": "insarhub-docs-v042",
+    "title": "InSARHub v0.4.2 documentation",
+    "type": "source",
+    "path": "wiki/sources/insarhub-docs-v042.md",
+    "source_ids": [
+      "insarhub-docs-v042"
+    ],
+    "related": [
+      "insarhub",
+      "li-2026-insarhub"
+    ],
+    "original_sha256": "c5f1667bdfa3fc3b11599d6385f1c1a1fc52cf83cd5c13acd30662a981c4076f",
+    "evidence_scope": "version-matched documentation for the vendored v0.4.2",
+    "sha256": "c5f1667bdfa3fc3b11599d6385f1c1a1fc52cf83cd5c13acd30662a981c4076f"
   }
 }

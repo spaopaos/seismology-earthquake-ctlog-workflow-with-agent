@@ -1,0 +1,638 @@
+# Changelog
+
+## [0.4.2]
+
+### Pair Quality
+
+* Replaced the weighted 0–100 pair score — three interchangeable modes, hard-kills, warnings and good/risky/bad cutoffs — with an **event verdict**: a pair is `concern` when at least one *serious* condition is detected at either acquisition, and `healthy` otherwise. There is deliberately no third label, and every verdict carries the events and measurements behind it, so a label is always traceable to a number.
+* Weather and snow now come from **Open-Meteo and the S1 global coherence dataset only**. WorldCover land cover, the Copernicus DEM, MODIS/Sentinel-2 NDVI, MODIS snow cover, CDS ERA5 and FIRMS were removed, taking the subsystem from ~9 hosts and 4 credential mechanisms to **2 anonymous hosts and none** — so a pair-quality run behaves the same on every machine instead of silently scoring against whatever happened to be reachable.
+* Weather is sampled on the archive's **native 0.1° (~9 km) grid across the AOI and averaged**, instead of a single AOI-centroid cell. All sample points travel in **one** Open-Meteo request; the per-point response is averaged per variable and only the mean is cached, so an AOI is represented by its area rather than one grid cell.
+* `deep_snow` is now a **minor** event. A deep but *unchanged* dry pack is a stable C-band target — the coherence cost comes from liquid water (`wet_snow`) or the pack changing between acquisitions (`delta_snow`), not its depth. On the Utah test stack roughly a third of the concerns were set by an unchanged deep pack alone. The pair-quality DB schema is bumped (3 → 4) so verdicts computed with the old rule are rebuilt rather than reused.
+* Rain and soil-moisture thresholds are **calibrated per AOI** (p97/p90) because neither has a published C-band threshold; snow, coherence, freeze/thaw and wind thresholds cite the literature. The applied thresholds are recorded with the result.
+
+### Bug Fixes
+
+* Fixed the AOI centroid being computed two different ways, which gave the weather/snow cache two keys for one AOI.
+* Fixed pair-quality scoring stampeding rate-limited APIs.
+* Fixed a failed weather/snow fetch being written to the quality cache as a full set of null readings.
+* Fixed the GUI pair-network editor rendering `concern` pairs grey instead of yellow and labelling the legend **Healthy / Risky**. It still tested the removed `risky` keyword, so a `concern` verdict never matched and fell through to the unjudged grey; the legend is now **Healthy / Concern**.
+* Fixed `select-pair` logging `Invalid HTTP request received.` (HTTP 400) during pair scoring. The network editor requested pair-DB lookups with every edge key in the query string, which can exceed the HTTP parser's ~64 KiB request line; the lookup now sends the key list in a JSON request body (`POST /api/pair-quality-db/lookup`).
+
+### Removed
+
+* Removed the `avoid_low_quality_days` pair-selection pre-filter and its `snow_threshold` / `precip_mm_threshold` options. Its snow criteria read `snow_cover_frac`, which the batch fetch never populated, so they could never fire — while `snow_threshold=0.0` flagged every acquisition date. Weather now informs the per-pair verdict instead of silently deleting scenes.
+
+### Dependencies
+
+* Aligned the `fast` CI job's hand-written pip list with `pyproject.toml`: `rasterio` now matches the declared `>=1.3`, and the redundant `setuptools<81` entry is gone. `test/tier2_basic/test_docs_install_commands.py` guards this drift.
+* Removed the `setuptools<81` enforcement from the `docker/dev`, `docker/release` and devcontainer images. It was a workaround for the pyproject pin dropped in 0.4.1; pyaps3 0.3.7 does not import `pkg_resources`, so no dependency in the tree needs it.
+
+## [0.4.1] - 2026-09-13
+
+### Security
+
+* Fixed the web API accepting cross-origin requests from any website. CORS was enabled with `allow_origins=["*"]` and `allow_credentials=True`, which Starlette answers by reflecting the caller's `Origin`, so any page open in the same browser could read from — and post to — the unauthenticated local API, including `POST /api/credentials/*`. CORS is now off by default and enabled only under `INSARHUB_DEV` for the Vite dev server. Contributors running the split dev setup need `INSARHUB_DEV=1 uvicorn insarhub.app.api:app --reload --port 8080`; `insarhub-app` is unaffected.
+
+### Analyzer Restructuring
+
+* Split `ISCE3_Dolphin_PL` into **`ISCE3_Dolphin_S1_PL`** (`ISCE3_Burst`) and **`ISCE3_Dolphin_NISAR_PL`** (`ISCE3_NISAR`), sharing a new `Dolphin_PL_Base_Analyzer`. One config per sensor fixes NISAR stacks silently inheriting the Sentinel-1 C-band wavelength. Supersedes the 0.4.0rc1 entry.
+* Renamed the analyzer modules and dolphin configs onto one convention. Legacy names (`ISCE3_Dolphin_PL`, `Dolphin_SBAS`, …) still resolve and are hidden from the analyzer list, and pre-split saved configs are retargeted to the right sensor on read.
+
+### Bug Fixes
+
+* Fixed CLI `--stacks PATH:FRAME` selecting nothing for `S1_Burst`: ASF returns no `frameNumber` on `SLC-BURST`, so burst stacks key on `fullBurstID` and selectors are now matched as strings. Accepts the full burst ID, the index with subswath, or a bare index; path zero-padding is ignored.
+* Fixed `filter()` silently falling back to the unfiltered search when no stack matched, so a typo in `--stacks` processed every stack. A selection matching nothing now also exits non-zero.
+* Fixed empty downloader results with `asf_search` 13.0.0 — Sentinel-1/ALOS/NISAR frame filters are now routed to `asfFrame`, which works on 12.x and 13.x.
+* Fixed `ISCE3_Burst`/`ISCE3_NISAR` background processing dying instantly under pytest, Jupyter/Colab or any `redirect_stdout`: the forked executor used `os.dup2(..., sys.stdout.fileno())`, which raises once `sys.stdout` is replaced, leaving every stage at `RUNNING`. Fixed at all ten call sites.
+* Fixed `ISCE2_S1`, `GMTSAR_S1`, the ISCE3 processors, `GMTSAR_SBAS` and both dolphin analyzers never recording themselves in `insarhub_config.json`, which left folders with a blank processor or analyzer badge in the GUI.
+* Fixed two `select_pairs()` crashes on NISAR products: an explicit null `centerLat`/`centerLon`, and `ASFProduct.stack()` raising for datasets ASF publishes no baseline stack for.
+* Unified `watch()` on `refresh_interval` across processors — it was `poll_interval` on `GMTSAR_S1` and `interval` on the ISCE3 base, so `watch --interval N` was silently ignored there. Old keywords still work.
+* Fixed `ISCE3_NISAR.compatible_analyzer` resolving to the Sentinel-1 analyzer, dolphin log lines and SLURM labels hardcoding `ISCE3_Dolphin_PL`, `GMTSAR_SBAS` mislabelling its own workdir, and `NameError: Fore` aborting the dolphin empty-stack warning.
+* Fixed `ISCE3_Burst` SLURM job names colliding across workdirs, and `S1_Burst` leaving an annotation-less `.SAFE` when `properties["bytes"]` came back as a string.
+* Fixed the job-folder listing tagging every analyzer `MintPy`; tags now follow the actual engine.
+* Fixed the GUI map not zooming to a polygon or box AOI — `fitBounds` sat behind an `isStyleLoaded()` check MapLibre 5 reports false right after `setData()`.
+* Fixed saved pair quality never reaching the stack file. `write_stack_file()` runs before the pair-quality DB exists, so it always wrote an empty `pair_quality` block and nothing filled it in afterwards — `/api/pair-quality` missed its fast path and recomputed every score on demand. The DB's scores are now merged in once the build finishes, or immediately when an existing DB already covers the scene set and the rebuild is skipped, and re-derived when pairs are edited in the GUI so `pair_quality` describes the pairs actually saved.
+
+### Downloader
+
+* `--select-pairs` now warns when the pair network will not be used: NISAR products have no perpendicular baseline, and `ISCE3_Burst`/`ISCE3_NISAR` build their own network from `slc/` via dolphin phase linking. Sentinel-1 bursts are unaffected.
+* Progress and stack listings now name the product actually being searched (`bursts`, `GSLCs`, `RSLCs`, `GUNWs`, `SLCs`) instead of reusing the `S1_SLC` wording, and burst stacks report a Burst_ID rather than a frame number.
+* Hid `NISAR_RSLC` and `NISAR_GUNW` from the GUI downloader list — both download fine, but no processor consumes them yet. Still available from the CLI and Python API.
+* Removed `get_config()` and `utils/config.toml`: the function could never run (`tomllib` was never imported, and the `Config` class it referenced does not exist), and the file was invalid TOML configuring Mask R-CNN training rather than InSAR.
+
+### GUI
+
+* Renamed the top-bar AOI field to **Area of Interest · WKT** (**目标区域 · WKT**); the map toolbar label below it is now **AOI**.
+
+### Testing
+
+* Replaced the test suite with a four-tier system under `test/` (see `test/README.md`): **install**, **basic**, **e2e** and **regression**. A bare `pytest` runs everything except e2e. Added a `test` extra, tier markers, and a `Tests` workflow that actually runs the suite — CI previously ran only an import smoke test.
+* Added `scripts/test_install.py`, which builds a wheel and runs tier 1 inside a fresh conda env per documented install flavour. All five workflows were verified end to end on real data over Parowan Valley, Utah.
+* Confirmed `requires-python = ">=3.11,<3.13"` is still correct: the code runs on 3.13, but `isce2` has no py3.13 build and COMPASS pins `scipy <1.13`.
+
+### Documentation
+
+* Added a **FAQ** page (English and Chinese), built from the questions that actually recur in the issue tracker: `insarhub-app`'s link not opening (port 8080 is usually taken — use `--port`), search succeeding while download returns nothing, ISCE2 stopping part-way, what `pip install -e .` does, which satellites are supported, and reading logs with `INSARHUB_DEBUG`.
+* Removed the pre-release banner and the `asf_search` 13.0.0 warning from the install docs, and dropped the `insarhub=0.4.0rc1` pins from every install command — both issues are resolved in 0.4.1.
+* Added the FAQ to the `mkdocs.yml` nav (**常见问题** in the Chinese build). The page was written but listed nowhere, so it was reachable only by typing its URL.
+* Fixed every documentation link in both READMEs and `CONTRIBUTING.md` landing on a 404. The site is versioned with mike, so each URL needs a `latest/` segment — `latest/zh/` for the Chinese pages. The CLI link now also points at the full `advanced/cli_reference/` instead of the short `quickstart/cli/` page.
+* Corrected `pip install -e ".[dev]"` to `".[test]"` in `CONTRIBUTING.md` and both contributing guides. `pyproject.toml` defines only a `test` extra, so the documented setup command failed for every new contributor.
+* Translated the `INSARHUB_DEBUG` logging section into the Chinese CLI reference, which still stopped at the ERA5 command while the English page documented the switch.
+* Rewrote `CONTRIBUTING.md` against the code as it actually is: the four test tiers and which tier a change belongs in, the frontend build (`npm ci` && `npm run build` — the Python install does not produce `dist/`, so a fresh clone serves no GUI), and backend registration via `__init_subclass__`. It previously told contributors to call `registry.register()` and add a config to `insarhub/config.py`; neither has existed since the config package landed. The Black instruction is gone too — no formatter is configured in the repo, and running one buries a change in reflowed lines.
+
+### Logging
+
+* InSARHub is now quiet by default: its own `INFO`/`DEBUG` records are suppressed so a run shows only the command's output. `WARNING` and `ERROR` still appear — a failure that prints nothing is worse than a noisy one — and `print()` output is untouched. Set **`INSARHUB_DEBUG=1`** to turn every InSARHub log record back on.
+* The switch is an environment variable because it has to reach all three entry points. `insarhub-app` and plain `import insarhub` previously configured no logging at all, so there was no way to get a log line out of the GUI or the Python API; both now apply the same policy as the CLI. `--verbose`/`-vv` still work and still escalate.
+* Only the `insarhub` logger is lowered in debug mode — the root stays at `WARNING`, so matplotlib, botocore, rasterio and asyncio do not bury the output. `GMTSAR_S1`'s executor used to set the **root** to `INFO`, which let every third-party library log into `executor.log` on top of the per-pair progress it was meant to surface.
+* Removed 33 dead imports across 23 modules. Re-export shims, registration side-effect imports and `# noqa: F401` markers were left intact.
+
+### Containers
+
+* Container defaults and every documented `--container` example now point at the immutable **`:0.4.0`** tag instead of the floating `:dev`. A `:dev` default meant each user pulled whatever was last pushed, so a run could not be reproduced or tied to a release. Two tier-2 tests enforce this: the tag must not be floating, and it must match `_version.py` — a version bump that forgets to re-tag now fails CI rather than silently shipping the previous release's images.
+* Split `docker/` into **`docker/dev/`** (builds from the working tree, tagged `:dev`) and **`docker/release/`** (installs a pinned InSARHub from conda-forge, tagged `:x.y.z`, with GMTSAR pinned to an immutable ref and the released MintPy). Release images take `--build-arg INSARHUB_VERSION` and assert at build time that the installed version matches, so a lagging conda-forge fails the build instead of producing a mislabelled image.
+* Removed the unreferenced legacy `docker/Dockerfile`; `docker/release/Dockerfile.isce2-mintpy` supersedes it. Added `docker/README.md` documenting the dev/release split, the release order, and the recipe details the Dockerfiles depend on (the numpy<2 solve ordering, the two meanings of `ISCE_HOME`, the `GLIBCXX_3.4.29` loader trap, and why no image sets `ENTRYPOINT`).
+* Published the four versioned `release/` images for the first time. `container_default` has named `:0.4.0` images since 0.4.0, but only `:dev` had ever been pushed to ghcr.io, so a bare `--container` failed with a manifest-unknown pull error for every 0.4.0 and 0.4.1 user. An explicit `--container <image>` was unaffected.
+* 0.4.1 keeps pointing at the `:0.4.0` images rather than shipping `:0.4.1`. The only runtime change in 0.4.1 is a FastAPI route, which runs in the host process and never inside a container, so the images are equivalent for everything the container actually executes.
+* Fixed `docker/release/Dockerfile.gmtsar-mintpy` never having been buildable. It used GMTSAR's `gmtsar/python/install.py` build flow but pinned `GMTSAR_REF=v6.6`, and that tag (2025-04-21) predates install.py by more than a year — the build died with `can't open file '/opt/gmtsar/gmtsar/python/install.py'`. No GMTSAR tag supports this flow (v6.6 is the newest, and v6.5/v6.2.2/v6.1 are older), so the ref is now a commit SHA, which is just as immutable as a tag. The `--depth 1` clone also had to go: `git clone --branch` cannot take a SHA. It also installs InSARHub from **PyPI via pip** rather than conda-forge: the feedstock's `gdal >=3.8` is unsatisfiable against a GMTSAR env's `gmt=6.4`, which caps gdal at 3.6. pip resolves the dependency tree, which enforces `numpy<2.0` and so also repairs the unpinned numpy GMTSAR's own installer pip-installs.
+* Relaxed `test_container_default_tag_matches_this_version` — now `test_container_default_tag_is_this_release_series` — from an exact match on `__version__` to the same `X.Y` series. Exact equality could not hold on release day: a `release/` image installs InSARHub from conda-forge and asserts the version matches, so `:X.Y.Z` is unbuildable until the feedstock catches up a day or more after the tag, which left a choice between tagging a release with red CI and naming an image that does not exist. A patch-level lag is now allowed; a lag across a minor or major bump, a tag ahead of `__version__`, and a floating tag all still fail. `docker/README.md` documents when a patch release should rebuild anyway.
+
+### Dependencies
+
+* Relaxed `rasterio >=1.4` to `>=1.3`. The floor dated to the initial 0.1.0 commit and no code needed it — every rasterio API InSARHub uses (`open`, `warp.transform_bounds`, `mask.mask`, `transform.from_origin`, `windows.from_bounds`, `/vsicurl/` windowed reads) was verified working on 1.3.6. It was also actively harmful: rasterio 1.4 requires proj >=9.5, so it could not coexist with a GMTSAR env, where gmt 6.4 holds gdal at 3.6.x and proj at 9.1.
+* Relaxed the conda recipe's `gdal >=3.8` to `>=3.6`, which is what made `conda install -c conda-forge insarhub` unsatisfiable in a GMTSAR environment. Verified on gdal 3.6.3 against every GDAL call in the codebase, including the `MEM` + `Warp` path and `NETCDF:` subdataset reads. Nothing here needs a 3.8 API.
+* Dropped the `setuptools <81` pin. It existed because pyaps3 imported `pkg_resources`, which setuptools removed in v81; pyaps3 0.3.7 no longer does, and no other dependency in the tree references it either.
+* Dropped `imagecodecs <=2026.1.1` from the conda recipe — nothing in InSARHub imports it. It was a transitive pin that had leaked into the recipe's `run:` list.
+* `numpy <2.0` stays. ISCE2, MintPy and COMPASS's `s1reader` all have compiled extensions that break against the 2.x ABI, and the sequenced installs that make the pin actually stick are documented in `docker/README.md`.
+
+### Development Environment
+
+* Rebuilt the VS Code dev container, which could not have worked for InSARHub. It downloaded `environment.yml` from **geodlkit** — an unrelated project — over the network and then `pip install geodlkit`, so the container came up without a single InSARHub dependency in it. It now builds from this repo's own `environment.yml` (the build context is the repo root so the file can be copied in), adds Node for the frontend, and installs the same test tooling CI does.
+* Moved the editable install and the frontend build into `.devcontainer/post-create.sh`, since both need the mounted workspace and neither exists at image-build time. `pip install` runs `--no-deps` on purpose: conda already resolved the tree, and letting pip re-resolve pulls PyPI wheels of rasterio and burst2safe over the conda builds, which then fail at runtime on `proj.db` version mismatches.
+* Dropped `--gpus all` and `--ipc=host` from `devcontainer.json`. Nothing in InSARHub uses CUDA — the only GPU references in the tree are `--gres=gpu:N` directives that `utils/tool.py` *writes into* a SLURM script for a remote cluster — so the container simply refused to start on any host without the NVIDIA container toolkit.
+* Stopped pinning `workspaceFolder` to `/home/vscode`, which opened VS Code on a directory the repo was not in; narrowed `forwardPorts` to the two ports that exist (8080 for `insarhub-app`, 5173 for the Vite dev server); and removed the default bind-mount, because a mount whose source is missing on the host stops the container from starting.
+
+## [0.4.0rc1]
+
+## New Features
+
+* **Expanded InSAR Processing Backends — GMTSAR, ISCE3, and NISAR**
+
+  * Added the **`GMTSAR_S1`** local/HPC processor for Sentinel-1 SLC `.SAFE` data, supporting both single-subswath (`p2p_processing`) and multi-subswath merged-stack (`p2p_S1_TOPS_Frame`) workflows, with staged `align` / `topo` / `intf` / `merge` processing.
+  * Added the **`ISCE3_Burst`** processor for ASF `SLC-BURST` granules using ISCE3/COMPASS and Dolphin, with DEM, TEC, CSLC, static, crop, interferogram, stitching, filtering, unwrapping, and LOS stages. Both network and phase-linking estimators are supported.
+  * Added the **`ISCE3_NISAR`** processor for NISAR L2 GSLC products. Because GSLC data is already geocoded, the workflow directly performs AOI cropping, interferogram generation, stitching, and unwrapping through Dolphin.
+  * Added **`GMTSAR_MINTPY_SBAS`**, **`GMTSAR_SBAS`**, and **`Dolphin_SBAS`** analyzers for MintPy-based, GMTSAR-native, and Dolphin time-series inversion workflows.
+  * Extended **`ISCE3_Dolphin_PL`** to support both `ISCE3_Burst` and `ISCE3_NISAR` processors.
+
+* **NISAR Data Ecosystem**
+
+  * Added documented downloaders for **`NISAR_GSLC`**, **`NISAR_RSLC`**, and **`NISAR_GUNW`**, covering geocoded SLC, radar SLC, and geocoded unwrapped interferogram products.
+  * Added **`S1_Burst`** downloading for ASF burst products, assembling individual burst granules into `.SAFE` directories.
+  * Added AOI-aware NISAR GSLC preprocessing: each large GSLC is cropped to the AOI before Dolphin phase linking, substantially reducing memory and processing requirements. `process_full_extent` can disable this behavior.
+
+* **Containerized Processing**
+
+  * Added unified **Docker and Apptainer/Singularity** execution for processors and analyzers through the `container` configuration field and `--container` CLI option.
+  * Container execution removes the requirement for local ISCE2, GMTSAR, or MintPy installations and is supported across local and HPC workflows.
+  * Added shared container utilities and corresponding processing images/documentation.
+  * Made **MintPy an optional dependency**, allowing downloader and processor workflows to run without MintPy installed locally.
+
+* **Scalable HPC / SLURM Processing**
+
+  * Added a shared, processor-independent **SLURM sliding-window manager** for `ISCE2_S1` and `GMTSAR_S1`.
+  * HPC workflows now limit the number of concurrent child jobs with `max_concurrent_hpc` and **chain-submit processing stages**, avoiding large pre-submitted dependency chains.
+  * Added symmetric HPC behavior for analyzers through `analyzer.run()` and standardized `--container` handling across local and HPC execution.
+
+* **Improved GUI and Interactive Visualization**
+
+  * Fully integrated the new GMTSAR processors/analyzers into the web GUI, including configuration, submission, refresh, retry, cancellation, and processor-specific SLURM templates.
+  * Added analyzer discovery based on `compatible_processor`, including support for analyzers compatible with multiple processors.
+  * Added Chinese GUI translations and a merge-download option.
+  * Added **raw-data visualization** through the Downloader's **View Data** function for Sentinel-1 and NISAR products.
+  * Renamed the processor viewer to **View Result** and expanded it to display geocoded interferograms from HyP3, ISCE3, and GMTSAR.
+  * Added four-corner raster overlays so rotated Sentinel-1 quicklooks are correctly positioned on the map.
+
+* **Adaptive MintPy Time-Series Processing**
+
+  * Added adaptive defaults for MintPy coherence thresholds based on the actual coherence distribution of each stack.
+  * `network.minCoherence`, `networkInversion.maskThreshold`, and `reference.minCoherence` now adapt automatically while respecting configured caps.
+  * Users can still specify explicit numeric thresholds to override adaptive behavior.
+
+* **Unified and More Flexible Workflow APIs**
+
+  * Standardized processor and analyzer execution so `analyzer.run()` can transparently dispatch to HPC when `hpc_mode` is enabled.
+  * Extended processor/analyzer compatibility registration to support multiple compatible processors.
+  * Promoted the **NISAR AOI crop** to an explicit processing stage, making it independently visible and executable through the workflow and refresh interfaces.
+
+## Bug Fixes
+
+### HPC / SLURM Reliability
+
+* Fixed orphaned child jobs and processes remaining after cancelling HPC workflows.
+* Fixed stale `FAILED` states and retry handling so failed GMTSAR/ISCE jobs correctly return to a runnable state.
+* Fixed background and asynchronous commands incorrectly reporting `SUCCEEDED` before processing had actually finished.
+* Improved SLURM process monitoring, termination, workflow state updates, and manager walltime handling.
+* Fixed excessive dependency-chain submission that could exceed SLURM `MaxSubmitPU` / submission limits. HPC managers now chain-submit downstream stages only after the preceding manager succeeds.
+* Fixed stale per-command markers causing `--step` resubmissions to submit no work.
+* Fixed manager scripts incorrectly masking failures as success due to `set -uo pipefail`.
+* Centralized SLURM manager/script generation and status-query logic for consistent ISCE and GMTSAR HPC execution.
+* Added clearer SLURM job naming and improved per-command status visibility through `refresh --ls`.
+
+### GMTSAR Processing
+
+* Refactored multi-subswath GMTSAR HPC execution so `align`, `topo`, `intf`, and `merge` are pooled across subswaths rather than running as separate sequential managers.
+* Fixed shared-file race conditions in multi-subswath/interferogram processing by separating `topo` generation from interferogram execution.
+* Fixed intermediate-file handling, merge failures, output-directory detection, and `dem.grd` discovery.
+* Fixed GMTSAR retry behavior and workflow-state recovery.
+* Fixed incorrect SBAS geometry parameters and missing post-SBAS geocoding.
+* Fixed GMTSAR stack processing to correctly support full-frame multi-subswath workflows and merged outputs.
+* Fixed GMTSAR compatibility with downloader-generated pair files, including automatic orbit resolution and `.zip` → `.SAFE` extraction.
+* Renamed the GMTSAR output directory from `gmtsar_case/` to `gmtsar/`.
+* Fixed GMTSAR DEM handling and added Copernicus GLO-30 support.
+* Fixed GMTSAR GUI workflows that incorrectly used the ISCE sbatch template.
+* Added processor-specific GMTSAR sbatch defaults while preserving existing user settings through additive configuration merging.
+* Fixed GMTSAR GUI HPC resource editing and processor/analyzer-specific sbatch configuration handling.
+* Added detailed GMTSAR HPC child-job status reporting through `refresh --ls`.
+
+### ISCE2 Processing
+
+* Fixed ISCE2 background commands being marked `SUCCEEDED` before the underlying process completed.
+* Fixed orphaned ISCE2 processes and incomplete workflow state updates.
+* Fixed HPC `num_proc` / `num_proc4topo` values drifting from SLURM `cpus_per_task`; HPC multiprocessing is now derived from sbatch resources.
+* Tuned default ISCE2 HPC resources for full-frame multi-swath processing.
+* Fixed `--step` resubmission behavior by clearing stale command markers.
+* Fixed ISCE2 discovery when using `--container`, allowing execution on hosts without ISCE2 installed.
+* Fixed ISCE2 DEM downloads to use the actual SLC footprint rather than only the search AOI.
+* Fixed containerized ISCE2 / `topsStack` discovery and execution.
+
+### Container Execution
+
+* Fixed `docker: not found` errors and unintended nested Docker execution inside containers.
+* Fixed containers terminating prematurely because of asynchronous command execution.
+* Fixed MintPy configuration and `.mintpy.cfg` handling in container environments.
+* Fixed incorrect GUI refresh and status behavior for local and containerized workflows.
+* Improved actionable error messages when ISCE2 or MintPy is unavailable, including guidance to use container execution.
+
+### GUI / Processor Integration
+
+* Fixed GMTSAR being unusable through the web GUI.
+* Unified CLI and GUI local-processor/job-file discovery and saved-processor reload logic.
+* Fixed GMTSAR job submission, cancellation, pair reconstruction, and local-job discovery.
+* Replaced processor-name-specific GUI logic with generic local/cloud processor metadata.
+* Fixed processor/analyzer compatibility filtering and incorrect processor types passed to sbatch configuration.
+* Fixed GUI refresh and result-viewer behavior across local, HPC, and container workflows.
+* Fixed the GUI not exposing GMTSAR sbatch resource editing.
+* Fixed GUI sbatch configuration from overwriting existing GMTSAR resource settings.
+* Fixed `GMTSAR_MINTPY_SBAS` HPC submissions from using an ISCE step such as `"17"` instead of the GMTSAR SBAS configuration.
+
+### MintPy / SBAS
+
+* Fixed MintPy analysis leaving the server process permanently `cd`'d into the analysis directory.
+* Restored automatic `mintpy/pic/` figure generation for CLI and GUI workflows.
+* Added an explicit `plot` step that works independently and through HPC execution.
+* Fixed plotting failures caused by matplotlib figure-number collisions so completed SBAS processing is not marked failed merely because visualization fails.
+* Added the missing `correct_unwrap_error` step to the default 18-step MintPy workflow.
+* Fixed analyzer HPC jobs dropping `prep_data` and user-specified configuration overrides.
+* Fixed `--list-options` failing to show defaults when `.mintpy.cfg` does not yet exist.
+* Fixed `Hyp3_SBSAS` / `ISCE_SBAS` MintPy output handling and improved analyzer-specific output organization.
+* Fixed `Hyp3_SBAS` clipped-raster corruption persisting across reruns by validating existing rasters and using atomic `.part` writes.
+* Fixed `networkx` dependency handling so fresh installations work correctly.
+* Added clearer errors for missing MintPy installations.
+
+### Data / Downloader / Search
+
+* Fixed downloader-generated GMTSAR pairs being incompatible with GMTSAR's required pair/orbit format.
+* Fixed search end dates being treated as midnight, causing all scenes acquired later on the specified end date to be excluded.
+* Fixed merged-download orbit files being written to the wrong directory.
+* Fixed merge searches being incorrectly restricted to a single satellite platform. Satellite platforms are now aggregated across all scenes in a stack.
+* Fixed incorrect AOI handling and output detection across processing workflows.
+* Fixed interferogram/result discovery for ISCE3 and GMTSAR outputs.
+* Fixed map overlays and raster rendering for rotated Sentinel-1 quicklooks and non-zipped interferogram files.
+
+### Configuration / CLI
+
+* Fixed `container` being incorrectly persisted in `insarhub_config.json`.
+* Fixed duplicate runtime-only configuration definitions that caused incorrect fields to be persisted.
+* Fixed `max_workers` being hidden from `--list-options` and processor configuration overrides.
+* Fixed negative numeric values such as negative longitude/bbox coordinates being incorrectly classified as unknown CLI flags.
+* Fixed multi-value fields such as `reference_lalo`, `subswath`, and `swath_num` losing tokens when supplied without quotes.
+* Fixed `reference_lalo` / `reference_yx` formatting when writing MintPy configuration files by converting space-separated values to MintPy's required comma-separated format.
+* Fixed `ssl_verify` being incorrectly passed through to ASF search requests.
+* Added processor-specific automatic sbatch templates while keeping the shared `sbatch_options.json` file additive and backward-compatible.
+* Fixed resource settings from existing sbatch configuration being overwritten during GUI/configuration updates.
+
+### DEM / Backend Consistency
+
+* Aligned default HyP3, ISCE-S1, and GMTSAR-S1 multilooking to **20 × 4**.
+* Aligned Goldstein filtering to **alpha = 0.5**.
+* Updated GMTSAR defaults for reliable time-series processing:
+
+  * `threshold_snaphu`: `0` → `0.1`
+  * `near_interp`: `0` → `1`
+  * `mask_water`: `1` → `0`
+  * `filter_wavelength`: `200` → `25`
+* Added Copernicus GLO-30 DEM support to GMTSAR for more consistent backend comparisons.
+* Tuned ISCE-S1 HPC defaults for full-frame processing:
+
+  * `num_proc4topo`: `1` → `6`
+  * `num_proc`: `1` → `4`
+  * Step `01`: `6 CPU / 16 GB`
+  * Steps `09` / `10`: `4 CPU / 16 GB`
+  * Step `16`: `4 CPU`
+  * Step `08`: `1 CPU / 4 GB`
+
+### Paths / Output Isolation
+
+* Centralized processor and analyzer output paths in `config/paths.py`.
+* Added dedicated MintPy output directories for different analyzers to prevent result-file collisions.
+* Added GMTSAR-specific path resolution for per-subswath and merged stack layouts.
+* Fixed long-standing analyzer output collisions and improved discovery of merged versus flat GMTSAR products.
+
+### Logging / Environment
+
+* Fixed global logging suppression that prevented most InSARHub logs from being emitted.
+* Restored normal CLI logging while remaining compatible with applications that configure their own logging.
+* Fixed `pyproj` coordinate-transform failures in affected conda environments by explicitly resolving the active environment's PROJ database.
+* Fixed test environments where the MintPy stub incorrectly required `dask`.
+
+
+# Refactor
+
+* **HPC / SLURM Architecture**
+
+  * Centralized processor-agnostic SLURM manager functionality into a shared `_slurm_manager.py`, reused across ISCE and GMTSAR workflows.
+  * Reworked HPC execution from pre-submitted dependency chains to **chain-submitted sliding-window managers**, reducing queue pressure and avoiding `MaxSubmitPU` limits.
+  * Standardized manager resources to **1 CPU / 1 GB** and automatically determine manager walltime from the selected partition's maximum allowed time.
+  * Added configurable `"manager": {"partition": "..."}` support while removing the obsolete `manager_time` setting.
+  * Added shared SLURM job-state/query utilities and improved job naming for monitoring and debugging.
+
+* **GMTSAR HPC & Multi-Subswath Processing**
+
+  * Unified `GMTSAR_S1` processing into four stages: **`align` → `topo` → `intf` → `merge`**, independent of subswath count.
+  * Added pooled sliding-window execution across subswaths and interferogram pairs for improved concurrency.
+  * Separated shared `topo` generation into its own stage, eliminating concurrent access/race conditions.
+  * Aligned local and HPC processing around the same pooled execution model.
+  * Added full-frame multi-subswath processing and native GMTSAR merging while preserving the single-subswath layout.
+  * Added layout-independent path resolution for merged and legacy stack layouts.
+  * Simplified configuration by removing the breaking `frame_mode` option; subswath configuration now determines single- vs multi-subswath processing.
+  * Added detailed `GMTSAR_S1.refresh --ls` task and SLURM job status reporting.
+
+* **SLURM Configuration & SBAS**
+
+  * Added processor-specific `sbatch_options.json` templates with additive merging so existing user settings are preserved.
+  * GMTSAR and ISCE now populate only their relevant processing stages.
+  * Changed GMTSAR MintPy SBAS configuration from ISCE-specific step `"17"` to **`"sbas"`**.
+  * Updated the GUI to display processor-specific stage/SBAS configuration and document manager settings.
+
+* **ISCE HPC Resource Management**
+
+  * Automatically derive ISCE `num_proc` and `num_proc4topo` from corresponding SLURM CPU allocations.
+  * Tuned default CPU and memory resources for full-frame multi-subswath processing while reducing resources for lightweight stages.
+
+* **Configuration & Path Architecture**
+
+  * Centralized processor/analyzer paths in `config/paths.py` using dedicated path objects.
+  * Added `GMTSARPaths` and expanded `Hyp3Paths`.
+  * Isolated MintPy outputs by analyzer (`hyp3_mintpy/`, `isce_mintpy/`, `gmtsar_mintpy/`) and colocated each analyzer's `.mintpy.cfg`.
+  * Moved shared processor-reload helpers from `core/local_processor_reload.py` to `utils/local_processor_reload.py`.
+
+* **Shared Backend Utilities & Cleanup**
+
+  * Moved CLI/GUI pair-quality and stack operations into shared `utils/` helpers, eliminating duplicated computation between interfaces.
+  * Added shared helpers for cache seeding, configuration overrides, job iteration, job launching, stop-event handling, and command error handling.
+  * Removed the unused `S1_Burst` downloader and associated registration/configuration.
+  * Removed unused API routes, request models, CLI commands, and other dead backend code.
+  * Enforced the architecture that CLI and GUI layers delegate computation to shared utility modules.
+
+* **Frontend Refactor**
+
+  * Removed unused frontend components and dead fields.
+  * Centralized the API base URL and status-color logic.
+  * Added shared `DrawerShell` / `DrawerHeader` components to eliminate repeated drawer UI structure.
+  * Added reusable `useCopyFeedback()` and `useFetchJson()` hooks for common frontend behavior.
+
+* **Processing Consistency**
+
+  * Added Copernicus GLO-30 DEM support to GMTSAR.
+  * Aligned HyP3, ISCE, and GMTSAR defaults around **20×4 multilooking** and **Goldstein alpha 0.5**.
+  * Updated GMTSAR time-series defaults for SNAPHU, low-coherence interpolation, and water masking.
+
+## [0.3.2] - 2026-06-09
+
+### New Features
+
+- **HPC sliding-window submission** (`isce_base.py`) — each step now runs a lightweight sbatch manager job that keeps ≤`max_concurrent_hpc` child jobs active at all times, refilling immediately on completion. Replaces the old batch-sequential approach. Consecutive steps with equal command counts (e.g. `run_13`–`run_16`) are merged into a single group-manager. Steps are chained via `--dependency=afterok`.
+- **Per-command elapsed time in sbatch logs** (`isce_base.py`) — sbatch scripts print `START`/`DONE`/`FAIL` with elapsed seconds. Group tasks also print total elapsed across all grouped steps.
+
+### Bug Fixes
+
+- **HyP3 file paths** (`hyp3_base.py`) — `hyp3_jobs.json` now saves to workdir root (was `workdir/hyp3/`); downloaded ZIPs go to `workdir/hyp3/`; retry job files save to workdir root; legacy `out_dir=workdir` entries auto-migrate to `workdir/hyp3/`.
+- **`watch` command ignores `--interval` flag** (`cli/main.py`) — `_proc_local_watch` read `args.refresh_interval` but argparse stores it as `args.interval`; interval was always 60 s regardless of user input. Fixed.
+- **`insarhub processor refresh/download` re-processes retry job files** (`cli/main.py`) — `_find_job_files` globbed `hyp3*.json`, matching `hyp3_retry_jobs_<ts>.json` files from past runs alongside `hyp3_jobs.json`. On refresh/download, stale retry files were loaded as separate processors, causing duplicate downloads or incorrect status. Fixed: retry files excluded from glob.
+- **Orbit files downloaded twice** (`cli/main.py`) — `-d -O` flags triggered two orbit downloads. Fixed: skips explicit `download_orbit()` call when downloader already handled it.
+- **`retry()` runs locally after HPC submission** (`isce_base.py`, `cli/main.py`) — `hpc_mode` excluded from saved config, so retry defaulted to local. Fixed: `retry()` auto-detects HPC from job metadata (`slurm_job_ids`/`hpc_manager`/`hpc_array`) and writes it back to `config.hpc_mode` so `_step_executor()` routes correctly. `_load_local_processor` also restores `max_concurrent_hpc` and HPC config fields from `insarhub_config.json`.
+- **Manager job killed mid-run leaves step stuck PENDING** (`isce_base.py`) — `elif n_cmds > 0 and not job_ids:` was dead code (always False inside `if job_ids:` block); SLURM-killed managers with incomplete commands never resolved to FAILED. Fixed: condition is now `elif n_cmds > 0:`.
+- **`_parse_time_s` mis-parses 2-part SLURM time strings** (`isce_base.py`) — `"30:00"` was treated as 30 h 0 min (108,000 s) instead of 30 min 0 s (1,800 s), overestimating group-manager walltime 60×. Fixed: 2-part strings now parsed as MM:SS per SLURM spec.
+- **Group-manager step stuck PENDING when job gone from SLURM** (`isce_base.py`) — if `group_task_dir` was absent from saved metadata (old jobs), `n_cmds` resolved to 0, preventing the SUCCEEDED/FAILED transition. Fixed: `n_cmds` now stored in job metadata at submission; refresh uses it directly with file-count as fallback.
+- **`refresh()` shows only one RUNNING command in manager mode** (`isce_base.py`) — with sliding-window, multiple commands run concurrently but only one showed RUNNING. Fixed: per-command status now derived from `.done`/`.fail` files; all in-flight commands show RUNNING.
+
+### GUI
+
+- **Hyp3_S1 `max_workers` in settings panel** (`defaultconfig.py`) — parallel download threads now configurable via Job settings group (default 4, range 1–16).
+
+### Bug Fixes (additional)
+
+- **`Hyp3_SBAS` MintPy output in workdir root** (`mintpy_base.py`) — base class `run()` passed `self.workdir` to `TimeSeriesAnalysis`; `Hyp3_SBAS` inherits without override, so all MintPy outputs scattered to workdir root instead of `workdir/mintpy/`. Fixed: uses `self.mintpy_dir`; same correction for `_geocode_diagnostic_files`.
+- **ISCE cleanup misses `merged/interferograms`** (`isce2_sbas.py`) — cleanup targeted `isce/interferograms/` (nonexistent); real stackSentinel output is `isce/merged/interferograms/`. Large intermediate files were never deleted.
+- **HyP3 auth failure submits to wrong user** (`hyp3_base.py`) — when re-auth failed for a pool user, `credits=0` was overwritten by `self.client.check_credits()` on the previous user's client; jobs were then submitted under the wrong account. Fixed: credits check guarded by auth result.
+- **`self.batchs` updated per-loop-iteration** (`hyp3_base.py`) — on multi-user refresh, if any user failed, their batch was silently dropped from `self.batchs`. Fixed: assignment moved after loop.
+- **Missing `filename` key in HyP3 file metadata crashes download** (`hyp3_base.py`) — direct dict subscript raised `KeyError` for auxiliary entries lacking `filename`. Fixed: `file_meta.get('filename')` with skip on empty.
+- **delete_job_folder blocks on `~`-prefixed workdir** (`settings.py`) — `Path(workdir)` without `expanduser().resolve()` made `relative_to()` always raise `ValueError`, returning 403 on every delete. Fixed.
+- **`_run_folder_select_pairs` uses `folder.parent` as workdir** (`folders.py`) — downloader config received parent directory instead of job folder; sub-paths written one level up, potentially colliding with sibling jobs. Fixed: `workdir=folder`.
+- **Analyzer stop_event leaks on step error** (`routes/analyzer.py`) — early `return` on step exception bypassed `_stop_events.pop(job_id)`, leaking events indefinitely. Fixed: pop before return.
+- **Refresh overwrites `.insarhub_cache.json` filenames with empty list** (`routes/processor.py`) — if no jobs had SUCCEEDED yet, `filenames=[]` overwrote a valid cache from a prior successful refresh. Fixed: preserves existing filenames when current refresh yields none.
+- **Retry job files appear as selectable job entries in GUI** (`routes/processor.py`) — `hyp3*.json` glob matched `hyp3_retry_jobs_<ts>.json`; selecting one for refresh returned only the retry batch status. Fixed: retry files excluded.
+
+### Refactor
+
+- **Centralized path layout** (`config/paths.py`) — `Hyp3Paths`, `ISCEPaths`, `MintPyPaths` dataclasses replace all hardcoded `workdir / "subdir"` strings across `hyp3_base.py`, `isce_base.py`, `isce_s1.py`, `mintpy_base.py`, `hyp3_sbas.py`.
+- **Path dataclass coverage extended** — remaining hardcoded path literals replaced with dataclass properties: `isce2_sbas.py` now uses `ISCEPaths` for `isce_dir`, `slc_dir`, `dem_dir`; `cli/main.py` uses `Hyp3Paths`/`ISCEPaths` in `_has_zips` and `_find_job_file`; `utils/batch.py` and `utils/tool.py` use `Hyp3Paths.output_dir` for ZIP discovery.
+- **`Hyp3Processor` renamed to `CloudProcessor`** (`core/base.py`) — ABC renamed to reflect generic cloud-backend semantics rather than HyP3 specificity. Updated across `core/__init__.py`, `__init__.py`, `processor/hyp3_base.py`, `commands/processor.py`, `cli/main.py`, `core/engine.py`.
+
+### Docs
+
+- **Contributing guide** — new tab in MkDocs navigation (EN + ZH). Split into Overview, Backend, and Frontend pages.
+- **Backend contributing guide** — architecture overview, path conventions, per-section instructions for adding new processors/downloaders/analyzers. Each section includes a "Adding a New Base X" subsection (with code examples for `CloudProcessor`/`LocalProcessor`, `BaseDownloader`, `BaseAnalyzer`) and an "Extending an Existing Base X" subsection with switch tabs (`Hyp3Base`, `ISCE_Base`, `ASF_Base_Downloader`, `Mintpy_SBAS_Base_Analyzer`).
+- **Frontend contributing guide** — conda Node.js install, uvicorn backend startup from InSARHub root, module reference tables grouped by area (Entry & Global, Map, Search & Scene Selection, Jobs & Results, Settings, Utilities), backend communication pattern, settings panel, Vite proxy, build output, code style.
+
+---
+
+## [0.3.1] - 2026-05-28
+
+### Bug Fixes
+
+- **Download result unpacking** (`commands/processor.py`) — `processor.download()` returns `(Path, dict)` tuple; `DownloadCommand` was assigning the whole tuple to `output_dir`. Fixed: now unpacks to `output_dir, dl_stats`. `CommandResult.data` now includes both output path and download stats.
+- **HyP3 workflow marker wrong location** (`hyp3_base.py`) — `write_workflow_marker` was writing `insarhub_config.json` to `workdir/hyp3/` instead of the job folder root, so HyP3 tags never appeared in the job drawer. Fixed: writes to `config.workdir`.
+- **Stale `out_dir` from saved job file** (`hyp3_base.py`) — old `hyp3_jobs.json` pointing to a pre-migration path outside current workdir would silently redirect output. Fixed: `out_dir` rejected if not under current workdir.
+- **`wslpath` unchecked** (`settings.py`) — if `wslpath -w` failed, PowerShell was called with `-File ""`. Fixed: returncode + empty string guard added.
+- **ZIP detection for `hyp3/` layout** (`cli/main.py`) — analyzer now checks `workdir/hyp3/*.zip` first, with fallback to `workdir/*.zip` for legacy layouts.
+
+### Performance
+
+- **Auth status parallel checks** (`auth.py`) — HyP3 credit check, CDSE, CDS, and Earthdata checks now run concurrently via `ThreadPoolExecutor` instead of sequentially. Typical improvement: 3–5× faster settings panel load.
+- **Job folder listing SSH speed** (`settings.py`) — removed all per-folder `glob`/`exists`/`is_file` checks. Now reads only `insarhub_config.json` per folder. Significant speedup on remote filesystems.
+
+### Source
+
+- **`hyp3/` subdir awareness** (`hyp3_sbas.py`, `mintpy_base.py`, `batch.py`) — all ZIP lookups now check `workdir/hyp3/*.zip` first, falling back to `workdir/*.zip` for legacy layouts. Affected paths: `_unzip_hyp3`, `cleanup`, and `ERA5Downloader.download_batch`.
+- **Missing `.mintpy.cfg` guard** (`mintpy_base.py`) — if `.mintpy.cfg` is not found when `run()` is called, a warning is printed and the config is written automatically rather than crashing downstream MintPy steps.
+- **`write_mintpy_config` parent mkdir** (`defaultconfig.py`) — `outpath.parent.mkdir(parents=True, exist_ok=True)` added before opening the file, preventing `FileNotFoundError` when the output directory does not yet exist.
+
+### CLI
+
+- **`prep` alias** — `insarhub analyzer run --step prep` now accepted as alias for `prep_data`. Help text updated to show alias.
+- **Default port** — `insarhub-app` now defaults to `8080` (was `8000`). Use `--port` to override.
+
+### GUI
+
+- **Subfolder navigation** (`JobQueueDrawer`) — click any folder to drill into subfolders; `↑` button to go up. Resets to workdir root on workdir change. Uses `/api/browse-subfolders` endpoint.
+- **Cancel button** (`JobQueueDrawer`) — Cancel action added for local ISCE jobs.
+- **Modern folder picker** (`settings.py`) — Windows/WSL now uses `IFileOpenDialog` COM API via embedded C# in PowerShell. Fixes: DPI blurriness on 2K monitors, Chinese character paths.
+- Add nyan cat
+
+### Network Graph (`utils/tool.py`)
+
+- Node labels changed from last-8-chars to `YYYY-MM-DD` dates.
+- Bottom axis: real acquisition dates. Top axis: days since first acquisition (swapped).
+- Left graph title removed.
+- Font sizes increased throughout; date labels rotated for readability.
+
+### Docs
+
+- Port references updated to `8080` across README, quickstart, and frontend docs.
+- `file_structure.md/zh`: added `hyp3/` to directory layout; `out_dir` examples updated to `.../hyp3`.
+- `cli.md/zh`: `--credential-pool` corrected from "JSON" to plain `username:password` text file; `prep` → `prep_data`.
+- `index.md/zh`: satellite support table added; program structure section moved to new Advanced page with workflow diagram.
+
+---
+
+## [0.3.0] - 2026-05-14
+
+### New Features
+
+- **ISCE_S1 local processor**: New processor backend that runs ISCE2 `stackSentinel` locally. Supports sequential local execution and SLURM HPC mode (`--hpc-mode`). Bounding box is auto-filled from the map AOI in the GUI.
+- **ISCE_SBAS analyzer**: New MintPy SBAS analyzer for ISCE2 `stackSentinel` outputs. `prep_data()` auto-discovers interferogram, geometry, baseline, and metadata paths; MintPy outputs written to `mintpy/` subdirectory.
+- **HPC mode (SLURM)**: ISCE_S1 can submit each processing step as a separate `sbatch` job. Per-step resource configuration via `sbatch_options.json`, editable in the GUI via **Sbatch Options** modal.
+- **Job Folders subfolder browser**: The Jobs drawer now lists both folders and files. Click any folder to navigate into it; click **↑ Up** to return to the parent. Breadcrumb path shown in the header.
+- **Cancel button for local processors**: A **Cancel** button appears in the ISCE_S1 processor panel to terminate the running background process (local) or `scancel` all active SLURM jobs (HPC).
+- **Refresh with per-command detail**: ISCE_S1 `refresh()` now shows per-command status (`cmd_NNNN RUNNING / SUCCEEDED / FAILED`) for multi-command steps, matching the CLI output.
+
+### Bug Fixes
+
+- **ISCE_S1 bbox not passed**: `Processor.create()` was calling `cls(cfg)` which mapped the config to the `pairs` argument in ISCE_S1's two-argument constructor. Fixed by detecting `pairs` in the constructor signature via `inspect.signature` and using keyword arguments.
+- **ISCE_SBAS diagnostic geocoding**: `avgPhaseVelocity.h5`, `numTriNonzeroIntAmbiguity.h5`, and `maskConnComp.h5` are now geocoded automatically after the `geocode` step. Existing radar-coordinate data is geocoded on demand in the render endpoint.
+- **ISCE_SBAS timeseries filter**: View Results now returns only `geo/geo_timeseries*.h5` (geocoded) when present, not the radar-coordinate `timeseries*.h5` files.
+- **ISCE_SBAS `.mintpy.cfg` path**: Analyzer route was writing `.mintpy.cfg` to the job folder root; ISCE_SBAS expects it at `mintpy/.mintpy.cfg`. Fixed by reading `analyzer.cfg_path` at runtime.
+- **ISCE_S1 submit via GUI missing sbatch options**: `_run_folder_process` now loads `sbatch_options.json` and calls `processor.submit()` directly for local processors, bypassing the HyP3-only `SubmitCommand`/`SaveJobsCommand` wrappers.
+- **cmd index parsing crash**: `int()` raised `ValueError` on malformed `cmd_????.done/fail` filenames. Fixed with a safe `_idx()` helper.
+- **Job Folders empty workdir path traversal**: An empty workdir in `browse-subfolders` resolved to CWD, allowing requests outside the workdir. Fixed with an early 400 response when workdir is not configured.
+- **Job Folders `has_children` OSError**: `subfolder.iterdir()` on restricted directories could raise `OSError`. Wrapped in `try/except`.
+
+## [0.2.5] - 2026-04-21
+
+### New Features
+
+- **SBAS network editor (GUI)**: Interactive baseline-time graph editor in the processor panel. Drag between scene nodes to create new pairs; click an existing edge to delete it; hover to inspect temporal baseline, perpendicular baseline, and quality score. Edges are colored by quality (green → yellow → red).
+- **Pair quality scoring**: Pre-processing interferogram quality assessment combining S1 global coherence decay models, WorldCover land-cover class fractions (stable, vegetation, forest), precipitation, snow cover, NDVI, and fire data. Quality scores drive edge colors in the network editor and can exclude bad-weather scenes automatically.
+- **Per-class coherence decay models**: `_coherence.py` fits separate exponential decay models per WorldCover land-cover class (stable, vegetation, forest, water). Per-class cache persisted to disk; prefetch runs before the pair loop to avoid warm-run stalls.
+- **Decay maps overlay (GUI)**: Seasonal S1 global coherence maps (γ∞ PS baseline, γ0 initial coherence, τ decay constant) can be overlaid on the main map directly from the processor panel for rapid site assessment before submitting jobs.
+- **`quick_overview` MintPy step**: Added as an optional step in the analyzer workflow to generate diagnostic map layers (coherence, phase velocity, unwrapping errors, connected-components mask) before full SBAS inversion.
+- **`avoid_low_quality_days` default changed to `True`**: Bad-weather scenes are now excluded from the pair network by default. Default precipitation threshold tightened to 25 mm (3-day accumulation). Weather/snow data fetched during filtering is seeded directly into the pair quality cache, eliminating duplicate API calls.
+- **API route refactor**: `api.py` split into separate route modules under `routes/` (`search`, `processor`, `analyzer`, `quality`, `render`, `folders`, `settings`) for easier maintenance.
+
+### Performance
+
+- **Parallel coherence prefetch**: S1 global coherence tile S3 downloads now run concurrently (up to 4 threads), followed by per-pair numpy evaluation in parallel (8 threads). Expected 4–6× speedup for stacks with 32 000+ pairs on first run; warm-cache runs unchanged.
+- **Smarter pair quality DB rebuilds**: DB only rebuilds when the scene set actually changes. Stores `_scene_names` for exact scene-set comparison; parameter changes (`dt_max`, `pb_max`, degree limits) no longer trigger a rebuild. Backward-compatible with old DBs (falls back to count comparison, migrates on next rebuild).
+
+### Bug Fixes
+
+- **Coherence scoring thresholds corrected** to Hanssen 2001 values: Good ≥ 0.60, Risky 0.30–0.60, Bad < 0.30 (was 0.65/0.35).
+- **matplotlib `Agg` backend**: Added `matplotlib.use('Agg')` before `pyplot` import in `tool.py` — fixes `RuntimeError: main thread is not in main loop` when plotting from FastAPI background threads.
+- **CDSE account validation**: Login credentials for the Copernicus Data Space Ecosystem are now validated on entry in the settings panel.
+- **Pair quality prefetch cache stall**: Per-class coherence S3 reads were blocking the first pair of each season on warm runs. Pre-fetching both overall and per-class maps before the pair loop fixes the 0% stall.
+
+---
+
+## [0.2.4] - 2026-03-25
+
+### New Features
+- **CLI & API**: `select_pairs()` is now a pure computation method — no file I/O inside the class. File writing (JSON, PNG, workflow marker) has been moved to the CLI and API call sites, keeping the core logic reusable and testable
+- **Path handling**: All functions that accept path arguments now call `.expanduser().resolve()`, enabling `~` tilde paths everywhere
+- **WebUI**: Added documentation button in the General Settings panel (bottom-left) linking to the InSARHub docs site
+- **WebUI (`insarhub-app`)**: Auto-creates the working directory if it does not exist when `-w <path>` is passed
+- **CLI (`insarhub-app`)**: Added `-v` / `--version` flag
+- **Windows fix**: `insarhub-app` no longer returns immediately on Windows — sets `WindowsSelectorEventLoopPolicy` so uvicorn blocks correctly
+
+### Bug Fixes
+- **WebUI Processor**: Unchecking dry-run after a completed run no longer leaves the button stuck at "✓ Done" — the status resets to idle on checkbox change
+- **WebUI Processor**: Clicking "✓ Done" after a real (non-dry-run) submit now correctly closes the modal
+- **WebUI Processor**: "✓ Done" button now shows a pointer cursor on hover
+- **Analyzer**: Fixed `NoneType` crash in troposphere correction when `Path.mkdir()` was called on an already-resolved path
+- **CLI credential setup**: Removed spurious blank first line from `.cdsapirc` written by the interactive credential prompt
+
+---
+
+## [0.2.3] - 2026-03-18
+
+### New Features
+- **Documentation**: Completed full WebUI (frontend) documentation with screenshots and usage guide
+- **Documentation**: Added version changelog and update log pages to the docs site
+- **WebUI**: Added email and Discord contact buttons next to the light/dark mode toggle in the header
+- **WebUI**: Reduced extra whitespace around the GitHub badge in the header
+
+
+### Bug Fixes
+- Fixed gh-pages CI push rejection when remote branch was ahead of local (`git fetch origin gh-pages` before `mike deploy`)
+- Minor doc link and typo fixes
+- Fixed broken image link in the WebUI overview documentation page
+
+---
+
+## [0.2.1] - 2026-03-06
+
+### New Features
+- **Frontend**: Download orbit file option added to the downloader panel
+- **Frontend**: Granule name file upload — users can supply a text file of scene names for custom searches
+- **Frontend**: Drawer now auto-hides when the user clicks on the map
+- **Downloader**: Added `parse_granule_names()` to parse scene names from a string, list, or file for search
+- **Downloader (`S1_SLC`)**: `-O <dir>` now downloads all orbit files to the specified directory
+- **Downloader (`S1_SLC`)**: Skips orbit files that already exist (checked by acquisition time)
+- **Downloader**: Automatically falls back to the ASF orbit server if the CDSE sentineleof server fails
+- **Documentation**: Completed WebUI documentation
+
+### Bug Fixes
+- Fixed velocity map display shifting caused by incorrect EPSG selection in the frontend
+- Fixed duplicate search results when multiple stacks share the same path (ASF server-side bug workaround)
+- Fixed `[ERROR] download: not enough values to unpack` in the download future handler
+- Fixed numpy deprecation warnings
+- Pinned CI to Python 3.12 to avoid breakage on 3.13/3.14
+
+---
+
+## [0.2.0] - 2026-02-20
+
+### New Features
+- **WebUI (`insarhub-app`)**: Full Panel-based browser frontend for download, processing, and analysis
+- **Frontend**: Interactive map for AOI selection with basemap overlay
+- **Frontend**: Job queue drawer with dry-run toggle, live log streaming, and submit/cancel controls
+- **Frontend**: Settings panel for credentials, working directory, and HyP3 account configuration
+- **Frontend**: Velocity and time-series result visualization directly in the browser
+- **CLI**: `insarhub-app` command to launch the WebUI server
+- **Core**: Unified `CommandResult` pattern shared between CLI and Panel frontend
+- **Core**: `InSAREngine` high-level pipeline runner with per-step skip flags and watch mode
+
+---
+
+## [0.1.0] - 2026-03-06
+
+### Initial Release
+
+First public release of **InSARHub** — a modular Python framework for automated InSAR time-series processing.
+
+---
+
+### Features
+
+#### Downloader
+- `ASF_Base_Downloader`: Search and download Sentinel-1, ALOS, and NISAR SLC data via the ASF Search API
+- Spatial filtering with bounding box, WKT, or GeoJSON/shapefile AOI
+- Post-search filtering by date range, path/frame, flight direction, polarization, season, coverage, and scene count
+- Scene footprint visualization with basemap overlay (`footprint()`)
+- DEM download via `dem-stitcher` aligned to search footprints
+- Multi-threaded download with Ctrl+C cancellation and partial-file cleanup
+- `S1_SLC`: Sentinel-1 SLC specialized downloader with orbit file (`sentineleof`) support
+
+#### Processor
+- `Hyp3_S1`: Submit, monitor, download, retry, and persist HyP3 InSAR jobs
+- Multi-account credential pool with automatic credit-aware job rotation
+- Batch job persistence (save/load JSON) for resumable workflows
+- `watch()` mode: polls job status and downloads succeeded outputs continuously
+- Retry failed jobs with automatic timestamp-stamped save files
+
+#### Analyzer
+- `Hyp3_SBAS`: End-to-end MintPy SBAS time-series analysis from HyP3 outputs
+- Automatic unzip, file collection, common-overlap clipping, and MintPy config generation
+- Optional pyAPS tropospheric correction with CDS API credential management
+- `cleanup()` to remove temporary files after processing
+
+#### Utilities
+- `select_pairs`: Temporal and perpendicular baseline filtering with configurable targets and tolerances
+- Local baseline computation (zero network calls for Sentinel-1 and ALOS)
+- API fallback with threaded fetching for products without local baseline data
+- Connectivity enforcement: minimum/maximum degree per scene with force-connect option
+- `plot_pair_network`: Network visualization with per-scene connection histogram
+- `ERA5Downloader`: Batch ERA5 reanalysis download for MintPy tropospheric correction, MintPy-compatible filenames
+- `clip_hyp3_insar`: Clip HyP3 zip outputs to a custom AOI before analysis
+- `Slurmjob_Config`: Generate SLURM batch scripts for HPC job submission
+- `earth_credit_pool`: Load multi-account Earthdata credentials from a pool file
+
+#### CLI (`insarhub`)
+- `insarhub download` — search, filter, and download SLC scenes
+- `insarhub processor submit/refresh/download/retry/watch/save/credits` — full HyP3 job lifecycle
+- `insarhub analyzer prep/run` — prepare and run MintPy analysis
+- `insarhub utils select-pairs/plot-network/era5/clip` — utility commands
+- Workdir (`-w`) and credential pool (`--credential-pool`) flags across all subcommands
+
+#### Core
+- Auto-registering component registry (`Downloader`, `Processor`, `Analyzer`)
+- `InSAREngine`: high-level pipeline runner with skip flags and watch mode
+- Unified `CommandResult` pattern shared between CLI and Panel frontend
+
+
+[0.2.5]: https://github.com/jldz9/InSARHub/releases/tag/v0.2.5
+[0.2.4]: https://github.com/jldz9/InSARHub/releases/tag/v0.2.4
+[0.2.3]: https://github.com/jldz9/InSARHub/releases/tag/v0.2.3
+[0.2.1]: https://github.com/jldz9/InSARHub/releases/tag/v0.2.1
+[0.2.0]: https://github.com/jldz9/InSARHub/releases/tag/v0.2.0
+[0.1.0]: https://github.com/jldz9/InSARHub/releases/tag/v0.1.0

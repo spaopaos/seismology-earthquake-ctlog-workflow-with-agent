@@ -1,18 +1,18 @@
 # Seismology Agent — workflow revision 0.3.0-dev
 
-Agent-guided seismology workflow: PhaseNet+ picking, GaMMA association, HYPOINVERSE location, HypoDD relocation, PALM MESS detection, joint CC+CT relocation and SKHASH focal mechanisms — from raw waveforms to multi-grade earthquake catalogs（全CUG（武汉）最好用的指导agent从连续波形到地震目录制作框架）.
+Agent-guided seismology workflow: PhaseNet+ picking, GaMMA association, HYPOINVERSE location, HypoDD relocation, PALM MESS detection, joint CC+CT relocation, SKHASH focal mechanisms and InSARHub coseismic InSAR capture — from raw waveforms to multi-grade earthquake catalogs（全CUG（武汉）最好用的指导agent从连续波形到地震目录制作框架）.
 
 ## Three steps to a catalog
 
 1. **Get the package** — clone this repository, download the assets of the [v0.3.0-dev release](../../releases/tag/v0.3.0-dev), and run `scripts/restore_offline_assets.sh <download-dir>` to restore the runtime archives, model weights and native binaries.
 2. **Hand it to an agent** — point the agent at [AGENTS.md](AGENTS.md). It is self-contained; the agent reads the docs and skills it needs. No conversation history is required.
-3. **Point it at your data** — give the agent your raw waveforms, response information and station metadata, plus a new run directory. The agent writes the dataset-specific preprocessing and then drives the stages `preprocess → picking → association → location → relocation → detection → post_detection_relocation → focal_mechanism`, pausing at documented decision points (GaMMA eps, HypoDD DAMP, MESS freq band, SKHASH polarity threshold and reversal list...) for your confirmation.
+3. **Point it at your data** — give the agent your raw waveforms, response information and station metadata, plus a new run directory. The agent writes the dataset-specific preprocessing and then drives the stages `preprocess → picking → association → location → relocation → detection → post_detection_relocation → focal_mechanism → insar`, pausing at documented decision points (GaMMA eps, HypoDD DAMP, MESS freq band, SKHASH polarity threshold and reversal list, InSAR magnitude threshold and pair review...) for your confirmation.
 
 Deployment commands and runtime options: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Workflow overview
 
-![Workflow overview: raw waveforms → preprocess → PhaseNet+ → GaMMA → HYPOINVERSE → HypoDD → PALM MESS → joint HypoDD → CC-tier catalogs + SKHASH focal mechanisms](docs/images/catalog-pipeline-dark.png)
+![Workflow overview: raw waveforms → preprocess → PhaseNet+ → GaMMA → HYPOINVERSE → HypoDD → PALM MESS → joint HypoDD → CC-tier catalogs + SKHASH focal mechanisms + InSAR coseismic capture](docs/images/catalog-pipeline-dark.png)
 
 Still hand-coding? Still doing research the old-fashioned way? So last season!
 
@@ -39,6 +39,7 @@ Workflow software and methods:
 - Hardebeck, J. L., & Shearer, P. M. (2002). A new method for determining first-motion focal mechanisms. *Bulletin of the Seismological Society of America*, 92(6), 2264–2276. https://doi.org/10.1785/0120010200
 - Hardebeck, J. L., & Shearer, P. M. (2003). Using S/P amplitude ratios to constrain the focal mechanisms of small earthquakes. *Bulletin of the Seismological Society of America*, 93(6), 2434–2444. https://doi.org/10.1785/0120020236
 - Skoumal, R. J., Hardebeck, J. L., & Shearer, P. M. (2024). SKHASH: A Python package for computing earthquake focal mechanisms. *Seismological Research Letters*, 95(4), 2519–2526. https://doi.org/10.1785/0220230329 (vendored v1.1, USGS, CC0-1.0; see [knowledge/repos/SKHASH/VENDORED_PATCHES.md](knowledge/repos/SKHASH/VENDORED_PATCHES.md))
+- Li, J., Mirzadeh, S. M. J., & Smith, R. (2026). InSARHub: A modular Python framework for automated InSAR and time-series processing with a built-in web GUI. *Journal of Open Source Software*; software DOI 10.5281/zenodo.20190966 (vendored v0.4.2, MIT; see [knowledge/repos/InSARHub/VENDORED.md](knowledge/repos/InSARHub/VENDORED.md))
 
 Agent-guided science:
 

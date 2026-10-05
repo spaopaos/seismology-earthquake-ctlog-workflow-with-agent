@@ -1,0 +1,172 @@
+site_name: InSARHub
+repo_url: https://github.com/jldz9/InSARHub
+repo_name: jldz9/InSARHub
+site_url: https://jldz9.github.io/InSARHub/
+theme:
+  name: material
+  font:
+    text: "sans-serif"
+    code: "Source Code Pro"
+  custom_dir: docs/overrides
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - toc.follow
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - announce.dismiss
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: grey
+      toggle:
+        icon: material/weather-sunny
+        name: switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - QuickStart:
+        - Installation: quickstart/install.md
+        - Account Setup: quickstart/api_setup.md
+        - Running:
+          - API: quickstart/running.md
+          - CLI: quickstart/cli.md
+  - FAQ: faq.md
+  - Web UI:
+        - Overview: quickstart/frontend.md
+        - Search & Download: frontend/search.md
+        - Processor: frontend/processor.md
+        - Analyzer: frontend/analyzer.md
+        - Results Viewer: frontend/results.md
+  - Advanced:
+        - File Structure: advanced/file_structure.md
+        - Downloader: advanced/downloader.md
+        - Processor: advanced/processor.md
+        - Analyzer: advanced/analyzer.md
+        - HPC (SLURM): advanced/hpc.md
+        - Container Execution: advanced/container.md
+        - Utilities: advanced/utilities.md
+        - CLI Reference: advanced/cli_reference.md
+        - Pair Quality Scoring: advanced/pair_quality.md
+        - Frontend Reference: advanced/frontend.md
+        - Program Structure: advanced/program_structure.md
+  - Contributing:
+        - Overview: contributing/contributing.md
+        - Backend: contributing/backend.md
+        - Frontend: contributing/frontend.md
+
+
+extra:
+  social:
+    - icon: fontawesome/solid/envelope
+      link: jiaweiliwork@outlook.com
+      name: Email me
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/RJJM42MBUU
+      name: Discord
+  version:
+    provider: mike
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.details:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - tables
+  - md_in_html
+  - pymdownx.blocks.caption
+  
+extra_css:
+  - stylesheets/extra.css
+plugins:
+  - search
+  - i18n:
+      reconfigure_search: false
+      docs_structure: suffix
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh
+          name: 中文
+          build: true
+          nav_translations:
+            Home: 主页
+            FAQ: 常见问题
+            QuickStart: 快速开始
+            Installation: 安装
+            Account Setup: 账号配置
+            Running: 运行
+            API: API
+            CLI: 命令行
+            CLI Reference: 命令行参考
+            Web UI: Web 界面
+            Overview: 概览
+            Search & Download: 搜索与下载
+            Processor: 处理器
+            Analyzer: 分析器
+            Results Viewer: 结果查看器
+            Advanced: 高级
+            Program Structure: 程序结构
+            Contributing: 贡献指南
+            Overview: 概览
+            Backend: 后端
+            Frontend: 前端
+            File Structure: 文件结构
+            Downloader: 下载器
+            Container Execution: 容器运行
+            Utilities: 工具集
+            Pair Quality Scoring: 配对质量评分
+            Frontend Reference: 前端参考
+  - glightbox
+  - mkdocstrings:
+       handlers:
+          python:
+            options:
+              show_docstring_description: false
+              show_docstring_parameters: true
+              show_docstring_returns: false
+              show_docstring_examples: false
+              show_docstring_other_parameters: true
+              show_docstring_attributes: true
+              show_docstring_raises: true
+              members: true
+              docstring_style: google
+              docstring_section_style: table
+              show_bases: false
+          
+

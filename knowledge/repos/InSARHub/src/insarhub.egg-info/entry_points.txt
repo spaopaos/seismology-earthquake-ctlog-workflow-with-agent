@@ -1,0 +1,3 @@
+[console_scripts]
+insarhub = insarhub.cli.main:main
+insarhub-app = insarhub.app.main:main

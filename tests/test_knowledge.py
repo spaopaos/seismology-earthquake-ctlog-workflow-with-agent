@@ -28,8 +28,8 @@ class WikiIntegration(unittest.TestCase):
         self.work=tempfile.TemporaryDirectory(prefix='wiki-run-'); self.run=Path(self.work.name)
     def tearDown(self): self.work.cleanup()
     def test_copied_snapshot_and_links(self):
-        self.assertEqual(self.k.verify()['wiki_pages'],35)
-        self.assertEqual(self.k.verify()['wiki_sources'],10)
+        self.assertEqual(self.k.verify()['wiki_pages'],38)
+        self.assertEqual(self.k.verify()['wiki_sources'],12)
         self.assertFalse((self.package/'knowledge/library/.llm-wiki').exists())
     def test_chinese_query_and_stage_filter(self):
         hits=self.k.search('阻尼 条件数','relocation')['results']
@@ -99,7 +99,7 @@ class WikiIntegration(unittest.TestCase):
         return mod
     def test_stage_order_and_joint_routing(self):
         mod=self._driver()
-        self.assertEqual(mod.STAGES[-3:], ['detection','post_detection_relocation','focal_mechanism'])
+        self.assertEqual(mod.STAGES[-4:], ['detection','post_detection_relocation','focal_mechanism','insar'])
         config=json.loads((ROOT/'configs/pipeline.example.json').read_text())
         (self.run/'pipeline.json').write_text(json.dumps(config))
         runner=mod.Runner(self.run/'pipeline.json')

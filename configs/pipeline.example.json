@@ -111,5 +111,18 @@
     "num_cpus": 8,
     "reversal_stations": [],
     "parameter_rationale": "SKHASH v1.1 grid search on PhaseNet+ weighted first-motion polarity + measured S/P amplitude ratios (launchers 1_build_inputs -> 2_cut_event_waveforms -> 3_measure_sp_amplitudes -> 5_run_skhash -> 6_parse_mechanisms). Region-dependent values must be user-confirmed: velocity model (inputs/velocity_p.cre), polarity threshold 0.3 (= HASH impulsive-picks equivalent), delmax, and the reversal list. Run 4_check_polarity_reversal.py first and confirm its evidence table with the user before filling reversal_stations; a reversal is only accepted when post-reversal mechanism agreement jumps above 60%. badfrac=0.1/npolmin=8/nmc=30/dang=5deg/azmax=10/ratmin=2 are method constants (5_run_skhash.py defaults)."
+  },
+  "insar": {
+    "ml_min": 4.5,
+    "buffer_deg": 0.3,
+    "pre_days": 90,
+    "post_days": 90,
+    "cluster_days": 30,
+    "cluster_km": 30.0,
+    "catalog_tier": "strict",
+    "confirmed": false,
+    "pairs_confirmed": false,
+    "processor_action": "submit",
+    "parameter_rationale": "InSARHub (vendored v0.4.2, HyP3 cloud) coseismic capture via launchers 1_select_events -> 2_run_downloader -> 3_run_processor -> 4_collect_products. Region-dependent values are user decisions: ml_min 4.5 (C-band detectability floor in vegetated regions), buffer 0.3 deg, pre/post 90 d windows, clustering 30 d/30 km. Pairs are PER-EVENT: a clean coseismic pair must bracket one threshold event alone inside its bracket window; pairs spanning two events carry both signals. Two explicit gates: insar.confirmed after reviewing insar_jobs.json, insar.pairs_confirmed after reviewing the pair network. Requires the dedicated insarhub conda environment (Python 3.11-3.12, numpy<2.0, GDAL>=3.8; see knowledge/repos/InSARHub/VENDORED.md) and Earthdata credentials in ~/.netrc."
   }
 }

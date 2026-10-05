@@ -276,6 +276,49 @@
    ],
    "scope_note": "Method background: the SKHASH paper; version-matched operating detail: the v1.1 manual. SKHASH v1.1 is vendored with four numpy>=2/pandas3 compatibility patches (VENDORED_PATCHES.md); do not substitute a pip install. The polarity threshold 0.3 maps HASH impulsive-only picks onto the continuous PhaseNet+ score, and the reversal-list gate is a project rule validated on the Eryuan sequence. A/B/C/D quality criteria are the original HASH criteria and must not be tuned to inflate grade A.",
    "knowledge_binding": "knowledge/bindings/focal_mechanism.md"
+  },
+  "insar": {
+   "wiki_pages": [
+    "insarhub",
+    "li-2026-insarhub",
+    "insarhub-docs-v042"
+   ],
+   "runtime_evidence": [
+    {
+     "path": "skills/seismic-insar/SKILL.md",
+     "role": "workflow_policy"
+    },
+    {
+     "path": "knowledge/repos/InSARHub/src/insarhub/cli/main.py",
+     "role": "pinned_implementation"
+    },
+    {
+     "path": "knowledge/repos/InSARHub/VENDORED.md",
+     "role": "vendored_provenance"
+    },
+    {
+     "path": "skills/seismic-insar/scripts/1_select_events.py",
+     "role": "event_selection_and_brackets"
+    },
+    {
+     "path": "skills/seismic-insar/scripts/2_run_downloader.py",
+     "role": "scene_search_and_pairs"
+    },
+    {
+     "path": "skills/seismic-insar/scripts/3_run_processor.py",
+     "role": "hyp3_submission"
+    },
+    {
+     "path": "skills/seismic-insar/scripts/4_collect_products.py",
+     "role": "product_manifest"
+    },
+    {
+     "path": "configs/pipeline.example.json",
+     "role": "explicit_initial_settings"
+    }
+   ],
+   "scope_note": "The paper is software/method background; the v0.4.2 docs are the version-matched operating reference. Coseismic capture policy (magnitude threshold, AOI buffer, window lengths, per-event brackets, HyP3 quota discipline) is this workflow's project rule set, validated on the Eryuan sequence; the paper's pair-quality scoring is a network-building heuristic, not a coseismic-bracketing rule. Requires the dedicated insarhub environment (numpy<2.0) and Earthdata credentials; two explicit user gates (jobs review, pair review) precede any scene search or HyP3 submission.",
+   "knowledge_binding": "knowledge/bindings/insar.md"
   }
  },
  "runtime_sources": {

@@ -17,6 +17,10 @@
     "SKHASH": {
       "path": "knowledge/repos/SKHASH",
       "commit": "upstream tag 1.1 snapshot (2025-12-17), code.usgs.gov/esc/skhash; four numpy>=2/pandas3 compatibility patches applied, see knowledge/repos/SKHASH/VENDORED_PATCHES.md"
+    },
+    "InSARHub": {
+      "path": "knowledge/repos/InSARHub",
+      "commit": "v0.4.2 tag (1139737, 2026); vendored without documentation media, see knowledge/repos/InSARHub/VENDORED.md"
     }
   },
   "binaries": {

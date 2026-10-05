@@ -7,7 +7,7 @@
       "category": "source"
     },
     "AGENTS.md": {
-      "sha256": "87c9105282b6ecc80aa0eee4fec3e2dcf6061d72e7721ebbefbe70e350665a07",
+      "sha256": "03912e8e7327f13cd3635dde413bc87771295294f125cfa0c09f07501872bdac",
       "category": "source"
     },
     "LICENSE": {
@@ -15,23 +15,23 @@
       "category": "source"
     },
     "README.md": {
-      "sha256": "22a2d84531bb186996e2c779c8e212b22563dde0704d236b397984b615405a3b",
+      "sha256": "824881014cf3cbf3904a9545b83394c9dd5ebb8c9f55936ec36d47226196d033",
       "category": "source"
     },
     "THIRD_PARTY.md": {
-      "sha256": "89e970fa96b19406542777bc4fce1a08a198c63548b8f015b4a0ac5426750d7a",
+      "sha256": "9d50b6ce80b9ed323e8c520397c9c6a81443b9a6a3cdadcaf21d329b4a845f02",
       "category": "source"
     },
     "seisflow.py": {
-      "sha256": "f6be3871a91aeb630aa6e7668f7727c90bcbc2f8932a4ed1da3b4a5aef3efd3e",
+      "sha256": "559af76d41bcc4b9e4bf6a83e8b8c03ba5271ac5838392a79eb3ca1e08303584",
       "category": "source"
     },
     "toolchain.json": {
-      "sha256": "66f95eb5652485bd0e315617e1363a82f474281b75f12bf81e7d1d79d3f1da69",
+      "sha256": "5e746aa08074c72f5544814ce033d701a3a158a6936a51832617b2ef9fa77dc4",
       "category": "source"
     },
     "configs/pipeline.example.json": {
-      "sha256": "af13446a2118dc2f63dcbd14fd4f4197c8dff94f8930a34d7b711f425b7ae437",
+      "sha256": "5ba5ffd435d1bcbeda4950d80c06983457029ffbd5a14a287f6e2495125ebb54",
       "category": "source"
     },
     "contracts/README.md": {
@@ -267,11 +267,11 @@
       "category": "source"
     },
     "knowledge/knowledge-manifest.json": {
-      "sha256": "48a323c9cc81f8f3f379f97710323160ca867cf688d7263ba8ecf4670b1ed0ec",
+      "sha256": "828250f711e325da05f9c6c8997e8f7da51786b3b2c6d3393f61f6c37e84039a",
       "category": "source"
     },
     "knowledge/stage-routes.json": {
-      "sha256": "c53ffc46bec45ae1a8e7291d8dab036c8340b8dee51140f0b948c7be34d90f58",
+      "sha256": "fdbf180fec69da1b8140d4ca02395ab4eb8ac6260a4390dc7a3375cd226885ba",
       "category": "source"
     },
     "knowledge/bindings/association.md": {
@@ -284,6 +284,10 @@
     },
     "knowledge/bindings/focal_mechanism.md": {
       "sha256": "d739ff12f61cb575bcb254b0455b5a8dae5c770209a8d3027fe713d4b201888f",
+      "category": "source"
+    },
+    "knowledge/bindings/insar.md": {
+      "sha256": "1e8c16f48401fc5a69f4a24a2db5a92abbf6219246a56d38fb0c7554f91850ae",
       "category": "source"
     },
     "knowledge/bindings/location.md": {
@@ -307,15 +311,15 @@
       "category": "source"
     },
     "knowledge/library/corpus-manifest.json": {
-      "sha256": "beb3f224bf77f43e385c405f2c9dd42c087a163415fc5f3fb62cfd135cf3ac8c",
+      "sha256": "ba9df4fc36841be3a1a94758b4901103653754b82c43392df3e7acffdeeb8bfb",
       "category": "source"
     },
     "knowledge/library/export.json": {
-      "sha256": "e77f0788a87f9691bcc8e6430cf4a3fb041ca224e77f672a3483975fcedfb514",
+      "sha256": "462158bb922d6270d7031af97c2e76d6419498e9ee4eb9c214cbc91c208d1218",
       "category": "source"
     },
     "knowledge/library/pages.json": {
-      "sha256": "9adbebcdd938e31e0a025df2e237514c3fcb6c0c56288411c51a7b145f70b6ef",
+      "sha256": "f41541cecee472a1ef2eb94e7ec4adae49a33849dc582ba320946244e17a2d22",
       "category": "source"
     },
     "knowledge/library/purpose.md": {
@@ -326,8 +330,16 @@
       "sha256": "2ac52db4bcc064170d38d7e39504dcf5be4544fb326f70b155b9421215ade202",
       "category": "source"
     },
+    "knowledge/library/raw/assets/extracted/insarhub-docs-v042.md": {
+      "sha256": "22ec6688fa297198c70d7b89216cae866f947fcfa3418b6bd9bbecc6a2ade9ac",
+      "category": "source"
+    },
     "knowledge/library/raw/assets/extracted/klein-2002-hypoinverse.md": {
       "sha256": "8e48256f689cbb5612158061683a12b3fa824d398f6328bb95384fb4cc4b8d84",
+      "category": "source"
+    },
+    "knowledge/library/raw/assets/extracted/li-2026-insarhub.md": {
+      "sha256": "c5d44e5ea5f5372420d3371a63a24d19e799c5d67ec37511a69c0ff43c6ad0e4",
       "category": "source"
     },
     "knowledge/library/raw/assets/extracted/ren-2025-seismology-modeling-agent.md": {
@@ -366,8 +378,16 @@
       "sha256": "78607c80b20e56d5da831770b22bf9972cec71462d9e9b51d67ef8ea98e9b5d7",
       "category": "source"
     },
+    "knowledge/library/raw/sources/insarhub-docs-v042-cli.md": {
+      "sha256": "1a94b2f16f814d79fd2bf5c3a3109bdd809ad214f4725f76f0527199ffeb9473",
+      "category": "source"
+    },
     "knowledge/library/raw/sources/klein-2002-hypoinverse.pdf": {
       "sha256": "110fc27a60bca8ccdb4e9e23535738491ad1ee6ffe094b94db355beb12c22d3e",
+      "category": "source"
+    },
+    "knowledge/library/raw/sources/li-2026-insarhub.md": {
+      "sha256": "f65be6cb3e7978f3386ea85d0c5ae347ca539c88ed5c704ba905dd589abbc565",
       "category": "source"
     },
     "knowledge/library/raw/sources/ren-2025-seismology-modeling-agent.pdf": {
@@ -478,6 +498,10 @@
       "sha256": "0c24e588ecd9e2a43df88dea6b455b41700c7cb5b0ba2f63f3d35702d4e9ece7",
       "category": "source"
     },
+    "knowledge/library/wiki/entities/insarhub.md": {
+      "sha256": "5e47d9348f961ec17e16dd3248cbb7f6e39c772df97d0771085aec00f1cd3dde",
+      "category": "source"
+    },
     "knowledge/library/wiki/entities/mindat-agent-workflow.md": {
       "sha256": "0ed30bd4d83fd7c7cf958b9e141a2ffcd65b19ecb3f713985a42220d47701d4a",
       "category": "source"
@@ -506,8 +530,16 @@
       "sha256": "d5ea26808efa079431ecf47850633f367d43c5c007681359907290be54ef3775",
       "category": "source"
     },
+    "knowledge/library/wiki/sources/insarhub-docs-v042.md": {
+      "sha256": "c5f1667bdfa3fc3b11599d6385f1c1a1fc52cf83cd5c13acd30662a981c4076f",
+      "category": "source"
+    },
     "knowledge/library/wiki/sources/klein-2002-hypoinverse.md": {
       "sha256": "f852abec22e1a7450c43af9aabd33c1d3a264da5e4cff180247ac40075804d36",
+      "category": "source"
+    },
+    "knowledge/library/wiki/sources/li-2026-insarhub.md": {
+      "sha256": "bce4c06b796f8b2641aa42567e238c55182449001e4571b4c8bad81a672483cc",
       "category": "source"
     },
     "knowledge/library/wiki/sources/ren-2025-seismology-modeling-agent.md": {
@@ -1152,6 +1184,966 @@
     },
     "knowledge/repos/GAMMA/tests/comparison/real/tt_db/taup_tt.py": {
       "sha256": "08b980e0021c42f287a594df953cdbe3e0a049c3da5dcb5ff61b80448102e733",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/CHANGELOG.md": {
+      "sha256": "15e6dc2b62835c28d6d65c7ab2010e568b2f6d54f1755edc631e42d253342b6d",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/CITATION.cff": {
+      "sha256": "b73ae75fc1a000bbe84315d37de63220c6e56d1f0e64acc06a42955b946fcb95",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/CONTRIBUTING.md": {
+      "sha256": "f177052722592d3884978bff8bd9ac877a6edb1c3b386fe226b8f5b09edd6131",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/LICENSE": {
+      "sha256": "d439ebae1757a847dd53aaa8176eea2a6ea4f0ea040f1d9614b2b490a6448afd",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/README.md": {
+      "sha256": "832bce3c0821ce702d3962da8c885d03d61fa63b4efa77187405bfbce927948e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/README.zh.md": {
+      "sha256": "b7e43213e46e4586fdcc46fdffc5af5a4f97cbc15c44d4e6f4bff58faaa91c9d",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/VENDORED.md": {
+      "sha256": "59039b6b5f899b12bfc287b4e4aed4393641aa69949464e4437a2154b495c78b",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/environment.yml": {
+      "sha256": "b44585564d96b02289cc1b81c45aacd875218e4ad424a697b5de2522c9661048",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/mkdocs.yml": {
+      "sha256": "f25f31cb26836c5fc9d886518ac0562c7ff029231572c1e5f470bab7320fb213",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/paper.bib": {
+      "sha256": "723fdb4f9c06d75605eef73f510605a44bc8270d82f28b3936aa4c2ec41f20e5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/paper.md": {
+      "sha256": "f65be6cb3e7978f3386ea85d0c5ae347ca539c88ed5c704ba905dd589abbc565",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/pyproject.toml": {
+      "sha256": "c908a702647bffdf6df4b14b37a90f63e7e0bb5a17012a93206f3e5dbfe327a4",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/README.md": {
+      "sha256": "ecddeee7fe6b47dc19f70e05cb4634f58e66626244c963df6b7f3c9e3a39b358",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/dev/Dockerfile.base": {
+      "sha256": "2afe5a0e24d3b81fb7d2fbf67b359c535da731119469332460ba8fd93b91648b",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/dev/Dockerfile.gmtsar-mintpy": {
+      "sha256": "ee6b7619d23ad80297cc3f551ee00b7d58de5857cdd4734a960aa847bb661724",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/dev/Dockerfile.isce2-mintpy": {
+      "sha256": "e439c891b20eab3fcd51ccedbeee5677eac9e292ce768323c8684ac3447d3bcc",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/dev/Dockerfile.isce3-dolphin": {
+      "sha256": "3a5bffade9dfa9e4c9aac49431bdace53b623aeaac38f826c8e02cf7fb5f952c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/release/Dockerfile.base": {
+      "sha256": "91856d88e68931ce97dbe8da51bccf6e8673d756323b17af1cc33c08ae1bb787",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/release/Dockerfile.gmtsar-mintpy": {
+      "sha256": "734290072e0a6e0621211053d416242bab37ff69e9641a7dc2774f37f9a938ad",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/release/Dockerfile.isce2-mintpy": {
+      "sha256": "339dba61a0289133a20dd45f83c83ff41a88694a38cb6d92c6f85fb10b5779cc",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docker/release/Dockerfile.isce3-dolphin": {
+      "sha256": "360a8654519369ddfd353511ca57cf9dc458b8dbb30a9ebdef672e4986950249",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/about.md": {
+      "sha256": "9b441c004dc9fa2655e242477549603c22cca11d72de44615868311e4ad1c6a1",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/faq.md": {
+      "sha256": "455ce8cd1e1bcda6b3285304af476cb9c9eca63e46c8c8c8a076abaab31eaa05",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/faq.zh.md": {
+      "sha256": "3c9a30d1c435cc65dbf776ff5edde3fd574cc850fd6aaee2ba4a714270f866e1",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/index.md": {
+      "sha256": "3e37de2651df16865fbf42df6efdc155b0480892ec6c4d56769b40c816d472cc",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/index.zh.md": {
+      "sha256": "075d8012d4e83417f8e4e5fb275f45e16b4ab3e8188c0a6e200e6878e3d0396f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/analyzer.md": {
+      "sha256": "336c283ebe76dc1265456270ec54981d1322c45ce7c0e517bf9ee3f2218e458c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/analyzer.zh.md": {
+      "sha256": "d942f653e9fddcf64b1514beabce1f4554cad04308dd3934ff532ef5107a43b1",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/cli_reference.md": {
+      "sha256": "6f6ed2d2d64326272022e879b4d58c79c2412b4870c288c1404773e4ad7765a9",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/cli_reference.zh.md": {
+      "sha256": "3cedb8b4639d84242e2f3f3abb472d8337bff6ce3736551407bcf86c3a4193c2",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/container.md": {
+      "sha256": "5d7a63492a66f6e610c5089f2189412841d82889a6e3634479e631b965bf18f3",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/container.zh.md": {
+      "sha256": "ba8edc5cc1d20dde1159b88c5482b44e6cdcdd67ec3a577bdd8ab1d59ffea7fa",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/downloader.md": {
+      "sha256": "f425650d731d07da12f0ac72699055fc641bda72922309475b823d28e6cb36c7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/downloader.zh.md": {
+      "sha256": "defdd3144d840f77f0a1cb8f267b6e846021371e477eae8a4c12bed50c86fca5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/file_structure.md": {
+      "sha256": "82b87677e3749426582926dc4f022d881e678095f5fad5d4b4f8cdf648c4532b",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/file_structure.zh.md": {
+      "sha256": "1d37bf23bfae6e37512a0f6b659372ea8da1fa3586d41d0a2c841008f4400e04",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/frontend.md": {
+      "sha256": "81a320eee6be238ba5954e072d4e46052f8066ac23fef362e88d86ac1ffdd0e8",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/frontend.zh.md": {
+      "sha256": "0132c1936f47f50d5880a183b870ce7b20e7941d670bef4a15ec2ab822ccb113",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/hpc.md": {
+      "sha256": "3aaecbda91d125f7dec099ebe07dace7a147cbac7d6b4d29a0352a22e92f8ba5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/hpc.zh.md": {
+      "sha256": "eccb5e2de1dc2e8a844c2003ff4b309b2fb8921fd7060d066b33a3bc18ba5cce",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/pair_quality.md": {
+      "sha256": "44ba8bc924773c734265cc27678bd53617c83a27edfd8e6517e56799cd8aabf9",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/pair_quality.zh.md": {
+      "sha256": "6ad6d050f1eded8aa060fcae6d0d23e909b50b4d7d514a9f11bc478738494080",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/processor.md": {
+      "sha256": "1b19a5dbd4fff4b14e87a7494c89c76ae590ad4e1049eb3543e82ee874a54e53",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/processor.zh.md": {
+      "sha256": "656d0ee7a62c9aec2a72ce0faef3caabee3f21db3db3f1ff78582ecd68f7319a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/program_structure.md": {
+      "sha256": "79489868d0939513ffd584e1ed1eba21ea865b404ae86c7252ffb33f7776ac51",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/program_structure.zh.md": {
+      "sha256": "85e8de814ca7989c2bcaa091ebf34982c61ca6eded971c1103fdcc855fa885ce",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/utilities.md": {
+      "sha256": "23397ea703aaf02f5a24857d3d2ee0cd0fb9e3d693df24e2ee64a0fe5b30f824",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/advanced/utilities.zh.md": {
+      "sha256": "0bed1463f043f35acca42e350d05c33f591a3948c36fabd26f774e6694c69448",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/api_setup.md": {
+      "sha256": "7a8278cb17aedff53124578f9a0e14fcbafebfe6f7f0c0ade09f0679b4cd276e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/api_setup.zh.md": {
+      "sha256": "27bba92d4accb3697367619d4b165080a3aebff74384371f86185bb776e45e46",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/cli.md": {
+      "sha256": "1a94b2f16f814d79fd2bf5c3a3109bdd809ad214f4725f76f0527199ffeb9473",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/cli.zh.md": {
+      "sha256": "308b8e0caa5f95335ee871008c4bf10f2e3061ead706c8579e730030dc801c4c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/frontend.md": {
+      "sha256": "8fd2a16f2e802878c3dfa648dda795c648846dda6911b52ae224d7d8834afc41",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/frontend.zh.md": {
+      "sha256": "e7d37164906de05a508721bfb808194328cd5ddbd3f52cde33b938184d7ffa35",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/install.md": {
+      "sha256": "39e8d53f4897d550ec8339a7471358af0749b76a51570bd71afad51940b18ab8",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/install.zh.md": {
+      "sha256": "4bd2f052d8cfa6657ebc12cf9895af4f1256ef39c504e22391b0c28101c24c49",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/running.md": {
+      "sha256": "903e3a02101056c9aaed6eec4ac9b22d861fff91f62add8f2606edcd910cad4f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/quickstart/running.zh.md": {
+      "sha256": "f1842addd4029c8c99408fbe7e0dff8e80aff1bd092998c2a0baca349fdfcb26",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/docs/stylesheets/extra.css": {
+      "sha256": "0aa718ea02219aabf96234e9af6d53a857bf3daa74086bba87f253a18117831a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/recipe/meta.yaml": {
+      "sha256": "8ba1b8610bd2b37ba62b5a2148cc80c01a91cc0b63161f8070c04c521613ac8e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/prep_licsar.py": {
+      "sha256": "3d2d7d538b6b960d12db856d322a9df53310300211ca8d1e8f340df8dbee4310",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/test_install.py": {
+      "sha256": "b6f0761a390c191c34faf4ec42f3a86c54478b48d7c72ef95096bee54c0f3fe1",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/e2e/api_e2e_hyp3_mintpy.py": {
+      "sha256": "6ead3594123903c05b34f3cbcd5249a1129d1b9a4893721b0077834fda61b7ea",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/e2e/api_e2e_isce_mintpy.py": {
+      "sha256": "8b6c8072a1f5adec71b65b5399b4ffd250c008474473066114400715d4d4fe4f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/e2e/cli_e2e_hyp3_mintpy.sh": {
+      "sha256": "f6616c128b8e5ce88ae827aa9ef30fff7b59d5e40a2b9e28ffc83bc489fad9b2",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/e2e/cli_e2e_isce_mintpy.sh": {
+      "sha256": "1ed3eac38de94aa2f964a6b9aeee834a14d6936170ebb441f40eb8ff8757567c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/e2e/full_pipeline_e2e.py": {
+      "sha256": "ba0196a958dba475857b1f94b0fa7f4c8884187581e386eba35927f7d30c088f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/scripts/e2e/universal_smoke_test.py": {
+      "sha256": "bfac2dd1ddb8938057c7cedc5dff25891cbc0a59096876b9635c4f76f9ff25d7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/__init__.py": {
+      "sha256": "3813c9b53f780ed70103c6980973f09bdad5a56d015a9079376abcee8a63ab2e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/_logsetup.py": {
+      "sha256": "449d3833712394bcf1f41aa5d76ce565d766ea74374e8bc4998907257106eaf9",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/_version.py": {
+      "sha256": "6cdb5260a427752241fa9508a85b183ee657f810357202f29b548611ed5c3d69",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/main.py": {
+      "sha256": "aab53790a914724f02ad356ca56d20b5c67ece0c2e58d185b13bcaacae8f228b",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/__init__.py": {
+      "sha256": "f185efbec16f588b43b22f49787787c1b239663921980c2a58595f2aa1a321a5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/dolphin_base.py": {
+      "sha256": "a17ddf2404374735bf3621f006b0bc6c4f54a4bbcb916b156a622f1d11e0bff4",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/gmtsar_mintpy_s1_sbas.py": {
+      "sha256": "a9876d84a227ba7710bac9dc0042610884e91a1f48e046d2b6202727c3ceca3a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/gmtsar_s1_sbas.py": {
+      "sha256": "a6ce0fae410b342f4c35790aae7cf023d750481574f3627e66c28ebf31beb340",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/hyp3_mintpy_s1_sbas.py": {
+      "sha256": "22b4a91b94da6338f0df671b872893150b7067ca69cc8049c9eb1b1a317ca933",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/isce2_mintpy_s1_sbas.py": {
+      "sha256": "6f06a6d1eb2d0e12d10f3b6d42faa6963a59550195a0544a93fe34f6198f464a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/isce3_dolphin_nisar_pl.py": {
+      "sha256": "48b88ceb5991f88c03dee8d6340c46b9b07fd78d6bc5596a5771c87a033f7580",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/isce3_dolphin_s1_pl.py": {
+      "sha256": "fc7a8a6d9f5cd19396315e48d77f39956b36acd2f3c91c5f21785644c0ed219c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/analyzer/mintpy_base.py": {
+      "sha256": "0a043a047c6c6a7e383e2965ca4e6314852a52b376fcbce84acef5c453cd6aa9",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/api.py": {
+      "sha256": "22a9b80b03e7785b374c83db3a5fa399f5ea10d4d01a6f9e6108569cc8db0430",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/main.py": {
+      "sha256": "601f84b3e49562a1da79f792968206efbd07ad75ac0717d00fa415a6a517c2cd",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/models.py": {
+      "sha256": "9e781d5d3f765968bab8ef2583f04bae73969306f17a5a967f9c74f2dbb551d7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/state.py": {
+      "sha256": "0b648f45da98bfcbddecf5bfadbb334683a55bc664d9860454c0108273cb376f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/.gitignore": {
+      "sha256": "fe718e7babb14f3cbad2d97f08889b9ce5215ed3fe0e43b2b8cfbfb3b9b844e8",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/README.md": {
+      "sha256": "f58b5b17f83db63c09a9f2c059ec435ac8a3feb66f9337391ed5f3f62cff4e63",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/eslint.config.js": {
+      "sha256": "4efe97b16d1200fac0eaf07aa00930a8668b1f96a0be1891ace8c1e712ff0ccb",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/index.html": {
+      "sha256": "b7aa5a9187007a253604202f6500bed604ee56a7c016ee6a74511303a63a14f3",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/package-lock.json": {
+      "sha256": "c4e3524c44132f59cd2d0cc3b9a0d5ea5fe90f7e3dff090eaefcd5cea0daa2a3",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/package.json": {
+      "sha256": "7b5a41cba4d2c11f60181675390ec0f5d5eb8fc499a27269b1d691e5d0bc4125",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/tsconfig.app.json": {
+      "sha256": "bad0519fb89ab9d7f474d3d27d5d5b5afbbe5ddcdfef96d03f26d97c9776b5c7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/tsconfig.json": {
+      "sha256": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/tsconfig.node.json": {
+      "sha256": "c3dd0fb522feba3596713f51b95bd53d781d845d24aedbfa2ac093d8b39c5120",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/vite.config.ts": {
+      "sha256": "a2536a764040203afbd05e5c31a4a4b62042d2e62fc5d7b8de9c288b8728d44c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/nyan-music.mp3": {
+      "sha256": "1fa4966845fae400235beddcf7b8978a6fbbf5a4aa6bf5cf39cbebd38abe78a4",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/nyan.gif": {
+      "sha256": "6d37766afaecd377cb79536d6d38c03c55ecf83c6a9cfde1530c9fd564fe3164",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/nyan2.gif": {
+      "sha256": "60262b96b443fbf33905ce1b6c1d7d768fe05a185f454f8af37c2d6e9004af02",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/nyan3.gif": {
+      "sha256": "023ad11bc18ac1abb7f3f5754d5c3015b036671861a20812b568251509cb1d91",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/nyan4.gif": {
+      "sha256": "593f9dbb4c06fbbf55369aca12b9621f8fb446343917c105d22efb14b9cc1fbf",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/nyan5.gif": {
+      "sha256": "6a338c2fe182ee9ba3f7f4bc932c35b884ee88e5dd892a4d38a702dcbccd449c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/nyan6.gif": {
+      "sha256": "1191c1229856e0436006faf3cbea19a5f0f85a16d8719cbce274a0feee0b3c79",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/public/vite.svg": {
+      "sha256": "4a748afd443918bb16591c834c401dae33e87861ab5dbad0811c3a3b4a9214fb",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/App.css": {
+      "sha256": "0d390afd8b5d5d1af1a188eeac5b8e03fbff8aed8a37b932f0451e0b8d5bf009",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/App.tsx": {
+      "sha256": "e756c85e15a45280d4ee744cad0c2fafeddeb2d17a291509aba8561cb8df2a96",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/BasemapSwitcher.tsx": {
+      "sha256": "d2bd2c507f4632cbba60c682a5787182bdcf4cfd5b8bd5f892c455ebfb4e6058",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/Drawer.tsx": {
+      "sha256": "d447500e01779383b431d6ea0645fc3d6f5a9cc1ee065362b6ef77b145c68394",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/JobQueueDrawer.tsx": {
+      "sha256": "9acd9b7fc1f5327d7da7816528bcb847e5c4d7ccbd14c20a91f0b3e158dc43a0",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/Map.tsx": {
+      "sha256": "1bc710c1cdca442826bed061be655f9fb8c545ab69fbc4cc8f46138bf977d9fa",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/MapToolbar.tsx": {
+      "sha256": "ff9d583cb98b8dfb513811d0a7c83ceb439317c410eb26a7949d1c074cba2e33",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/NetworkEditor.tsx": {
+      "sha256": "cf24f447906771041e46e785e9526349c44a678349bc6b57b980dd975984f875",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/SceneDetailPanel.tsx": {
+      "sha256": "6f5697a91da566060c23957355f3cc98ddcb648ebbdb512ed6c334d249977e51",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/ScenePanel.tsx": {
+      "sha256": "5037a5aaf8730e986801cfddc21f930011f8627dbfa1635813fd99a1caf97a02",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/SearchFilters.tsx": {
+      "sha256": "d9d0165f3bcddde62cc15a5e449aaa31ecdb86b3471143cafb6c227577b2098e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/SettingsPanel.tsx": {
+      "sha256": "7b691e8ce0ebdef3c4fe3924330a3e5d688eef4e1be8102a7147e03f4ef3b241",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/StackSceneList.tsx": {
+      "sha256": "3540ec3f12f01bea9abfccf806757cea08c6dabd2dab02f2c7665c1c1f6f961f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/StackSummaryDrawer.tsx": {
+      "sha256": "58318cd272985377e8b5b99f8b936e388f89fcbce94bed3aa1eb245993a4fd8e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/StatusBar.tsx": {
+      "sha256": "43ccf94d475d9b096e29fef90ee4831c818f9144ee3e5d62574eb503cd7bff87",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/TopBar.tsx": {
+      "sha256": "3d79d53d4a96fbb21718490ec36ce7a144de4630bc1cfc40e66d5b0e5b577089",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/api.ts": {
+      "sha256": "99d9b6f0dd3b76413e712a71ab94c379768737afdb07510ef851a610c9211310",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/geoUtils.ts": {
+      "sha256": "4cc5304abeb53264bac4d9509bcafc9ffe9da4d73f1547fb3d56eb8aa1e3ccec",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/i18n.ts": {
+      "sha256": "2254920e9a21dc912a1a0cc1ea5efbc136d80af5fd1e64e052ee557607c94c58",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/index.css": {
+      "sha256": "1ed1de280018384347e3943b45e2fe97183440457b831f1ce72b5e259a527b02",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/main.tsx": {
+      "sha256": "27dd535fb345857ef67c05d3e159f1bc11ac3ef3071a8e4f91687485f878b4d0",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/theme.ts": {
+      "sha256": "bc2c1f405a8658d6b9903cf7a9e13d398260afd0fdaa6da979f0eca0a6b60101",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/useCopyFeedback.ts": {
+      "sha256": "9bf228d5b64fbff42a71f8a93bdff6eaad5f87db694a375786d68eed7bdbc41c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/useFetchJson.ts": {
+      "sha256": "73325663763605a720e746d5fdc263ad5f4d8eddd308e7e4937e9008a4f8fe4e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/useResizable.tsx": {
+      "sha256": "4648519ad367677805e46f933f5d0de8c6afe69667a937ad11456108acb6c2e5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/assets/icons.tsx": {
+      "sha256": "13883d78af8954f6f15ad442d7a6512cc299272ab4a6185dfb71674e692eb571",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/assets/react.svg": {
+      "sha256": "35ef61ed53b323ae94a16a8ec659b3d0af3880698791133f23b084085ab1c2e5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/locales/en.json": {
+      "sha256": "ed68faf302ed296808dcf07c3c1e47e4acf0bd700c59d1b3c7feb1151c939349",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/frontend/src/locales/zh.json": {
+      "sha256": "edf8992535abe032ccb27c1d55538bc9efc2c64bb2b8316cf51fea44f5d37be2",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/__init__.py": {
+      "sha256": "29d7cc6e322976475f8d80c6adb1e684cc095c9394c47a2612c51b97cbba7175",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/analyzer.py": {
+      "sha256": "b36a2da111dd3bcff5404fbb882676f477025def4fd51f83742ef4a151573d2e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/auth.py": {
+      "sha256": "689c73917b74637b5ca5ba9d208a88c67b2f49964d6bb7945841683d92f29080",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/folders.py": {
+      "sha256": "071b29c08f1a84d8e8f152c3e8efcf54efa7c67f103e2fa05c533a341da8c0be",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/processor.py": {
+      "sha256": "ca74148319af1a05b7993aea3742bebe6a0445b16ebb5ecfe599a224d4486415",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/quality.py": {
+      "sha256": "875dc87f9e583242850dcbdb00f8e222cd4b630a8d578b1853ccec232b81ee19",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/render.py": {
+      "sha256": "aa22986de1ee76a709006f989363c2fcef286707368137e8d9d7fed5b048676c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/search.py": {
+      "sha256": "4a75783e5818a1ae8fde4c25792a3645de3b5ab74a608165a8b46d8930b966b8",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/app/routes/settings.py": {
+      "sha256": "dbfafa7580d95c2c95426d52c432c5c64d4caa2c9fc8ddcedcf96ade85ca8710",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/cli/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/cli/main.py": {
+      "sha256": "383a27a55aaef84b580117f51b12b5ed4b692ddf615b1a17d38912fcf16d8c73",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/commands/__init__.py": {
+      "sha256": "a5cda990f345ab12367b2c48dc8c76cec440521d2d449b8f241671dc062fec59",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/commands/analyzer.py": {
+      "sha256": "ba5fb710aa057f34dc0221dc6ed647d0afd25b2cea23f20e80112e2c80c99be6",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/commands/base.py": {
+      "sha256": "94b291bdcc0fd66c8ed9671b89f4dae5609dccc45015a30ceadcb3cbe699fadb",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/commands/downloader.py": {
+      "sha256": "5312ddf25a39859503751850b8a53e3939a5ea78af92aa441ae7bdd0defb6b26",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/commands/processor.py": {
+      "sha256": "61b32cfbf7153052642ca78fb93794783abc80baf03b3bded3c2d19ff70027a0",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/config/__init__.py": {
+      "sha256": "209ed7217a0bcd7c0f46a8b67309ee81f3623e493957fa9f21548af6a2186b37",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/config/defaultconfig.py": {
+      "sha256": "03827beda7b3f0202dea3afe6b91ffe777fb5feebc9fd1b36bfa9afa9b4d677d",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/config/paths.py": {
+      "sha256": "802e627d08bdebf4b7e132c1b53518e5a886dece52d9c690a98cfcc7394c068e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/core/__init__.py": {
+      "sha256": "d6959635012538c420e55499afd304336425e0425dc04ce199d7b906cef5c2ab",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/core/base.py": {
+      "sha256": "b81925b0d0db5de4da993e07c8d863101bb38d37b0137e5baccea52ab0886b18",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/core/engine.py": {
+      "sha256": "369ff80a5dfec09b007547209f9df6d177b5b6adbb9acf7c7b5ec4eef98f3fcd",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/core/exceptions.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/core/logging.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/core/registry.py": {
+      "sha256": "0bf3b8712ace4ef9e385f31c2d91f57cae6975c09c577a1c0151a371ecb44d99",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/downloader/__init__.py": {
+      "sha256": "ffb68f5e96a07ec0b206323a5d8dab70cd17c08baa39ebcd3282571441b71e9e",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/downloader/asf_base.py": {
+      "sha256": "ae3ccb2088117c2338dfb3feea7c492b6872f3792b25ccb0af914e76abfc66f5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/downloader/nisar_gslc.py": {
+      "sha256": "8e974202b38914a892590ff4fcccac76160e3a747239bcf0e4c0d4ee63c2ac0c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/downloader/nisar_gunw.py": {
+      "sha256": "6a0d8c95bf5443a6ffda20ed37a6c9ff0503832bde5b31c1cc2e14cf01936bd7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/downloader/nisar_rslc.py": {
+      "sha256": "26882a645509fff38d05bf4fec9e21f7371f917b5b89bd3e5da308552282077f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/downloader/s1_burst.py": {
+      "sha256": "dc1c10446c1111e19ddd0490d7fae9366d79e5ede8e350021e0d607db2443758",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/downloader/s1_slc.py": {
+      "sha256": "534ffc73661605e84e09da9a5e110049435a377d6c2ebfee0d1a47d2c87d1de7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/__init__.py": {
+      "sha256": "5e1f32c237eb9ac42641eb1ac55467458b8eb7d589ad8527b226bb12249a4a82",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/_gmtsar_esd_network.py": {
+      "sha256": "feb9cf9538e25f908739897676535563f47ecc1999bb338a072aaf1ec947b73b",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/gmtsar_s1.py": {
+      "sha256": "cdb79a308be91f211cd7be636e914895b4799284c2fc139c6c21cd7db69ac44a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/hyp3_base.py": {
+      "sha256": "b6467370654601062d9d3201aeca38ebfe2bed7adc2ca70588da02186eeefa5c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/hyp3_s1.py": {
+      "sha256": "3142103843721fdac69927d035a16cb908d44a790bedf1d13390015085350008",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/isce2_base.py": {
+      "sha256": "065d521b5fa8381d72b2f54a577c2e1f6ce954af297e9f9b0fbc4b7eeb7a7310",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/isce2_s1.py": {
+      "sha256": "ba2409f88c3d555893e4d66357629576637ec5eb138fb95a2c1c34fa0003c94d",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/isce3_base.py": {
+      "sha256": "f1cc76dda98bf410b3e36385a40052b44bae046b0d8f4d21258269192161a0ce",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/isce3_burst.py": {
+      "sha256": "3c85e6b6b349b675fb80c3f623825f980b0d749c136689fed63ff49433b2956c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/processor/isce3_nisar.py": {
+      "sha256": "8d018733c2131915619b57606df0c89631344344209201c195620d035b000163",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/__init__.py": {
+      "sha256": "1d78ec5db23366dda85dcfea39971d550a913883c1e595b0102858cdad3f9a1a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/addon.py": {
+      "sha256": "6742c1ac220f027a4c8554fd32579cc6346461933675ab1ec3bd2eaaaa8d9a5a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/apis.py": {
+      "sha256": "24b69a02298673d0d2cff1ce07bdb65e75e5e15280c381a0a6a07af2a946f937",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/batch.py": {
+      "sha256": "ad3464860c40b27df1c3551f3de87a21cc16e94eb845dd413bea66aad8e7bb83",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/config_io.py": {
+      "sha256": "aa23a4b057174ff99f01b0848823d0e372916a91519f77b4f0481e22d1b451c1",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/container.py": {
+      "sha256": "3ea5f106126b4b18e00d7e865e06b02bd782a34f48e03e8b431b2313a54e6a89",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/defaults.py": {
+      "sha256": "9aac9da41b991e6fef3cfa8906b7b1fc62f1e6ee84c1eb512293519bd2fe2696",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/hpc.py": {
+      "sha256": "a5d61a10e9893881c7bd9695132f9e52ceab4e49ac9230a0e13aeb87613dc390",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/ionex.py": {
+      "sha256": "eef8e18f280b3f0e269ab75ae33ef86387e2a685b31c60e2235e8290dcb3384d",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/local_processor_reload.py": {
+      "sha256": "bd0075213290080af1e138fb427c9ebbd6122d13d537c7491589a755137bbb78",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/postprocess.py": {
+      "sha256": "be54f9b8379323826e61c3382dedfcddcf67f9c61f40db8f1f448d674a848459",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/slurm_manager.py": {
+      "sha256": "dc4ed119578ff61be939e1a5c36afefe673951ad1463cf32bf7c74a550ab1abd",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/stack_io.py": {
+      "sha256": "a68e8454677f3ab77095cb05680b9e31099f07eeca733928b7776883e0b491b9",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/status.py": {
+      "sha256": "6c45c1ac959dbf471578acba9db7f25b3a999b7c2d673877dba4533bab9d1ac6",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/tool.py": {
+      "sha256": "127fe4cf73a5f5003c2e8f6ffd27be1667cb309155d0f1b5e0047eb261332dce",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/__init__.py": {
+      "sha256": "fc1df7b80c8d777d6c19befdb65588a4be52fd840dc36252d672a31f9ac62bb0",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_archive.py": {
+      "sha256": "7b9bf119b5ed6a3d253f3f63ade03dead84b7a2457e4e3101ee2e9b267c844a1",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_baselines.py": {
+      "sha256": "0b41f22da3f47f8acb4736828f6ea454a817baf5779b608b4e61f15240972f06",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_cache.py": {
+      "sha256": "ab08465aae82c7e50a861a9a2ef62b0bc416a836cd8fc249095b21c542f330d0",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_classifier.py": {
+      "sha256": "7df0987ee048e0aacfa25613bd13e83aba149e6d0d25548e7db23779167b0a82",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_coherence.py": {
+      "sha256": "187c6a9f3b8b25ecc114bd23482854fd1d34d43f46a362b8e1942826e6f247f8",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_dates.py": {
+      "sha256": "5b789eb797d631ac43c248590dad5d72f396b923a337cdd5d0df9d5582dc6328",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_db.py": {
+      "sha256": "94d9fbd0475657d3ff63abd08357f4dee98dbb43ffc5e1ddc7609f3b87676650",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_events.py": {
+      "sha256": "d7ec307fc2ab0d0c0ad14eb8ba080d7fd580685e0a55186d1176f175018408b9",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_feature_assembler.py": {
+      "sha256": "45281de75c43fe5d970fcf0b77b32b661119cd65c03a9b6b33be71c851aa909f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_geom.py": {
+      "sha256": "0187c22e8e5c430f201a84a53f10b284fe09a442d531cf26b0e73f644c2330bf",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_http.py": {
+      "sha256": "a249a62b1bd198450be4d22566ca63c807ecc92df373ccee6cc710c2b4128e80",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/_weather.py": {
+      "sha256": "a0f095630eaee754b622d3f91abd12d9f193cd939421aa1ee8d8ee1f771349cd",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub/utils/pair_quality/pair_quality.py": {
+      "sha256": "651b0d7351dbe8a409def68c76596b7b2fc38987ac00e9e3f55aff013222e259",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub.egg-info/PKG-INFO": {
+      "sha256": "1698c77de7648ab5058eabab43e4cdbf71b497d90a56cae8ea5da0537ea8b377",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub.egg-info/SOURCES.txt": {
+      "sha256": "fb7b86775e53d418b44a14cc00ab61b105bad3484e447d564ef24cdbfb2f1644",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub.egg-info/dependency_links.txt": {
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub.egg-info/entry_points.txt": {
+      "sha256": "332d6db4ec45a0bffe15c342abf7b2a1802598d9dc429191687551feb7894708",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub.egg-info/requires.txt": {
+      "sha256": "eff01933b0bb96ec80e3c6e5b9778b988d35e079919a447decbe9bc9466fade7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/src/insarhub.egg-info/top_level.txt": {
+      "sha256": "520f4c56b454b0fa3d3766aaa66482940bf21632e40620edcf41b34d4613f4d5",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/README.md": {
+      "sha256": "0efb04203efc3f6030b2ad6165a07e489c262333e3db7ab99aa2f0ae6f2273e6",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/_backends.py": {
+      "sha256": "c56dbea3c4e6ca27c432344f984633c832926eca3d7dd0e762c53de7dea0ada7",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/conftest.py": {
+      "sha256": "44e4b02f5995d074bc3601e506fa4c2665ab84f6b86392987d2dcdb94ec3a003",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier1_install/test_install.py": {
+      "sha256": "346948af69d9c88ef284c70c93d709cb8e2152c5bed13936cb8acb38e04b6d77",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_api_contract.py": {
+      "sha256": "13dacc80f0efb8f2c90acc53bb9eb104e030709df041e215a832c309d3eeeacd",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_cli_contract.py": {
+      "sha256": "ffd35c4bac3e8d07d866d964681bb2bc3c8a19823a6c2b7d7f16878b3c0f94c3",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_docs_install_commands.py": {
+      "sha256": "a12c294d847c0a69b1cf99ea8135473275e3787b01118765073906b79424ef55",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_imports.py": {
+      "sha256": "d7c182c9ab8093daab8f426b96e2eb61c0cf15de64559957fca9d2558c9d983f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_logging_policy.py": {
+      "sha256": "09d6addab049f65fce591b10c3bb8c67e6d3e021695b4e2fd9c9116147af97ff",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_pair_quality_events.py": {
+      "sha256": "c4f21e0fcce8f4d0168e7fee4ca215185374519cdb0cd568a873a99b06bb0754",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_pair_quality_sources.py": {
+      "sha256": "d6c178294a97dd61fbcb71307768f15e6a0e4a3908c33468dda04e5790132a09",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier2_basic/test_registry_and_config.py": {
+      "sha256": "ad360c971cde8ab66fc71dcc1de894fc12992a82358afaf5d11ea59e037d2f26",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier3_e2e/_harness.py": {
+      "sha256": "631c46dd09e05039b20940a8d5d1b405cb0a50db02d4b20aeec5e14a7c10759f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier3_e2e/conftest.py": {
+      "sha256": "0642df759b06469ce0985c65d094917641d68c431f98f7d1df133af5a7aeba85",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier3_e2e/test_e2e_cli.py": {
+      "sha256": "e6255c1e9c6ed75000dd006b8e78d58e4924416ff89296466dfe914f872e3ac1",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier3_e2e/test_e2e_gui.py": {
+      "sha256": "1a5c9666619eaf2f128080f945771e8eb878ef52e13d6c17c9ccb306326f1474",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier3_e2e/test_e2e_python.py": {
+      "sha256": "8c81818d2625c121d6d12d971b380824d05172dbd952a206bf9ada9801a065c4",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/README.md": {
+      "sha256": "f06c830cb441c04055fbad33c3a6b75e21af35e7094d11b32f62d60f6cd1d940",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_0400_asf_frame_compat.py": {
+      "sha256": "b31ece514c24de927036755cf6b5aa4e1a42ed54dbd45145bc1492fa4e4768aa",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_0400_burst_stack_selection.py": {
+      "sha256": "a9ae255ca34efa700a33dbece7d9619b887a4adfca9d5c282207addc2d2517bf",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_0400_cors_wildcard.py": {
+      "sha256": "ef1af1ada4c8f89ca22f2c1c8e06698c1a646a9d8546f3104ef8cabeff5a3b3f",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_0400_empty_filter_fallback.py": {
+      "sha256": "b294fb047e8c8834dbd12bdfa7010f58080e7f80184f0cd5f840d13c29aeda33",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_0412_aoi_centroid_cache_key_drift.py": {
+      "sha256": "6e159af11f726e27a75dc400aa60a3e5f9b5359a2e960c5211336534f3684e87",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_0412_concurrent_quality_fetch_storm.py": {
+      "sha256": "1d5217664133e7ce63f1b5dcd97edb8a8ed9adc3742b5198b4082f65dccc6767",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_0412_quality_cache_poisoned_by_failed_fetch.py": {
+      "sha256": "1f6e45ecc10e16eff3cfe71ebb85a7ef5d6ca04a24f171f0e3dcfbce5da6a6fb",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_index.py": {
+      "sha256": "e3590b1b6091680afd66aa806de392a640733fc5f6b6fd9cefb8df26c27aff5d",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_isce3_fork_stdout_fileno.py": {
+      "sha256": "a7ed3e7d17dddea54b61ebd92f89c5b9b2d61c4ea8fd0c10cdd2b7bb1132779a",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_nisar_null_center_latlon.py": {
+      "sha256": "f23304b09c652c30bc630e4b79227ab271687afa6eee25f453e0f5cbb1e9e11c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_probe_isce2_path_only.py": {
+      "sha256": "58f15ceab39cba9e2e200059428905695942002d8a6a06d9b07e899f4a68ad3c",
+      "category": "source"
+    },
+    "knowledge/repos/InSARHub/test/tier4_regression/test_bug_processor_workflow_marker.py": {
+      "sha256": "fad87d2b62645979b4bf10d52183008310864d7798aac607a92d63262fcb9b1f",
       "category": "source"
     },
     "knowledge/repos/PALM/README.md": {
@@ -2354,6 +3346,26 @@
       "sha256": "eb43390dcfe42baf392b1bb110edbfc2c2650e07676f58d904ca7f1f59c55acb",
       "category": "source"
     },
+    "skills/seismic-insar/SKILL.md": {
+      "sha256": "dc0ba58e896e03e7607531bcbdea2d418ef7989ab71c5f253fbadd819660e187",
+      "category": "source"
+    },
+    "skills/seismic-insar/scripts/1_select_events.py": {
+      "sha256": "dbd7ce996cb8ee30f0fc7fb424b7e588e8605c3ef204b56ec5f3e3edd11ed207",
+      "category": "source"
+    },
+    "skills/seismic-insar/scripts/2_run_downloader.py": {
+      "sha256": "a7df20c60e3ac0e152663d13841a88298cede87f4a954af91503669bf6814f0a",
+      "category": "source"
+    },
+    "skills/seismic-insar/scripts/3_run_processor.py": {
+      "sha256": "20135a7536e4211fb6868a3badb088fdf9b05b87d98a2312835cd46eeef78e24",
+      "category": "source"
+    },
+    "skills/seismic-insar/scripts/4_collect_products.py": {
+      "sha256": "7c462c6b675f37043c6ef842af50fbcb5c256c6dfa71bb2d5570bb1b7451be4d",
+      "category": "source"
+    },
     "skills/seismic-location/SKILL.md": {
       "sha256": "a8e47ee81593f7fb2f065556e224887e10fd41e1ae19c0a30d1856f6c20ce133",
       "category": "source"
@@ -2539,7 +3551,7 @@
       "category": "source"
     },
     "tests/test_knowledge.py": {
-      "sha256": "4e2bbc4a7250a50d14d618e15ea8464348dff771fed6e3c71a1375ae2b7e3d55",
+      "sha256": "173b644f41789f5e6a8ab1b643db94e63a236952e6483f531db3db2655b2ed09",
       "category": "source"
     },
     "tests/test_portability.py": {
