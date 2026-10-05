@@ -3,13 +3,14 @@ name: seismic-insar
 description: 以 InSARHub（Sentinel-1 + HyP3 云端 GAMMA）捕获重定位目录中显著事件（M≥阈值）的同震形变：AOI/时间窗生成、质量评分配对、云端干涉图与 LOS 形变产品交付。
 ---
 
-# 同震 InSAR 形变捕获（InSARHub / HyP3）
+# 同震/震群 InSAR 形变捕获（InSARHub / HyP3）
 
-## 概述
+## 概述 — 两类产品
 
-从重定位目录筛选达到震级阈值的事件（时空聚类合并震群），生成 AOI 与震前/震后时间窗，经 InSARHub（vendored v0.4.2，`knowledge/repos/InSARHub`）搜索 Sentinel-1 SLC、按质量评分选择同震干涉对，提交 ASF HyP3 云端（GAMMA）生成干涉图，交付 LOS 形变栅格，与 `seismic-focal-mechanism` 机制解联合解读。
+1. **单震同震形变**（`1→6` 号启动器）：从重定位目录筛 M≥阈值事件，逐事件生成干净同震干涉对（全局 bracket），HyP3 云端处理，交付 LOS 形变图
+2. **震群长周期时序**（`7_swarm_timeseries.py`，InSARHub 规范链原生形态）：对整个震群时间窗（聚类合并窗）在选定 stack（升降轨各一）上提交**全质量网络**（约 15-45 对/stack），云端批量干涉后跑 MintPy SBAS，交付**震群总形变、速度场与逐期时间序列**——时间序列同时解析震间慢形变/瞬变（无震蠕滑、流体迁移等），与单震产品互补
 
-定位是**目录的形变学交叉验证**：M≥~4.5 浅源事件在植被区的 C 波段可探测性有限，捕获失败本身也是科学结论（深度/震级约束），要如实报告。
+两类产品共用搜索/配对/处理前三环；额度预算：单震 ~10 credits/对，震群网络每 stack 数百 credits（提交前向用户报告对数与预算）。
 
 ## 前置条件
 
@@ -66,6 +67,21 @@ GUNW NetCDF → LOS 位移（d = −φ·λ/4π，正值朝卫星，C 波段 λ=0
 
 事件 ↔ 干涉对 ↔ 产品路径映射表 `insar_products.csv`。
 
+### 7. 震群长周期时序（`7_swarm_timeseries.py`）— 第二类产品
+
+```bash
+# prepare: 合并窗搜索 + 选定 stack（整数 PATH:FRAME 形如 33:502）的质量网络
+python 7_swarm_timeseries.py --action prepare --jobs insar_jobs_merged.json \
+  --stacks 33:502 99:1265 --workdir-root insar_swarm
+# submit: 每 stack 整网一个批次（裸 submit 自动加载 stack json 网络对）
+python 7_swarm_timeseries.py --action submit --workdir-root insar_swarm
+# analyze: 下载完成后每 stack 跑 MintPy SBAS
+python 7_swarm_timeseries.py --action analyze --workdir-root insar_swarm
+```
+
+交付：`velocity.h5` / `timeseries.h5` / 累计形变图（每 stack 的 mintpy 输出目录）。
+注意：**prepare 后先向用户报告每 stack 网络对数与 credit 预算再 submit**（典型 15-45 对/stack，~10 credits/对）；SBAS 的对网络是 InSARHub 质量评分选定集，勿手工增删（时序反演依赖网络闭合性）；SBAS 层的大气校正（MintPy correct_troposphere，需 CDS）按跨区域决策表判定。
+
 ## 跨区域决策点（agent 自主判定或升级询问，不得沿用上一区域的经验值）
 
 | 决策 | 默认 | 判定规则（按证据） | 升级询问条件 |
@@ -106,6 +122,7 @@ GUNW NetCDF → LOS 位移（d = −φ·λ/4π，正值朝卫星，C 波段 λ=0
 | `network_*.png` + 质量库 | 每 stack 配对网络与评分（中间层复核）|
 | `hyp3_jobs.json` + GUNW NetCDF | HyP3 批次状态与原始干涉产品（中间层复核）|
 | `insar_products.csv` | 事件 ↔ 干涉对 ↔ 产品路径映射 |
+| `insar_swarm/*/mintpy/` | **第二类产品（人审对象）**：震群 SBAS 速度场 `velocity.h5`、逐期 `timeseries.h5`、累计形变 |
 
 ## 关键坑（前人已踩/已确认，勿再踩）
 

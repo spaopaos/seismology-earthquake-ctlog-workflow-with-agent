@@ -1,0 +1,21 @@
+Add the swarm long-period InSAR product (second product mode)
+
+Per user direction the insar stage now delivers TWO products:
+1. per-event coseismic maps (existing, launchers 1-6)
+2. swarm-scale long-period time series (new 7_swarm_timeseries.py) =
+   InSARHub's standard chain end-to-end: merged swarm window -> quality
+   network on selected stacks (integer PATH:FRAME tokens) -> whole-network
+   HyP3 batch (bare submit auto-loads the stack's selected pairs) ->
+   MintPy SBAS -> velocity.h5 / timeseries.h5 / cumulative deformation.
+   The time series resolves inter-event transient/aseismic motion,
+   complementing the per-event coseismic maps.
+
+Skill documents both modes incl. quota reporting before swarm submit
+(15-45 pairs/stack, ~10 credits each) and the SBAS-layer tropospheric
+correction decision (MintPy correct_troposphere, per the cross-region
+decision table).
+
+Live on the Eryuan 3-month swarm: merged window 2025-01-23..2025-09-02,
+stacks 33:502 (desc, 42 pairs) + 99:1265 (asc, 24 pairs) submitted to
+HyP3 (~660 credits, 8% of the free monthly quota); a dedicated autopilot
+polls, downloads and runs SBAS automatically.
