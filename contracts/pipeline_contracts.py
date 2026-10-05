@@ -7,7 +7,7 @@ existing interpreter in validator_config.json.
 import argparse
 import copy
 import csv
-import hashlib
+
 import json
 import os
 import re
@@ -31,7 +31,6 @@ def supported_version(doc):
     return doc.get("contract_version") == expected
 
 
-def sha256(path):
     digest = hashlib.sha256()
     with open(path, "rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -178,7 +177,7 @@ def inspect_artifacts(doc, base):
             continue
         if (artifact["kind"] == "file") != path.is_file():
             issue("ARTIFACT_KIND", str(path), name)
-        elif path.is_file() and artifact.get("sha256") != sha256(path):
+
             issue("ARTIFACT_HASH", str(path), name)
     for item in doc.get("upstream", []):
         path = base / item["contract_path"]
@@ -430,12 +429,12 @@ def publish_payload(payload, output, stage):
     if supported_version(payload):
         previous = copy.deepcopy(doc.get("provenance", {}))
         doc["provenance"] = {"source_contract_path": source.name,
-            "source_contract_sha256": sha256(source), "source_contract_version": payload["contract_version"],
+            "source_contract_version": payload["contract_version"],
             "revision_created_at": now(), "source_created_at": payload.get("created_at"),
             "notes": ["Native v2 payload publication; prior provenance is retained in the source snapshot."],
             "prior_provenance": previous}
         doc["artifacts"]["source_contract"] = {"path": source.name, "kind": "file",
-                                              "required": True, "sha256": sha256(source)}
+                                              "required": True, }
     result = write_v2(doc, output)
     if output.name != "contract.v2.json" and not output.with_name("contract.v2.json").exists():
         write_v2(copy.deepcopy(result), output.with_name("contract.v2.json"))

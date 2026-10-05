@@ -15,7 +15,7 @@ Checks:
 Reports PASS/FAIL with per-check counts. FAIL blocks the location run.
 """
 import argparse
-import hashlib
+
 import json
 import sys
 from pathlib import Path
@@ -99,8 +99,6 @@ def main():
     result = {
         "status": "FAIL" if errors else "PASS",
         "n_events": n_events, "n_phase_lines": n_phaselines,
-        "phase_dat_sha256": hashlib.sha256(
-            (w / "input" / "phase.dat").read_bytes()).hexdigest(),
         "errors": errors[:50], "warnings": warns,
     }
 

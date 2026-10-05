@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare the default/estimated DBSCAN eps options; never choose or run association."""
 import argparse
-import hashlib
+
 import json
 import math
 import subprocess
@@ -99,9 +99,7 @@ def prepare_options(stations_path, vp=6.0):
         "input_station_rows": len(stations),
         "physical_station_ids": physical.physical_id.tolist(),
         "stations_path": str(Path(stations_path).resolve()),
-        "stations_sha256": file_hash(stations_path),
-        "gamma_commit": GAMMA_COMMIT, "gamma_utils_sha256": UTILS_SHA256,
-        "user_prompt": prompt,
+        "gamma_commit": GAMMA_COMMIT, "user_prompt": prompt,
     }
 
 
@@ -132,7 +130,7 @@ def resolve_selection(options_path, stations_path, choice, selected_via, custom=
             "default_s": DEFAULT_EPS, "estimate_s": options["estimate"]["value_s"],
             "vp_km_s": positive_number(options["vp_km_s"]),
             "options_path": str(Path(options_path).resolve()),
-            "options_sha256": file_hash(options_path)}
+            }
 
 
 def read_effective_eps(directory):

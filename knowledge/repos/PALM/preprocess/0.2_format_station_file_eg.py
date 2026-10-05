@@ -1,4 +1,4 @@
-﻿""" Format station file in Fullfed format, e.g. http://www.fdsn.org/networks/detail/7D_2011/
+""" Format station file in Fullfed format, e.g. http://www.fdsn.org/networks/detail/7D_2011/
 """
 import os
 from collections import defaultdict

@@ -14,7 +14,7 @@ Parses the native log once; reports removals from "negative depth" messages.
 Verifies binary sha256 (R2), scientific inputs and final selection evidence.
 """
 import argparse
-import hashlib
+
 import json
 import re
 import subprocess
@@ -181,7 +181,7 @@ def run_once(w, damp, args, top, vel):
         return result
     initial, relocated = load_catalog(paths["initial"]), load_catalog(paths["relocated"])
     result.update(n_input=len(initial), n_relocated=len(relocated),
-                  artifacts={k: {"path": str(p), "sha256": digest(p)} for k, p in paths.items()})
+                  artifacts={k: {"path": str(p), } for k, p in paths.items()})
     if not relocated:
         result.update(status="EMPTY", reason="NO_RELOCATED_EVENTS")
         return result
@@ -244,11 +244,7 @@ def trial_context(w, args):
     if any(not p.is_file() or p.stat().st_size == 0 for p in paths):
         raise ValueError("GATE: input/" + ", input/".join(names) + " must be nonempty")
     context = {
-        "rule_version": RULE_VERSION, "binary_sha256": digest(BIN),
-        "runner_sha256": digest(__file__),
-        "metrics_sha256": digest(Path(__file__).with_name("damping_metrics.py")),
-        "input_sha256": {p.name: digest(p) for p in paths},
-        "vp_model_sha256": digest(args.vp_model),
+        "rule_version": RULE_VERSION,
         "ratio": args.ratio, "dist": args.dist, "obsct": 0 if cc_only else args.obsct,
         "wdct_last": args.wdct_last, "initial_erh_km": args.initial_erh_km,
     }

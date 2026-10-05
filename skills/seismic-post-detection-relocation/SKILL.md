@@ -1,42 +1,120 @@
 ---
 name: seismic-post-detection-relocation
-description: MESS 后轻量联合重定位：第一轮 medium 档 ph2dt dt.ct 原样复用 + MESS 原生 dt.cc，IDAT=3 联合 HypoDD；三个 CC 档各自按空间证据试算 DAMP，仅交付三套目录。
+description: MESS 检测后的联合重定位：ph2dt 的 dt.ct + MESS 原生 dt.cc，IDAT=3 联合 hypoDD，含 DAMP 阻尼探测。
 ---
 
-# Post-MESS joint relocation (lite: first-round CT reuse)
+# 联合 CC+CT 重定位（dt.ct + dt.cc IDAT=3）
 
-先读包根目录 AGENTS.md 与 knowledge/bindings/post_detection_relocation.md。复用 runtime.local.json 中的 science_python、钉版 HypoDD，不安装环境、不修改钉版上游源码。本阶段不重跑 PhaseNet、不重跑 ph2dt。
+## 概述
 
-```bash
-python seisflow.py --runtime runtime.local.json run --config <new-run>/pipeline.json --stage post_detection_relocation
+将目录走时差分（dt.ct，来自 ph2dt）与互相关差分走时（dt.cc，来自 MESS 模板匹配）联合求解 hypoDD 重定位，对所有事件（含 MESS 新检出）产出统一基准的精定位目录。
+
+## 前置条件
+
+| 输入 | 来源 |
+|---|---|
+| dt.ct | relocation 阶段 ph2dt 产出（复用，不重跑） |
+| dt.cc | detection 阶段 MESS 产出 |
+| event.dat | detection 阶段 MESS 关联产出 |
+| hypoDD 二进制 | 钉版 v2.1beta（MAXEVE=6500） |
+| 台站别名文件 | relocation 阶段 station_aliases.json |
+
+## 步骤
+
+### 1. 确定联合事件集合
+
+事件集合 = 全部 hypoDD strict 目录事件（作为模板）+ MESS 新检出事件。
+
+受 MAXEVE=6500 限制：
+- 全部模板 + MESS 新检出按 best_cc 从高到低截取至 ≤6500
+- 建议将新检出裁至 CC≥0.4（与三档交付下限一致）
+
+### 2. 构建输入文件
+
+**event.dat**（联合）：
+- MESS 行沿用（模板事件 + 新检出），格式统一为 **10 字段**、时间 **8 位 HHMMSScc**
+- 补入 strict 目录中未自检的模板行（strict 格式，同 10 字段）
+- 深度不加偏置（`hypodd_depth_offset_km=0` 已在 config 中设置）
+
+**dt.ct**（改写 ID）：
+- 将旧 event_index 映射为 strict CSV 行号
+- 保留双端都在联合集合内的对（其余弃）
+
+**dt.cc**（改写台站名）：
+- 将裸台站名（如 `LE001`）改为 S%04d 别名（从 station_aliases.json）
+- 双位置码台站按 HH 族优先
+- 仅保留双端在联合集合内的对
+
+**hypoDD.inp**：
+```
+IDAT=3（ct+cc 联合）
+IPHA=3, DIST=100
+OBSCC=4, OBSCT=6
+ISTART=2, ISOLV=2（LSQR）, IAQ=1, NSET=4
+NITER  WTCCP WTCCS WRCC WDCC  WTCTP WTCTS WRCT WDCT  DAMP
+   4    1.0   0.5  -9   -9    1.0   0.5   6    5   <DAMP>
+   8    1.0   0.5  -9   -9    1.0   0.4   4    4   <DAMP>
+  12    1.0   0.5   4    4    1.0   0.4   4    4   <DAMP>
+  16    1.0   0.5   3    2    1.0   0.3   3    2   <DAMP>
 ```
 
-此阶段位于 detection 之后，并包含在 all 的末尾。首次 CT relocation 仍位于 MESS 之前，为 MESS 提供中档模板库，也是本阶段复用 dt.ct 的来源。
+> ⚠ dt.cc 文件引用行后**不能有空行**（会报 "line 10" 错）。
 
-## 数据和三套目录
+### 3. DAMP 阻尼探测（五档并行）
 
-只消费已完成 MESS 的 cc_0p4、cc_0p6、cc_0p8 三套检测契约，加上第一轮 relocation medium 档的 `input/dt.ct`（与其 solver 证据 `qc/damping_selection.json` 的哈希绑定，逐字节一致）。每套独立联合求解，只交付三套正式目录；DAMP 试算留在各目录 qc/ 中。不要把每套再展开成松、中、紧九套目录，不跨 CC 档合并。
+用 Python 生成五档配置（**不要用 sed**——CRLF 文件上 sed 会静默失配）：
 
-CC 读取 MESS 导出的 dt.cc。维护转换器统一事件发震时间、事件顺序 DT=T1−T2 和台站别名；依据模板原发震时间修正后使用 OTC=0。裸台站名存在网络歧义时拒绝输入。反算检查事件深度偏移，恢复海平面基准，与原 P 模型一致；不得只平移事件而不核对模型基准。
+```python
+DAMPS = [50, 100, 200, 400, 800]
+base = open("hypoDD.inp").read().replace("\r\n", "\n")
+for d in DAMPS:
+    txt = base.replace("<DAMP>", f" {d}.0")
+    open(f"hypoDD_d{d}.inp", "w", newline="\n").write(txt)
+```
 
-CT 是第一轮 ph2dt 的原生 dt.ct 原样复用：不匹配拾取、不补窗、不改写数值。dt.ct 引用的目录事件进入联合事件表，非 MESS 事件沿用第一轮 event.dat 原始行；其台站并入 station.dat 并与既有别名核对坐标。复用来源的 tier 由 ct_reuse.relocation_tier 指定（默认 medium，与模板库同源）。
+五档**并行**运行（hypoDD 是单进程，机器多核时可同时跑五个）。
 
-联合求解要求 CC 与复用 CT 均非空，并从实际原生结果确认两类约束都参与；缺任一类时报告 UNAVAILABLE，不静默改成单一数据类型。有效联合链接门槛为 OBSCC+OBSCT（默认 0+4=4，按手册 IDAT=3 求和语义）。
+#### 选定判据
 
-## 参数试算和证据
+| 指标 | 稳定标准 |
+|---|---|
+| 相邻阻尼解差异 | 水平中位 <200 m |
+| 事件保留数 | 低阻尼不应大幅下降 |
+| 紧致度（最近邻） | 不随阻尼单调恶化 |
+| 深度分布 | 不出现系统性拉深/拉浅 |
 
-沿用 ../seismic-relocation/references/damping.md 及同一 damping_metrics.py 实现。每个 CC 档独立试算，检查相邻候选的去质心结构、两次解各簇质心漂移、共同事件覆盖和丢失，采用有证据支持的最小 DAMP。CND 40–80 只是经验参考。候选没有更大邻居、失败或资料不足时不选值。
+选稳定平台中部（通常 200–400）的值作为终版 DAMP。
 
-初始 DAMP 候选为 20/50/100/200；需要扩展时声明新的候选与实验目录。不得直接沿用初轮选择结果。P/S 比值和 P 模型取同一地区已验证上游并检查适用性；上游 ERH 中位数仅是对比尺度，不是 MESS 新事件的实测误差。无 ERH 依据时明确补充。
+### 4. 终版求解
 
-联合加权分四段（CT 先约束较大尺度，随后增强近距离 CC，保留非零 CT 权重），全部配置见 configs/pipeline.example.json。WRCC/WRCT 的 >=1 表示标准差倍数，0–1 为秒，-9 关闭剔除；WDCC/WDCT 为 km。数值是项目初始工作设置，非地区最优。
+用选定 DAMP 重跑一次，产出 `hypoDD.reloc`。
 
-## 发布、恢复与检查
+### 5. 解析终版目录
 
-产出 post_detection_relocation/{cc_0p4,cc_0p6,cc_0p8}/catalog.csv、reference_events.csv、event_lineage.csv、原生输出、复用与适配审计（ct_reuse.json、cc_adaptation.json）、两类观测数、参数、完整试算与日志，以及顶层 contract.v2.json、catalogs.json、QC。
+从 `hypoDD.reloc` 解析（注意**首列=cusp ID**，非末列）：
+- cusp < 模板总数 → 模板事件（对应 strict CSV 行号）
+- cusp ≥ 1000000 → MESS 新检出
 
-事件 ID 与 MESS 一致；新坐标的 location_method 为 hypodd_cc_ct，method 为 joint_lite_cc_ct。参考事件另列；不能凭 known_match_method 合并事件，也不要求同一事件在三个独立求解中坐标相同。
+合并 MESS catalog.csv 的 best_cc、strict 目录的 ML，产出联合目录 CSV。
 
-输入、配置、脚本、模型、试算/正式原生文件均校验身份，复用 dt.ct 与第一轮 solver 证据逐字节绑定。正式运行重新计算空间选择证据；缺失/篡改不通过。参数变化用新运行目录，旧运行的契约和知识锁不得补改。
+### 6. 被剔事件补回
 
-成功执行、非空目录和 DAMP 稳定都不等于地质位置准确。分别报告 CC、CT 的实际使用数量、残差范围、未保留事件和深度变化；最终日志 RMS 不冒充可比较的全目录残差降幅。检测事件的目录连接仅经由其模板的互相关链，其绝对位置不确定性未被测量。
+hypoDD 会因走时不一致剔除部分事件（固有行为）。对被剔的大事件（用户判断是否补回），按 strict 坐标补入目录。
+
+## 交付
+
+| 产物 | 说明 |
+|---|---|
+| `joint_relocated_catalog.csv` | 终版联合目录（含 event_id, source, 坐标, 深度, ML, best_cc） |
+| `hypoDD.reloc` + 各迭代 | 原生 hypoDD 输出 |
+| DAMP 扫描对比表 | 五档指标矩阵 |
+
+## 关键坑
+
+1. **hypoDD.inp dt.cc 行后空行** → "line 10" 错
+2. **event.dat 11 字段** → 统一为 10 字段
+3. **event.dat 时间 9~10 位** → 归一为 8 位 HHMMSScc
+4. **reloc 输出首列是 cusp ID**（不是末列）
+5. **sed 在 CRLF 文件上静默失配** → 用 Python 生成配置
+6. **dt.ct 的 ID 是 gamma event_index**（6171 事件空间），不是 strict 行号
+7. **PALM hypodd_depth_offset_km=5.0 会给 event.dat 全部深度 +5 km** → config 中设 0

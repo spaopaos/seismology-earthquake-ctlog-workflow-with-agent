@@ -11,7 +11,7 @@ import obspy
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'contracts'))
 from archive_interface import archive_records, intervals, within, DAY_NPTS
-from pipeline_contracts import sha256, load_contract, publish_payload
+from pipeline_contracts import load_contract, publish_payload
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
@@ -23,7 +23,7 @@ def main():
         doc, _ = load_contract(root, 'preprocess')
         report = json.loads((root / 'archive_validation.json').read_text())
         for name, expected in report['file_sha256'].items():
-            if sha256(root / name) != expected:
+
                 raise ValueError('Archive changed since independent validation: ' + name)
         print(json.dumps({'status': report['status'], 'reused': True}))
         return

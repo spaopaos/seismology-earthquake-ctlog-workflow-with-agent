@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export a read-only execution snapshot from an existing LLM Wiki; never modify the live project."""
 import argparse
-import hashlib
+
 import json
 import os
 import re

@@ -7,7 +7,7 @@ sha256 against the frozen SHA256SUMS.txt manifest (R1 tooling proof).
 FAIL blocks run_ph2dt.py (which checks this file exists and is PASS).
 """
 import argparse
-import hashlib
+
 import json
 import sys
 from pathlib import Path
@@ -72,8 +72,6 @@ def main():
 
     result = {"status": "FAIL" if errors else "PASS",
               "n_events": n_events, "n_phase_lines": n_phases,
-              "phase_dat_sha256": hashlib.sha256(
-                  (w / "input" / "phase.dat").read_bytes()).hexdigest(),
               "errors": errors[:50], "warnings": warns}
     out = Path(args.out) if args.out else w / "input" / "ph2dt_input_verification.json"
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False))

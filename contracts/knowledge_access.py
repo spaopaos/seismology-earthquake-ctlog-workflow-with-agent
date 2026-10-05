@@ -1,7 +1,7 @@
 """Portable, source-linked Wiki access and honest per-run knowledge provenance (stdlib only)."""
 import argparse
 import copy
-import hashlib
+
 import json
 import os
 import re

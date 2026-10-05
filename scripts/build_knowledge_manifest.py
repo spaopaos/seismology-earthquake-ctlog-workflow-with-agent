@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Freeze reviewed knowledge/bindings in a NEW release workspace, then validate the snapshot."""
-import hashlib
+
 import json
 import sys
 from pathlib import Path

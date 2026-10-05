@@ -1,48 +1,135 @@
 ---
 name: seismic-detection
-description: 以HypoDD中档目录建立唯一模板库，使用PALM MESS扫描并交付CC≥0.4/0.6/0.8三档独立目录。
+description: 以 hypoDD 目录全量事件为模板，使用 PALM v5.0 MFT 引擎扫描连续波形，交付 CC≥0.4/0.6/0.8 三档独立事件目录。
 ---
 
-# Detection
+# 模板匹配检测（PALM MFT，洱源规则）
 
-发布版本 0.2.0。先读包根目录 `AGENTS.md`。使用 `pipeline.json` 的地区与运行设置、`runtime.local.json` 的解释器映射；禁止依赖开发机路径、聊天历史或某个环境名称。
+## 概述
 
-统一入口（`python` 是明确选择的现有或已部署解释器）：
+对预处理的连续波形执行多台互相关模板匹配（Match-Expand-Shift-Stack），以 hypoDD 重定位目录的全量事件为模板库，输出三档 CC 目录。后续联合重定位由 `seismic-post-detection-relocation` skill 接管。
+
+## 前置条件
+
+| 输入 | 来源 | 说明 |
+|---|---|---|
+| hypoDD 目录 CSV | relocation 阶段产出 | 含 event_id, lat, lon, depth, ML |
+| 关联拾取 CSV | association 阶段产出 | gamma_assignments.csv |
+| 连续波形库 | preprocess 阶段产出 | NET.STA/LOC.CHA/年/日/ 下的三分量速度 SAC |
+| PALM ≥v5.0 | github.com/uafgeotools/capuaf 或用户提供 | 含 2_run_mft 启动器 |
+| 台站坐标 CSV | preprocess/preprocess 阶段产出 | NET,STA,LOC,CHA,lat,lon,ele |
+
+## 步骤
+
+### 1. 构建模板相文件与台站文件
+
+模板相文件（`mess.temp`）事件行名必须 ≥14 字符，推荐 `"发震时刻_事件ID"` 格式。事件行 6 列：名称, ISO 发震时刻, 纬度, 经度, 深度, 震级。相位行 3 列：`NET.STA, P_ISO, S_ISO`（仅含有 P+S 双拾取的台站）。
+
+台站文件（`mess.sta`）**必须 5 列**：`NET.STA, lat, lon, ele, gain`。gain=1.0（数据已去响应）。按 NET.STA 去重（HH/HN 双位置码台站同坐标，保留一行）。
+
+> ⚠ 4 列台站文件会被 PALM 的 get_sta_dict 路由为 StationXML 解析并**静默返回空站**，导致全部检测无声跳过。
+
+### 2. 建日优先数据目录
+
+PALM 要求 `data_dir/<YYYYMMDD>/<NET.STA>...` 布局。对台站优先的归档建软链树（不复制数据）：
 
 ```bash
-python <package>/seisflow.py --runtime <mapping.json> run --config <run>/pipeline.json --stage detection
+for sta_dir in archive/*/*/; do
+  for day_dir in "$sta_dir"*/; do
+    day=$(basename "$day_dir")
+    mkdir -p data_root/"$day"
+    ln -s "$day_dir"*.SAC data_root/"$day"/
+  done
+done
 ```
 
-固定格式转换与程序调用使用本技能维护的 `scripts/`，由统一入口调用。正常新数据运行不改写转换器。所有下游读取当前 `contract.v2.json`，原生输入校验失败时停止受影响步骤。新配置使用新运行目录；不覆盖已完成结果或伪造验证报告。参数依据和用户选择写入运行配置及记录，不只留在对话中。
+### 3. 编写 PALM config
 
-科学程序完成、接口验证通过、科学质量已审阅是不同状态。报告实际计数、排除原因、QC路径与尚未验证项。
+在 `2_run_mft/` 下建 `config_<CASE>.py`，关键参数：
 
+```python
+class Config(object):
+  def __init__(self):
+    self.min_snr = 0                  # 无 SNR 门（全量模板）
+    self.min_sta = 4
+    self.max_sta = 20                 # 按最早 P 截取
+    self.temp_win_det = [1., 9.]      # P−1→P+9 s 检测窗
+    self.temp_win_p = [0.5, 1.5]      # P 精修窗
+    self.temp_win_s = [0.5, 2.5]      # S 精修窗
+    self.trig_thres = 0.3             # 单道触发阈
+    self.expand_len = 1.              # 峰扩展（~3 km 搜索半径）
+    self.det_gap = 5.
+    self.samp_rate = 50               # 检测采样率
+    self.phase_samp_rate = 100        # 精修/振幅采样率
+    self.freq_band = [1., 20.]        # 频带（用户可调）
+    self.hypodd_depth_offset_km = 0.0 # 设 0，避免 +5 km 深度伪影
+    self.association_origin_time_tolerance_sec = 2.0
+    self.association_detection_cc_min = 0.3
+    self.association_phase_cc_min = 0.4
+    self.channel_priority = ["HH","BH","EH","HN","EN","SH"]
+    self.location_priority = ["10","20","01","02","00",""]
+```
 
-## 随包 Wiki 的使用
+### 4. 切取模板
 
-本环节先读取 `knowledge/bindings/detection.md`，或运行包入口 `seisflow.py knowledge stage --stage detection` 获取明确阅读路线。需要解释参数/方法时，通过 `knowledge search --stage detection --query <问题>` 查询，再用 `knowledge read --id <条目ID>` 和 `knowledge source --id <来源ID> --page <PDF页码>` 回到原文。
+```bash
+cd 2_run_mft
+python 2_cut_templates_<CASE>.py
+```
 
-带上 `--run-dir <运行目录> --stage detection` 可记录实际返回的条目/来源；对关键配置选择使用 `knowledge cite` 保存条目、配置值和理由。自动生成的阶段知识上下文只表示资料已提供，不代表agent实际读过，也不代表科学事实已独立验证。具体命令见 `docs/WIKI_INTEGRATION.md`。
+> ⚠ 不要用 `conda run` 包装此步骤（会挂死）。直接 `python` 运行。
 
-Wiki论文与历史手册用于其声明的证据范围；本阶段的具体格式、默认值与决策权限以对应的钉版代码/手册和维护规则核对。不要将论文案例值自动填为地区默认值。正式运行固定知识快照，新增经验先保存在运行目录。
+### 5. 全量扫描
 
+```bash
+python 3.1_run_mft_gpu_<CASE>.py
+```
 
-## 固定流程
+按 7 天段分批，逐段输出 `catalog_YYYYMMDD-YYYYMMDD.dat` + `phase_*.dat`。GPU 满载运行。
 
-只用中档重定位目录建立一套模板库，单次分段扫描后做一次全局关联，再独立导出CC≥0.4、0.6、0.8目录。三个目录共享事件ID，不跨档合并。扫描初始触发CC=0.3、模板min_snr=2、min_sta=4。
+### 6. 关联与三档拆分
 
-档位由最终CC筛选表达。禁止返回旧的多模板库或三档重复扫描流程。各档同步导出震相、原生event.dat、dt.cc与模板参考事件，并核对引用。
+扫描完成后 PALM 自动运行关联（`associate_mft`），或手动触发：
+- 2 s 发震时刻容差合并重复检出
+- 输出：`catalog.csv`（独立事件）、`phase.csv`（逐台 CC 精修拾取）、`event.dat`、`dt.cc`
 
-## 数据与检查
+三档拆分：从 `catalog.csv` 按 `best_detection_cc` ≥0.4/0.6/0.8 筛出三份独立 CSV。
 
-归档保持只读；每个物理台站选择一套固定仪器组，优先覆盖天数，再按HH/SH/HN和组名稳定排序，选择与排除记录在continuous_manifest中。不同网络同名台站保持独立；选择组的完整身份用于取坐标。
+### 7. 新事件震级（向用户询问公式）
 
-模板与扫描数据必须来自同一预处理语义；覆盖模板日期及扫描日期的缓冲区。默认遵照有效频带与奈奎斯特限制选择检测采样率。当前发布入口要求模板与扫描具有兼容的实际频带；不同组频带不能假称相同，受影响组应在预处理阶段形成明确兼容归档后再检测。
+> ⚠ 此步骤**必须先向用户展示震级计算公式并请用户确认**，不可沿用固定公式。
 
-验证模板manifest、实际index/NPY分片、台站数量、波形指纹及完整上游契约链，验证失败不扫描。没有满足条件的模板时报告原因，不降低阈值凑结果。
+询问内容：
+- 震级计算公式（如 ML = lg(A) + R(Δ) 或其他）
+- 量规函数表（R(Δ) 数值表，需用户提供）
+- 振幅测量窗口与分量约定
+- 多台合成规则（如 ±0.5 剔除再平均）
+- 是否需要台站校正值
 
-## 恢复与交付
+用户提供公式后再编写计算脚本，从 phase.csv 的逐台 S 振幅出发计算。
 
-同一工作目录内可恢复已验证步骤；脚本、配置或输入变化时拒绝复用。当前中断模板/扫描缓存含物理路径，迁移机器时使用新运行目录重建该阶段，不能修改哈希记录来伪装缓存有效。
+### 8. 新事件波形截取
 
-检测位置来自模板，不等于新事件已完成定位；震级未绝对标定。时间窗匹配不证明事件同一性，新候选仍需波形检查。标准完整流程随后执行 post_detection_relocation：以本阶段 CC 和第一轮 medium 档原样复用的 dt.ct 联合 HypoDD 重定位（IDAT=3 轻量联合，不重拾取、不重跑 ph2dt），按同一空间证据规则试算 DAMP，仅交付三套目录。
+对新事件（非模板自检命中）按 P−8→S+15 窗截取三分量 SAC（与 event_wf 库同规范），30 进程并行。
+
+## 交付
+
+| 产物 | 说明 |
+|---|---|
+| `catalog.csv` | 全部独立事件（含 best_cc） |
+| `catalog_cc04/06/08.csv` | 三档 CC 目录 |
+| `phase.csv` | 逐台 CC 精修拾取（含振幅） |
+| `event.dat` | hypoDD 格式事件文件 |
+| `dt.cc` | 互相关差分走时（联合重定位用） |
+| 新事件波形库 | P−8→S+15 三分量 SAC |
+| 新事件震级表 | 按用户确认的公式计算 |
+
+## 关键坑（前人已踩，勿再踩）
+
+1. **台站文件 4 列静默空站** → 必须 5 列含 gain
+2. **PALM trim_stream 0.5 采样容差** 对日末 23:59:59.990 会全台判空 → 需改 1.5 采样（dataset.py + dataset_gpu.py）
+3. **CUDA_VISIBLE_DEVICES 钉 GPU UUID** → torch 设备编号与 nvidia-smi 不同
+4. **conda run 包装 cut_template 挂死** → 直跑
+5. **associate_mft 要求整数模板 ID** → 发震时刻名需名字→顺序 ID 映射补丁
+6. **event.dat 11 字段行** → 需统一为 10 字段，时间 8 位 HHMMSScc
+7. **hypoDD.inp dt.cc 行后空行** → 会报 "line 10" 错

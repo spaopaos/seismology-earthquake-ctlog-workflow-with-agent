@@ -220,7 +220,7 @@ def main():
     summary = {"events": len(events), "picks_in": len(picks), "picks_associated": len(assignments),
                "unassociated": len(unassoc), "runtime_s": time.monotonic() - start,
                "dbscan_eps_s": dbscan_eps, "input_manifest": str(manifest_path),
-               "input_manifest_sha256": sha(manifest_path), "phase_metadata_preserved": True,
+               "phase_metadata_preserved": True,
                "magnitude_usable": False}
     (out / "run_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     log.info("summary %s", json.dumps(summary))

@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 import tempfile
-import hashlib
+
 from pathlib import Path
 
 import numpy as np
@@ -61,7 +61,7 @@ def main():
         upstream = {"contract_version": "2.0", "stage": "picking", "software": {"name": "synthetic fixture"},
             "run_id": "eps-unit-fixture", "created_at": "2026-01-01T00:00:00Z", "upstream": [], "status": "PARTIAL",
             "artifacts": {"picks": {"path": raw.name, "kind": "file", "required": True,
-                                      "sha256": hashlib.sha256(raw.read_bytes()).hexdigest()}},
+                                      }},
             "reader": {"name": "synthetic", "input_verification": {"status": "NOT_TESTED"}},
             "component_order": ["E", "N", "Z"], "normalization": "none", "model": {"weights": "synthetic"},
             "window": {"mode": "whole_day", "sampling_rate_hz": 100.0}, "thresholds": {"min_prob": 0.3},
@@ -76,7 +76,7 @@ def main():
         prepared["source_pick_index"] = [0]
         prepared.to_csv(root / "picks.csv", index=False)
         (root / "input_manifest.json").write_text(json.dumps({
-            "source_picks": {"path": str(raw), "sha256": hashlib.sha256(raw.read_bytes()).hexdigest()},
+            "source_picks": {"path": str(raw), },
             "outputs": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in [root / "picks.csv", station_path]}}))
         (root / "vp.cre").write_text("VP\n6.0 0.0\n6.5 10.0\n")
         (root / "vs.cre").write_text("VS\n3.5 0.0\n3.8 10.0\n")

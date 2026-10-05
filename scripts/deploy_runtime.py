@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deploy supplied environment snapshots into an explicitly chosen NEW directory."""
 import argparse
-import hashlib
+
 import json
 import os
 from pathlib import Path

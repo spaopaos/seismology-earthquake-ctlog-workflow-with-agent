@@ -5,7 +5,7 @@ Usage: python -B verify_gamma_amplitude.py --gamma-repo knowledge/repos/GAMMA
 Uses only synthetic CSVs in a temporary directory and the existing environment.
 """
 import argparse
-import hashlib
+
 import importlib
 import json
 import subprocess
@@ -98,7 +98,6 @@ def main():
     print(json.dumps({
         "status": "PASS", "gamma_commit": commit,
         "gamma_converter": str(source),
-        "gamma_converter_sha256": hashlib.sha256(frozen_source).hexdigest(),
         "checks": ["linear_mps_preserved", "pinned_gamma_internal_values",
                    "invalid_amplitudes_counted", "usable_exclusion_counted",
                    "all_invalid_header_only", "prelog_negative_control"],

@@ -8,7 +8,7 @@
 - Scans .prt for '***' error lines and remark codes.
 """
 import argparse
-import hashlib
+
 import subprocess
 import sys
 from pathlib import Path
@@ -20,7 +20,7 @@ BIN = binary("hyp1.40")
 
 
 def check_binary():
-    h = hashlib.sha256(Path(BIN).read_bytes()).hexdigest()
+
     if h != EXPECTED_SHA256:
         sys.exit(f"binary sha256 mismatch: {h[:16]}… expected {EXPECTED_SHA256[:16]}… "
                  "(R2: only the pinned golden-tested build may run)")

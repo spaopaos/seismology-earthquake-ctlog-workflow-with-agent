@@ -200,8 +200,7 @@ def main():
         "s_model": s_model, "pos": args.pos, "n_phase_lines": n_lines,
         "n_events": len(events), "picks_dropped_no_station": n_no_sta,
         "picks_dropped_low_prob": n_dropped_w,
-        "converter_sha256": __import__("hashlib").sha256(
-            Path(__file__).read_bytes()).hexdigest()}, indent=2))
+        }, indent=2))
     print(f"phase.dat: {len(events)} events, {n_lines} phase lines "
           f"(no-station: {n_no_sta}, low-prob dropped: {n_dropped_w}); "
           f"station lines: {len(used_sta_chan)}; s_model={s_model}")

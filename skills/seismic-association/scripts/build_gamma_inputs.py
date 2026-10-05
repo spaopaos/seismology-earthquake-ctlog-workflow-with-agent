@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare GaMMA inputs, retaining source identity and downstream phase metadata."""
 import argparse
-import hashlib
+
 import json
 from pathlib import Path
 
@@ -99,8 +99,8 @@ def main():
              "amplitude_reject_reasons": reasons, "output_rows": len(picks),
              "amplitude_units": "m/s", "amplitude_scale": "linear"}
     (out / "input_filter_stats.json").write_text(json.dumps(stats, indent=2) + "\n")
-    manifest = {"source_picks": {"path": str(Path(args.picks).resolve()), "sha256": sha(args.picks)},
-                "station_metadata": {"path": str(Path(args.stations).resolve()), "sha256": sha(args.stations)},
+    manifest = {"source_picks": {"path": str(Path(args.picks).resolve()), },
+                "station_metadata": {"path": str(Path(args.stations).resolve()), },
                 "archive": str(Path(args.archive).resolve()), "day": args.day,
                 "outputs": {name: sha(out / name) for name in ("gamma_picks.csv", "gamma_stations.csv", "input_filter_stats.json")}}
     (out / "input_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

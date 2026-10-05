@@ -1,7 +1,7 @@
 """Cut quality-controlled MFT templates into portable NPY shards."""
 
 import argparse
-import hashlib
+
 import json
 import os
 from datetime import datetime, timezone

@@ -2,7 +2,7 @@
 """Portable command entry for a researcher or any agent with local command access."""
 import argparse
 import csv
-import hashlib
+
 import json
 import os
 import platform
@@ -138,7 +138,7 @@ class Runner:
             relevant = {"stage":self.config.get(stage), "resources":self.config.get("resources")}
             if stage == 'association' and name in ('build_gamma_inputs', 'prepare_dbscan_eps'):
                 relevant['stage'] = {"dbscan_vp_km_s":self.config['association']['dbscan_vp_km_s']}
-        identity = hashlib.sha256((signature + digest(script) + json.dumps(relevant,sort_keys=True) + self.state['knowledge']['manifest_sha256']).encode()).hexdigest()
+
         previous = self.state['steps'].get(key)
         if previous and previous['status'] == 'PASS':
             if previous['identity'] != identity or any(not (self.base / p).is_file() or digest(self.base / p) != h for p,h in previous['outputs'].items()):

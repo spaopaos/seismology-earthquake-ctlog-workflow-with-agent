@@ -87,8 +87,7 @@ def main():
 
     (out / "input" / "conversion_meta.json").write_text(json.dumps({
         "n_events": len(cat), "n_phase_lines": n_lines,
-        "converter_sha256": __import__("hashlib").sha256(
-            Path(__file__).read_bytes()).hexdigest()}, indent=2))
+        }, indent=2))
     print(f"phase.dat: {len(cat)} events, {n_lines} phase lines; stations: {len(stations)}")
 
 

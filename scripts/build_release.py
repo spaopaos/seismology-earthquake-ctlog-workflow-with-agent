@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a source archive, runtime-assets archive and complete offline tar from this release."""
 import argparse
-import hashlib
+
 import json
 import tarfile
 import sys

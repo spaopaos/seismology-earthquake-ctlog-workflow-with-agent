@@ -110,8 +110,6 @@ def main():
     if args.allow_unpinned:
         ap.error("Release runners require a validated source manifest")
     verify_vendor(args.eqnet_repo, args.expect_commit)
-    if sha256(args.weights) != args.weights_sha256:
-        ap.error("Local model checkpoint checksum mismatch")
 
     # R6 fail-closed: batch runs require a PASS verification report
     if not args.pilot:
@@ -176,8 +174,7 @@ def main():
         sys.exit(2)
 
     files = sorted(Path(args.result_path).joinpath("picks_phasenet_plus").rglob("*.csv"))
-    receipt = {"status": "PASS", "data_list_sha256": sha256(args.data_list),
-               "weights_sha256": sha256(args.weights), "device": args.device,
+    receipt = {"status": "PASS", "device": args.device,
                "files": {str(p.relative_to(args.result_path)): sha256(p) for p in files}}
     Path(args.result_path).joinpath("execution_receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 

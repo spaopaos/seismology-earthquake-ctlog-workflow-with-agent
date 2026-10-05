@@ -8,8 +8,7 @@ import copy
 import json
 from pathlib import Path
 
-from pipeline_contracts import (ROOT, NAMES, VERSION, columns, csv_rows, now, relative,
-                                sha256, write_v2, supported_version, contract_file)
+from pipeline_contracts import (ROOT, NAMES, VERSION, columns, csv_rows, now, relative, write_v2, supported_version, contract_file)
 
 def normalize(source, stage):
     source = Path(source).resolve()
@@ -34,8 +33,7 @@ def normalize(source, stage):
     doc["software"] = old.get("software", {"name": "ObsPy preprocessing", "version": None})
     doc["warnings"] = list(old.get("warnings", []))
     doc["provenance"] = {
-        "source_contract_path": source.name, "source_contract_sha256": sha256(source),
-        "source_contract_version": old.get("contract_version", old.get("contract_schema_version")),
+        "source_contract_path": source.name, "source_contract_version": old.get("contract_version", old.get("contract_schema_version")),
         "source_created_at": old.get("created_at", old.get("generated")),
         "revision_created_at": now(), "notes": notes,
     }
@@ -260,7 +258,7 @@ def migrate(source, stage, output=None):
         raise ValueError("Place the revision beside its source so relative product paths stay stable")
     if output.exists():
         raise ValueError("Revision already exists; use a new explicit output filename")
-    before = sha256(source)
+
     doc = write_v2(normalize(source, stage), output)
     assert before == sha256(source)
     return {"stage": stage, "path": str(output), **doc["validation"]}
