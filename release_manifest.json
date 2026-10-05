@@ -7,7 +7,7 @@
       "category": "source"
     },
     "AGENTS.md": {
-      "sha256": "03912e8e7327f13cd3635dde413bc87771295294f125cfa0c09f07501872bdac",
+      "sha256": "2ee8f5d3fa24fa4b46786cc88cec3db91cea3b76f660ecc90d7be8673d3d9413",
       "category": "source"
     },
     "LICENSE": {
@@ -23,7 +23,7 @@
       "category": "source"
     },
     "seisflow.py": {
-      "sha256": "559af76d41bcc4b9e4bf6a83e8b8c03ba5271ac5838392a79eb3ca1e08303584",
+      "sha256": "99f82556b813e2af530b1ffca222796bbbfafd52cc38f1a718a809ea6f34c2b7",
       "category": "source"
     },
     "toolchain.json": {
@@ -31,7 +31,7 @@
       "category": "source"
     },
     "configs/pipeline.example.json": {
-      "sha256": "5ba5ffd435d1bcbeda4950d80c06983457029ffbd5a14a287f6e2495125ebb54",
+      "sha256": "171bf86fea3070ed4a163204288c614c625569a9b84aa634f85620c80346d22d",
       "category": "source"
     },
     "contracts/README.md": {
@@ -267,11 +267,11 @@
       "category": "source"
     },
     "knowledge/knowledge-manifest.json": {
-      "sha256": "828250f711e325da05f9c6c8997e8f7da51786b3b2c6d3393f61f6c37e84039a",
+      "sha256": "dfea9c1ed058548a61c6c2855e1f4b4384dfdb03d258fb34432960f53077d719",
       "category": "source"
     },
     "knowledge/stage-routes.json": {
-      "sha256": "fdbf180fec69da1b8140d4ca02395ab4eb8ac6260a4390dc7a3375cd226885ba",
+      "sha256": "a1afd8b17bc7a5deda5dcb32e25440a1bc7012475f6bb146930aa6ba3afdb5dd",
       "category": "source"
     },
     "knowledge/bindings/association.md": {
@@ -3347,11 +3347,11 @@
       "category": "source"
     },
     "skills/seismic-insar/SKILL.md": {
-      "sha256": "dc0ba58e896e03e7607531bcbdea2d418ef7989ab71c5f253fbadd819660e187",
+      "sha256": "575e72a09d0a36e4b3a73754d0e59c4a3066dd62946fb1a225532d3144781f16",
       "category": "source"
     },
     "skills/seismic-insar/scripts/1_select_events.py": {
-      "sha256": "dbd7ce996cb8ee30f0fc7fb424b7e588e8605c3ef204b56ec5f3e3edd11ed207",
+      "sha256": "5ac5736b014ab75ae274529f833aa547d047e7f11f1e7c599a5127097f802b3d",
       "category": "source"
     },
     "skills/seismic-insar/scripts/2_run_downloader.py": {
@@ -3359,11 +3359,19 @@
       "category": "source"
     },
     "skills/seismic-insar/scripts/3_run_processor.py": {
-      "sha256": "20135a7536e4211fb6868a3badb088fdf9b05b87d98a2312835cd46eeef78e24",
+      "sha256": "a7fd04d2abdfec56101d089346762a5075bee6d2d33c8ffff921e6b737aaa6d4",
       "category": "source"
     },
     "skills/seismic-insar/scripts/4_collect_products.py": {
       "sha256": "7c462c6b675f37043c6ef842af50fbcb5c256c6dfa71bb2d5570bb1b7451be4d",
+      "category": "source"
+    },
+    "skills/seismic-insar/scripts/5_select_pairs.py": {
+      "sha256": "e843564c03e40436ad76c73478e9838e154a254a2ced9163be8972beb1c15efc",
+      "category": "source"
+    },
+    "skills/seismic-insar/scripts/6_make_maps.py": {
+      "sha256": "c82f387985cb43e22cdb9954d5913894ea8b2674fb068f61f491d43239597884",
       "category": "source"
     },
     "skills/seismic-location/SKILL.md": {

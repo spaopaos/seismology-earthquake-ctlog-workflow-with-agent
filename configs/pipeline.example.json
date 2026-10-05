@@ -120,9 +120,9 @@
     "cluster_days": 30,
     "cluster_km": 30.0,
     "catalog_tier": "strict",
-    "confirmed": false,
-    "pairs_confirmed": false,
+    "require_manual_review": false,
+    "per_direction": 1,
     "processor_action": "submit",
-    "parameter_rationale": "InSARHub (vendored v0.4.2, HyP3 cloud) coseismic capture via launchers 1_select_events -> 2_run_downloader -> 3_run_processor -> 4_collect_products. Region-dependent values are user decisions: ml_min 4.5 (C-band detectability floor in vegetated regions), buffer 0.3 deg, pre/post 90 d windows, clustering 30 d/30 km. Pairs are PER-EVENT: a clean coseismic pair must bracket one threshold event alone inside its bracket window; pairs spanning two events carry both signals. Two explicit gates: insar.confirmed after reviewing insar_jobs.json, insar.pairs_confirmed after reviewing the pair network. Requires the dedicated insarhub conda environment (Python 3.11-3.12, numpy<2.0, GDAL>=3.8; see knowledge/repos/InSARHub/VENDORED.md) and Earthdata credentials in ~/.netrc."
+    "parameter_rationale": "InSARHub (vendored v0.4.2, HyP3 cloud) coseismic capture, AUTONOMOUS by policy: 1_select_events -> 2_run_downloader (search + quality-scored pairs) -> 5_select_pairs (deterministic policy: clean per-event bracket + healthy quality + shortest temporal baseline, one pair per look direction, concern pairs only as flagged fallback to fill an empty direction) -> 3_run_processor (submit/refresh/download with ONLY the selected pairs via --pairs-json) -> 6_make_maps (GUNW -> LOS displacement GeoTIFF + hillshade PNG with coherence mask and epicenter) -> 4_collect_products. All intermediates (stack jsons, quality DBs, selected_pairs.json, HyP3 batch state, GUNW NetCDFs, maps) are preserved for review; the human reviews the FINAL deformation maps. Set require_manual_review=true to restore the two interactive gates (jobs review, pair review). Region-dependent values (ml_min, buffer, windows) remain user decisions; look direction is derived from acquisition local solar time (heuristic, verify on first use in a new region). Requires the insarhub environment and Earthdata credentials."
   }
 }

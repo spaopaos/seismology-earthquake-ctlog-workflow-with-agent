@@ -93,6 +93,10 @@ def main():
         c["lon"] = float(np.mean([e[lon_col] for e in c["events"]]))
 
     jobs = []
+    # GLOBAL bracket awareness: an event's clean bracket must exclude EVERY
+    # other threshold event, including events in other clusters/windows --
+    # a pair spanning two windows' events carries both signals.
+    all_events = sorted(sel.to_dict('records'), key=lambda e: e['_t'])
     for i, c in enumerate(clusters, 1):
         events = sorted(c["events"], key=lambda e: e["_t"])
         pre_start = c["t_min"] - pd.Timedelta(days=args.pre_days)
@@ -100,15 +104,26 @@ def main():
 
         ev_out = []
         for k, e in enumerate(events):
-            prev_t = events[k - 1]["_t"] if k > 0 else pre_start
-            next_t = events[k + 1]["_t"] if k + 1 < len(events) else post_end
-            bracket = [max(prev_t, pre_start).strftime("%Y-%m-%d"),
-                       min(next_t, post_end).strftime("%Y-%m-%d")]
+            prev_t = pre_start
+            next_t = post_end
+            for other in all_events:
+                if other["_t"] == e["_t"]:
+                    continue
+                if other["_t"] < e["_t"] and other["_t"] > prev_t:
+                    prev_t = other["_t"]
+                if other["_t"] > e["_t"] and other["_t"] < next_t:
+                    next_t = other["_t"]
+            bracket = [prev_t.strftime("%Y-%m-%d"), next_t.strftime("%Y-%m-%d")]
             gap_before = (e["_t"] - prev_t).total_seconds() / 86400.0
             gap_after = (next_t - e["_t"]).total_seconds() / 86400.0
-            inseparable = (gap_before <= S1_REVISIT_DAYS
-                           and k > 0) or (gap_after <= S1_REVISIT_DAYS
-                                          and k + 1 < len(events))
+            # inseparable when a NEIGHBORING THRESHOLD EVENT (not the search
+            # window edge) sits within one revisit
+            k_all = [j for j, o in enumerate(all_events)
+                     if o["_t"] == e["_t"]][0]
+            neighbor_before = k_all > 0 and (
+                e["_t"] - all_events[k_all - 1]["_t"]).total_seconds() / 86400.0 <= S1_REVISIT_DAYS
+            neighbor_after = k_all + 1 < len(all_events) and (
+                all_events[k_all + 1]["_t"] - e["_t"]).total_seconds() / 86400.0 <= S1_REVISIT_DAYS
             ev_out.append({
                 "event_id": str(e.get("event_id", "")),
                 "origin_time": e["_t"].strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -116,13 +131,14 @@ def main():
                 "ml": float(e[ml_col]),
                 # a CLEAN coseismic pair for this event must have one scene
                 # inside [bracket_start, event) and one inside
-                # (event, bracket_end]
+                # (event, bracket_end]; brackets already exclude every other
+                # threshold event, cluster-mate or not
                 "bracket_start": bracket[0],
                 "bracket_end": bracket[1],
                 "clean_pair_possible": bool(
-                    (e["_t"] - pd.Timestamp(bracket[0], tz="UTC")).days >= 1
-                    and (pd.Timestamp(bracket[1], tz="UTC") - e["_t"]).days >= 1),
-                "inseparable_with_neighbor": bool(inseparable),
+                    (e["_t"] - prev_t).total_seconds() / 86400.0 >= 1
+                    and (next_t - e["_t"]).total_seconds() / 86400.0 >= 1),
+                "inseparable_with_neighbor": bool(neighbor_before or neighbor_after),
             })
 
         jobs.append({

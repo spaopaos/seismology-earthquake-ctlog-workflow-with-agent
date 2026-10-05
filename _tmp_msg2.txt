@@ -1,0 +1,29 @@
+Make the insar stage autonomous by policy; add pair-selection policy and deformation maps
+
+Per user direction, the full flow (pair selection -> HyP3 interferograms ->
+deformation maps) is agent-driven following InSARHub's standard processing
+chain; every intermediate is preserved for review and the human reviews the
+FINAL maps. require_manual_review=true restores the two interactive gates.
+
+- new 5_select_pairs.py: deterministic policy — clean globally-aware
+  per-event brackets, healthy quality (concern only as flagged fallback to
+  fill an empty look direction), shortest temporal baseline, per-direction
+  pick; look direction from local-solar-time heuristic; policy recorded in
+  selected_pairs.json
+- new 6_make_maps.py: GUNW NetCDF -> LOS displacement (d = -phi*lambda/4pi)
+  + coherence mask -> GeoTIFF(mm) + hillshade PNG with coherence contour
+  and epicenter
+- 3_run_processor.py: --pairs-json submits ONLY policy-selected pairs
+  (`--pairs REF,SEC` comma form); two-level workdir handling
+- 1_select_events.py: brackets are now GLOBALLY aware — a pair spanning a
+  threshold event in ANOTHER capture window is no longer misjudged clean
+  (Eryuan case: 0417->0710 spanning both doublet events was previously
+  selectable; now excluded)
+- driver: auto flow (select -> submit -> [download -> maps]); manual gates
+  only when require_manual_review; configs/stage-routes/binding/AGENTS/
+  SKILL.md updated for the autonomous model; 12 documented pitfalls
+- validated live on the Eryuan doublet: policy picked 4 pairs (job_001
+  asc p99 0417->0429 + desc p135 0419->0501, both healthy 12d; job_002
+  desc p33 0530->0611 healthy 12d + asc p99 0429->0815 concern-fallback
+  108d), all submitted to HyP3 successfully (~40 credits of the free
+  8000/month); autopilot polls, downloads and renders maps

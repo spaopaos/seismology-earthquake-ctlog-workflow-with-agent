@@ -394,15 +394,25 @@ class Runner:
                      '--cluster-km',cfg[stage].get('cluster_km',30.0),
                      '--out',out/'insar_jobs.json'],
                     [out/'insar_jobs.json'])
-                if cfg[stage].get('confirmed') is not True:
+                if cfg[stage].get('require_manual_review'):
                     print((out/'insar_jobs.json').read_text()[:4000], flush=True)
-                    raise ValueError('A user decision is required: review insar_jobs.json (AOI, windows, per-event brackets) with the user, then set insar.confirmed=true in pipeline.json; no scene search was launched')
+                    raise ValueError('Manual review mode: review insar_jobs.json with the user, then set insar.confirmed=true; no scene search was launched')
                 self.native(stage,'2_run_downloader.py',
                     ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work'],())
-                if cfg[stage].get('pairs_confirmed') is not True:
-                    raise ValueError('A user decision is required: review the pair network and quality scores in insar_work with the user (coseismic pairs must respect per-event brackets), then set insar.pairs_confirmed=true; no HyP3 jobs were submitted')
+                self.native(stage,'5_select_pairs.py',
+                    ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work',
+                     '--per-direction',cfg[stage].get('per_direction',1),
+                     '--out',out/'selected_pairs.json'],
+                    [out/'selected_pairs.json'])
+                if cfg[stage].get('require_manual_review') and cfg[stage].get('pairs_confirmed') is not True:
+                    raise ValueError('Manual review mode: review the pair network and selected_pairs.json with the user, then set insar.pairs_confirmed=true; no HyP3 jobs were submitted')
                 self.native(stage,'3_run_processor.py',
-                    ['--workdir-root',out/'insar_work','--action',cfg[stage].get('processor_action','submit')],())
+                    ['--workdir-root',out/'insar_work','--action',cfg[stage].get('processor_action','submit'),
+                     '--pairs-json',out/'selected_pairs.json'],())
+                if cfg[stage].get('processor_action') == 'download':
+                    self.native(stage,'6_make_maps.py',
+                        ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work',
+                         '--selected',out/'selected_pairs.json','--outdir',out/'maps'],())
                 self.native(stage,'4_collect_products.py',
                     ['--jobs',out/'insar_jobs.json','--workdir-root',out/'insar_work',
                      '--out',out/'insar_products.csv'],[out/'insar_products.csv'])
