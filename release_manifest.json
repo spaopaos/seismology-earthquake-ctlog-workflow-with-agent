@@ -7,7 +7,7 @@
       "category": "source"
     },
     "AGENTS.md": {
-      "sha256": "2ee8f5d3fa24fa4b46786cc88cec3db91cea3b76f660ecc90d7be8673d3d9413",
+      "sha256": "05e85ecb9dc1ad759d3020a70664394d8b875c453499560d12233e3b452e4ffd",
       "category": "source"
     },
     "LICENSE": {
@@ -31,7 +31,7 @@
       "category": "source"
     },
     "configs/pipeline.example.json": {
-      "sha256": "171bf86fea3070ed4a163204288c614c625569a9b84aa634f85620c80346d22d",
+      "sha256": "d013ee7dd75706bc7b789c0b0b9801a14c5a768b14947e43438987128a886400",
       "category": "source"
     },
     "contracts/README.md": {
@@ -267,7 +267,7 @@
       "category": "source"
     },
     "knowledge/knowledge-manifest.json": {
-      "sha256": "dfea9c1ed058548a61c6c2855e1f4b4384dfdb03d258fb34432960f53077d719",
+      "sha256": "4e89cbe56d8ec1a66ea3d843f00b735418857831c7f18f51168bf09722ef425d",
       "category": "source"
     },
     "knowledge/stage-routes.json": {
@@ -287,7 +287,7 @@
       "category": "source"
     },
     "knowledge/bindings/insar.md": {
-      "sha256": "1e8c16f48401fc5a69f4a24a2db5a92abbf6219246a56d38fb0c7554f91850ae",
+      "sha256": "bda86b863e63191ab495bb4a1cc2342038ee024fc5c2f596d571ec220b69f855",
       "category": "source"
     },
     "knowledge/bindings/location.md": {
@@ -3347,7 +3347,7 @@
       "category": "source"
     },
     "skills/seismic-insar/SKILL.md": {
-      "sha256": "575e72a09d0a36e4b3a73754d0e59c4a3066dd62946fb1a225532d3144781f16",
+      "sha256": "8229a944a072d171edf19937c3f2db558432009fe41f6a10d6a86c7ea1390544",
       "category": "source"
     },
     "skills/seismic-insar/scripts/1_select_events.py": {

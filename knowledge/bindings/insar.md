@@ -24,6 +24,18 @@ credentials (`~/.netrc`) are a prerequisite; a failed capture (no
 detectable signal for an M-threshold event) is a scientific result about
 depth/magnitude detectability, not a pipeline failure.
 
+Cross-region policy: atmospheric/ionospheric correction and detectability
+thresholds are REGION decisions, never inherited from a previous region.
+Tropospheric correction is decided AFTER first maps from evidence (expected
+signal scale vs atmospheric noise; stripe morphology; asc/desc consistency),
+applied via GACOS or PyAPS/ERA5 when triggered, with both raw and corrected
+maps delivered; ionospheric correction follows band/latitude rules (C-band
+off, L-band/high-latitude on). The magnitude threshold, coherence threshold
+and the look-direction heuristic verification are explicit per-region
+checkpoints. When evidence is ambiguous, correction credentials are
+missing, or the event is scientifically significant, the agent asks the
+user instead of deciding silently.
+
 - [Stage policy](../../skills/seismic-insar/SKILL.md)
 - [Vendored provenance + env/ABI notes](../../knowledge/repos/InSARHub/VENDORED.md)
 - [Event selection + brackets](../../skills/seismic-insar/scripts/1_select_events.py)
