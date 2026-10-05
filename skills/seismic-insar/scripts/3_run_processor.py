@@ -20,7 +20,15 @@ from pathlib import Path
 
 
 def default_exe():
-    return str(Path(sys.executable).with_name("insarhub"))
+    # console script living next to this interpreter (insarhub env);
+    # guard against being launched with a different interpreter
+    exe = Path(sys.executable).with_name("insarhub")
+    if not exe.is_file():
+        raise SystemExit(
+            f"insarhub executable not found next to {sys.executable}; "
+            "run this script with the insarhub environment python "
+            "(or pass --insarhub-exe)")
+    return str(exe)
 
 
 def workdirs(root, job_id):

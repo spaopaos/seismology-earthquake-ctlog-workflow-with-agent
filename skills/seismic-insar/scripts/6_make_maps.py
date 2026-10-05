@@ -89,8 +89,21 @@ def process_pair(sel, root, outdir, coh_min, crop_km):
     ex, ey = warp_transform('EPSG:4326', d['crs'],
                             [sel_event_lon(sel)], [sel_event_lat(sel)])
     ex, ey = ex[0], ey[0]
+    # coverage verification: a frame that only clips the AOI corner
+    # produces empty study-area maps (Eryuan case: p33_f507 east edge
+    # stopped 0.007 deg west of the study window)
     t = d['transform']
     h, w = d['shape']
+    x0, y0 = t.c, t.f
+    x1 = t.c + t.a * w
+    y1 = t.f + t.e * h
+    margin = 5e3
+    covered = (min(x0, x1) <= ex - margin and max(x0, x1) >= ex + margin
+               and min(y0, y1) <= ey - margin and max(y0, y1) >= ey + margin)
+    if not covered:
+        return None, ('FOOTPRINT COVERAGE FAILURE: frame does not cover the '
+                      'epicenter +-5 km; re-select the next-ranked candidate '
+                      'pair in the same look direction and resubmit')
     px = abs(t.a)
     r0 = max(int((ey + crop_km * 1000 - t.f) / t.e), 0)
     r1 = min(int((ey - crop_km * 1000 - t.f) / t.e), h)
