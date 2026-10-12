@@ -16,3 +16,4 @@ bin/lib/
 
 # Split release parts downloaded from GitHub Releases
 *.part-*
+_original_backup.png
