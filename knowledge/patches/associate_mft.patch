@@ -1,0 +1,36 @@
+--- /mnt/d/yunan/mess_run/2_run_mft/patch_backup_20261012/associate_mft.py.orig	2026-10-05 13:28:08.000000000 +0800
++++ /mnt/d/yunan/palm/src/PALM-master/MFT_src/associate_mft.py	2026-10-12 06:47:09.053462200 +0800
+@@ -203,13 +203,27 @@
+   next_id = int(cfg.association_start_event_id)
+   cursor = 0
+   while cursor < len(detections):
+-    anchor_time = detections[cursor].origin_time
++    # PATCH(mess-20261012): cluster with a running strongest anchor instead
++    # of the earliest detection. Scanning forward from cursor, a detection
++    # joins the cluster while it stays within the tolerance of the CURRENT
++    # anchor; when an incoming detection has a higher detection_cc than the
++    # anchor it becomes the new anchor and the window extends from it. This
++    # keeps the window centered on the strong self detection of a real
++    # event so a burst of hundreds of detections spanning >tolerance is no
++    # longer split into a body cluster plus a tail cluster that registers
++    # as a separate "new" event. The 2 s tolerance itself is unchanged:
++    # merging is judged relative to the strongest detection, not the
++    # earliest, so genuinely adjacent events 2-5 s apart stay separate.
++    anchor = cursor
+     stop = cursor + 1
+-    while (
+-        stop < len(detections)
+-        and detections[stop].origin_time - anchor_time
+-        < cfg.association_origin_time_tolerance_sec
+-    ):
++    while stop < len(detections):
++      if (
++          detections[stop].origin_time - detections[anchor].origin_time
++          >= cfg.association_origin_time_tolerance_sec
++      ):
++        break
++      if detections[stop].detection_cc > detections[anchor].detection_cc:
++        anchor = stop
+       stop += 1
+     cluster = detections[cursor:stop]
+     self_candidates = [

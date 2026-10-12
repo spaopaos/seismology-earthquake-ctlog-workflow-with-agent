@@ -1,0 +1,40 @@
+--- /mnt/d/yunan/mess_run/2_run_mft/patch_backup_20261012/cut_template.py.orig	2026-09-29 14:24:42.000000000 +0800
++++ /mnt/d/yunan/palm/src/PALM-master/MFT_src/cut_template.py	2026-10-12 06:47:00.881580300 +0800
+@@ -117,16 +117,31 @@
+   start_time = center - window[0]
+   end_time = start_time + (template_npts - 1) / sample_rate
+   selected = stream.slice(start_time, end_time, nearest_sample=True)
+-  if len(selected) != 3 or any(len(trace) != template_npts for trace in selected):
++  if len(selected) != 3:
+     return None
++  arrays = []
+   for trace in selected:
+     data = np.asarray(trace.data)
+-    if not np.all(np.isfinite(data)) or not np.any(data):
++    # PATCH(mess-20261012): nearest_sample slicing can land one sample off
++    # the nominal window when the phase time is not an exact multiple of
++    # the sample interval (e.g. 50 Hz detection windows for picks with
++    # millisecond offsets), yielding npts-1 (or npts+1) samples and
++    # dropping the whole channel. The window stays anchored at its start;
++    # only the final sample is trimmed or extended with the edge value, a
++    # <1/sample_rate shift with negligible CC impact. Deviations >= 2
++    # samples still reject the channel.
++    if len(data) == template_npts:
++      adjusted = data
++    elif len(data) - template_npts == 1:
++      adjusted = data[:template_npts]
++    elif template_npts - len(data) == 1:
++      adjusted = np.pad(data, (0, 1), mode="edge")
++    else:
+       return None
+-  return np.stack(
+-      [np.asarray(trace.data, dtype=np.float32) for trace in selected],
+-      axis=0,
+-  )
++    if not np.all(np.isfinite(adjusted)) or not np.any(adjusted):
++      return None
++    arrays.append(np.asarray(adjusted, dtype=np.float32))
++  return np.stack(arrays, axis=0)
+ 
+ 
+ def passes_snr(stream, tp):

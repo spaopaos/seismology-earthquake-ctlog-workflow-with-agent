@@ -118,3 +118,5 @@ hypoDD 会因走时不一致剔除部分事件（固有行为）。对被剔的�
 5. **sed 在 CRLF 文件上静默失配** → 用 Python 生成配置
 6. **dt.ct 的 ID 是 gamma event_index**（6171 事件空间），不是 strict 行号
 7. **PALM hypodd_depth_offset_km=5.0 会给 event.dat 全部深度 +5 km** → config 中设 0
+
+8. **跨源孪生双重登记（seismic-detection 关键坑 8/9 的后果）** → 交付前必做孪生清查：mess 行与 gm 行 **|Δt|≤0.011 s（1 采样级）** 的对即同一事件双重登记。注意：爆发震群中"≤2 s 窗口"会误伤真实相邻事件（洱源实测 ≤2 s 内 499 个 mess 事件是真实爆发邻居），判据必须收到同采样级。处置：剔除孪生行 + **dt.cc 观测转挂 gm 本体**（测量本属同一事件，约束不丢；v2 中零 CC 边的哑火事件可 100% 拿回转挂约束）+ 同参数重解。完整案例与六项终测见 `knowledge/patches/v3_TEST_REPORT.md`
