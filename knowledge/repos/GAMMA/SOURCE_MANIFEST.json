@@ -39,7 +39,6 @@
     "tests/comparison/real/run.py": "6ed484bf62098a50e75bed3b4e479734e1464dcce8aca52ca1e3158001c715bc",
     "tests/comparison/real/tt_db/itvel.nd": "676eda4c928709fc2ca0dfe8d97051ca6ad457d7268dc76c60d7a24f3dbbe153",
     "tests/comparison/real/tt_db/taup_tt.py": "08b980e0021c42f287a594df953cdbe3e0a049c3da5dcb5ff61b80448102e733",
-    "tests/comparison/stations_ridgecrest.csv": "c8a448443d44036cd3a566c12e56cb83c1bcfb846a83bef72a86738fb523d580",
     "tests/comparison/statistics.ipynb": "291040af784ef428475f8d0693140d9e913c6533edf890513cd98e2a3c021c75",
     "tests/comparison/synthetic_ridgecrest_data.ipynb": "dc4d120e5cede7fa89367cacf014b7cd49c29bc47216b8dab519e7420939407e",
     "tests/comparison/synthetic_ridgecrest_gamma.ipynb": "2be24f26016d345437fc1eea4b99a7f30d64960c68dfb263beb242200578513d",
