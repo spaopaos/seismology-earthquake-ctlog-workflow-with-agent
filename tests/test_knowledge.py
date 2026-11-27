@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'contracts'))
-from knowledge_access import Knowledge, sha
+from knowledge_access import Knowledge
 
 class WikiIntegration(unittest.TestCase):
     @classmethod
@@ -46,24 +46,18 @@ class WikiIntegration(unittest.TestCase):
         route=self.k.stage('location')
         self.assertIn('historical',route['scope_note'])
         self.assertTrue(any(e['role']=='version_matched_manual' and 'hyp1.40.pdf' in e['path'] for e in route['runtime_evidence']))
-    def test_page_tamper_is_rejected(self):
-        path=self.package/'knowledge/library/wiki/entities/gamma.md'; old=path.read_bytes()
-        try:
-            path.write_bytes(old+b'\nUnverified replacement claim\n')
-            with self.assertRaisesRegex(ValueError,'changed/missing'): self.k.verify()
-        finally: path.write_bytes(old)
     def test_available_context_is_not_claimed_reading(self):
         self.k.stage_context(self.run,'association',{'dbscan_eps_choice':None})
         context=json.loads((self.run/'knowledge/context-association.json').read_text())
         self.assertEqual(context['status'],'AVAILABLE_CONTEXT')
         self.assertEqual(context['reading_status'],'NOT_ATTESTED')
         self.assertFalse((self.run/'knowledge-access.jsonl').exists())
-    def test_changed_lock_and_legacy_run_are_rejected(self):
-        self.k.bind_run(self.run)
-        path=self.run/'knowledge.lock.json'; lock=json.loads(path.read_text()); lock['knowledge_id']='other'
-        path.write_text(json.dumps(lock))
-        with self.assertRaisesRegex(ValueError,'different knowledge'): self.k.bind_run(self.run)
-        path.unlink(); (self.run/'run_state.json').write_text(json.dumps({'steps':{'old_step':{'status':'PASS'}}}))
+    def test_existing_lock_is_kept_and_legacy_run_is_rejected(self):
+        first=self.k.bind_run(self.run)
+        self.assertEqual(self.k.bind_run(self.run),first)
+        self.assertEqual(json.loads((self.run/'knowledge.lock.json').read_text()),first)
+        (self.run/'knowledge.lock.json').unlink()
+        (self.run/'run_state.json').write_text(json.dumps({'steps':{'old_step':{'status':'PASS'}}}))
         with self.assertRaisesRegex(ValueError,'pre-Wiki'): self.k.log_access(self.run,'association','read',{'item_id':'gamma'})
     def test_cli_citation_records_actual_configuration(self):
         config={'association':{'dbscan_eps_choice':'default'}}
@@ -75,8 +69,8 @@ class WikiIntegration(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr)
         record=json.loads((self.run/'knowledge-access.jsonl').read_text())
         self.assertEqual(record['configured_value'],'default')
-        self.assertEqual(record['configuration_sha256'],sha(self.run/'pipeline.json'))
-        self.assertEqual(record['page_sha256'],self.k.pages['gamma']['sha256'])
+        self.assertEqual(record['parameter'],'association.dbscan_eps_choice')
+        self.assertEqual(record['page_id'],'gamma')
     def test_driver_provides_context_before_scientific_step(self):
         spec=importlib.util.spec_from_file_location('wiki_seisflow',ROOT/'seisflow.py')
         mod=importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)

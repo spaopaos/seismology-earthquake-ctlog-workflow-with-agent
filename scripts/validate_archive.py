@@ -22,20 +22,16 @@ def main():
     if (root / 'contract.v2.json').exists():
         doc, _ = load_contract(root, 'preprocess')
         report = json.loads((root / 'archive_validation.json').read_text())
-        for name, expected in report['file_sha256'].items():
-
-                raise ValueError('Archive changed since independent validation: ' + name)
         print(json.dumps({'status': report['status'], 'reused': True}))
         return
     provenance = json.loads((root / 'archive_provenance.json').read_text())
-    hashes = {}
+    artifacts = []
     for field in ['processing_script', 'effective_config', 'source_manifest', 'qc_summary']:
         name = provenance[field]
         if not isinstance(name, str) or not name or not (root / name).is_file():
             raise ValueError('Missing preprocessing evidence: ' + field)
-        hashes[name] = sha256(root / name)
-    for name in ['daily_manifest.csv', 'archive_provenance.json']:
-        hashes[name] = sha256(root / name)
+        artifacts.append(name)
+    artifacts += ['daily_manifest.csv', 'archive_provenance.json']
     records, skipped = archive_records(root)
     if not records:
         raise ValueError('No usable group-days; preprocessing has no consumable output')
@@ -79,12 +75,12 @@ def main():
                     raise ValueError('Unobserved archive samples must be zero-filled')
                 last = b
             amplitudes[c] = float(np.max(np.abs(tr.data)))
-            hashes[r['file_' + c]] = sha256(path)
-        hashes[r['metadata']] = sha256(root / r['metadata'])
+            artifacts.append(r['file_' + c])
+        artifacts.append(r['metadata'])
         summaries.append({'group': r['group'], 'date': r['date'], 'peak_abs_mps': amplitudes,
                           'usable_fraction': sum(b-a for a,b in r['usable']) / DAY_NPTS})
     report = {'status': 'PARTIAL' if skipped else 'PASS', 'groups_checked': len(records),
-              'skipped': skipped, 'file_sha256': hashes, 'summaries': summaries,
+              'skipped': skipped, 'files_checked': artifacts, 'summaries': summaries,
               'scientific_status': 'NOT_TESTED',
               'scope': 'Independent waveform/metadata consistency. Response and orientation correctness require source/QC review.'}
     report_path = root / 'archive_validation.json'
@@ -104,8 +100,8 @@ def main():
                'script_path': provenance['processing_script'],
                'stats': {'group_days': len(records)+len(skipped), 'ready': sum(r['status']=='READY' for r in records),
                          'partial': sum(r['status']=='PARTIAL_DAY' for r in records), 'unavailable': len(skipped)},
-               'artifacts': {name: {'path': name, 'kind': 'file', 'required': True, 'sha256': h} for name,h in hashes.items()}}
-    payload['artifacts']['independent_validation'] = {'path': report_path.name, 'kind': 'file', 'required': True, 'sha256': sha256(report_path)}
+               'artifacts': {name: {'path': name, 'kind': 'file', 'required': True} for name in artifacts}}
+    payload['artifacts']['independent_validation'] = {'path': report_path.name, 'kind': 'file', 'required': True}
     payload['artifacts']['archive_root'] = {'path': '.', 'kind': 'directory', 'required': True}
     doc = publish_payload(payload, root / 'contract.v2.json', 'preprocess')
     load_contract(root, 'preprocess')

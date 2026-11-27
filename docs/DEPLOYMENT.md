@@ -2,7 +2,7 @@
 
 ## Offline distribution
 
-Unpack the complete Linux x86-64 archive. It contains the project and `runtime_archives/` with three checksummed conda-pack archives. `scripts/deploy_runtime.py` verifies the archives, extracts them into an explicitly chosen new directory, runs each environment's relocation script, and writes a relative runtime mapping. It never installs dependencies, alters existing environments, or overwrites an existing runtime directory.
+Unpack the complete Linux x86-64 archive. It contains the project and `runtime_archives/` with three conda-pack archives. `scripts/deploy_runtime.py` extracts them into an explicitly chosen new directory, runs each environment's relocation script, and writes a relative runtime mapping. It never installs dependencies, alters existing environments, or overwrites an existing runtime directory.
 
 Use a Python 3.8+ interpreter to deploy. Subsequent scientific execution uses the supplied Python 3.9 and 3.11 interpreters. Runtime extraction needs about 20 GB free in addition to the compressed archives; real waveform processing needs additional input/output/scratch space. Keep the original archives to deploy at another location: an already prefix-repaired environment should be re-extracted when relocating.
 
@@ -24,7 +24,7 @@ HYPOINVERSE source and `knowledge/repos/hyp2000-1.40/build_and_verify.sh` are pr
 
 ## GitHub handoff
 
-The source archive contains maintained project code, skills, contracts, tests, source snapshots and documentation. It excludes model weights, native runtime assets and the three environment archives. Add the supplied assets as release downloads and publish their SHA256SUMS. Keep upstream license notices with redistributed components. The package has not been uploaded to an external service by the packaging process.
+The source archive contains maintained project code, skills, contracts, tests, source snapshots and documentation. It excludes model weights, native runtime assets and the three environment archives. Add the supplied assets as release downloads. Keep upstream license notices with redistributed components. The package has not been uploaded to an external service by the packaging process.
 
 After testing on the destination, archive the fixed release and its validation report for citation. Fill author/repository/DOI metadata from the actual publication details; no author identity or DOI is invented here.
 

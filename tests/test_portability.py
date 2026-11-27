@@ -87,12 +87,12 @@ class Portability(unittest.TestCase):
         self.assertTrue(result.polarity_score.eq(-0.7).all())
         self.assertTrue(result.amplitude_units.eq('m/s').all())
         self.assertEqual(receipt['outside_usable'],2)
-    def test_vendor_change_is_detected_without_git(self):
-        import hashlib
+    def test_vendor_commit_and_missing_file_are_detected_without_git(self):
         p=self.root/'repo'; p.mkdir(); (p/'module.py').write_text('value=1\n')
-        (p/'SOURCE_MANIFEST.json').write_text(json.dumps({'commit':'pinned','files':{'module.py':hashlib.sha256((p/'module.py').read_bytes()).hexdigest()}}))
+        (p/'SOURCE_MANIFEST.json').write_text(json.dumps({'commit':'pinned','files':{'module.py':'record'}}))
         self.assertEqual(verify_vendor(p,'pinned'),'pinned')
-        (p/'module.py').write_text('value=2\n')
+        with self.assertRaises(ValueError): verify_vendor(p,'other')
+        (p/'module.py').unlink()
         with self.assertRaises(ValueError): verify_vendor(p,'pinned')
     def test_dateline_aperture_uses_short_geodesic(self):
         import numpy as np

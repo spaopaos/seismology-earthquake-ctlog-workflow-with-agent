@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Prepare GaMMA inputs, retaining source identity and downstream phase metadata."""
-import hashlib
 import argparse
 
 import json
@@ -10,10 +9,6 @@ import numpy as np
 import pandas as pd
 from contract_io import load_contract
 from station_identity import resolve_groups
-
-
-def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def station_groups(metadata, groups):
@@ -103,7 +98,7 @@ def main():
     manifest = {"source_picks": {"path": str(Path(args.picks).resolve()), },
                 "station_metadata": {"path": str(Path(args.stations).resolve()), },
                 "archive": str(Path(args.archive).resolve()), "day": args.day,
-                "outputs": {name: sha(out / name) for name in ("gamma_picks.csv", "gamma_stations.csv", "input_filter_stats.json")}}
+                "outputs": [name for name in ("gamma_picks.csv", "gamma_stations.csv", "input_filter_stats.json")]}
     (out / "input_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(f"picks={len(picks)}; matching instrument groups={len(stations)}; output={out}")
 

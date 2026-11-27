@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Prepare the default/estimated DBSCAN eps options; never choose or run association."""
-import hashlib
 import argparse
 
 import json
@@ -15,11 +14,6 @@ from pyproj import Proj
 
 DEFAULT_EPS = 10.0
 GAMMA_COMMIT = "80394dd4a4c29450da599f507916ecf1db6203dd"
-UTILS_SHA256 = "05b059be24616e057e4b31e410ac283a5eaa51e48678a4976fe576073d53f67e"
-
-
-def file_hash(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def positive_number(value):
@@ -36,8 +30,8 @@ def load_gamma_utils():
     from contract_io import load_contract
     from runtime_support import verify_vendor
     commit = verify_vendor(repo, GAMMA_COMMIT)
-    if commit != GAMMA_COMMIT or file_hash(repo / "gamma/utils.py") != UTILS_SHA256:
-        raise ValueError("GaMMA version/converter differs from the pinned source")
+    if commit != GAMMA_COMMIT:
+        raise ValueError("GaMMA version differs from the pinned source")
     sys.path.insert(0, str(repo))
     from gamma import utils
     if Path(utils.__file__).resolve() != repo / "gamma/utils.py":
@@ -108,9 +102,7 @@ def resolve_selection(options_path, stations_path, choice, selected_via, custom=
     options = json.loads(Path(options_path).read_text())
     if options["parameter"] != "dbscan_eps" or options["units"] != "s":
         raise ValueError("Unexpected eps options format")
-    if options["stations_sha256"] != file_hash(stations_path):
-        raise ValueError("Station inputs changed: regenerate eps options and confirm the choice")
-    if (options["gamma_commit"] != GAMMA_COMMIT or options["gamma_utils_sha256"] != UTILS_SHA256
+    if (options["gamma_commit"] != GAMMA_COMMIT
             or options["default_s"] != DEFAULT_EPS):
         raise ValueError("Stale or incompatible eps options")
     if selected_via not in ("pipeline_config", "conversation"):

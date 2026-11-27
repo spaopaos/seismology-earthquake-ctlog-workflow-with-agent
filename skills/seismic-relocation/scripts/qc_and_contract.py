@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 from contract_io import load_contract, product_path, publish_payload
 from damping_metrics import load_catalog, displacement_metrics
-from tier_outcomes import outcome, sha
+from tier_outcomes import outcome
 
 FIELDS = ["id", "lat", "lon", "dep", "x", "y", "z", "ex", "ey", "ez", "yr", "mo", "dy", "hr", "mi", "sc",
           "mag", "nccp", "nccs", "nctp", "ncts", "rcc", "rct", "cid"]
@@ -53,7 +53,7 @@ def main():
             continue
         if state["status"] == "READY":
             selection = json.loads((directory / "qc/damping_selection.json").read_text())
-            if selection["context"]["vp_model_sha256"] != sha(args.vp_model) or selection["context"]["ratio"] != args.ratio:
+            if selection["context"].get("vp_model") != str(Path(args.vp_model).resolve()) or selection["context"]["ratio"] != args.ratio:
                 raise ValueError("Published model/ratio differs from the tier's actual experiment")
             catalog = read_native(directory / "output/hypoDD.reloc")
             reloc_paths[tier] = str(directory / "output/hypoDD.reloc")

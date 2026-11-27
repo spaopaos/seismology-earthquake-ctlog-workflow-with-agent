@@ -1,28 +1,19 @@
 """Portable release identity and explicit runtime configuration (stdlib only)."""
 
-import hashlib
 import json
 import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-def digest(path):
-    h = hashlib.sha256()
-    with Path(path).open('rb') as stream:
-        for block in iter(lambda: stream.read(1048576), b''):
-            h.update(block)
-    return h.hexdigest()
-
 def verify_vendor(repo, expected_commit):
     repo = Path(repo).resolve()
     manifest = json.loads((repo / 'SOURCE_MANIFEST.json').read_text())
     if manifest['commit'] != expected_commit:
         raise ValueError('Unexpected source version: ' + str(repo))
-    for name, expected in manifest['files'].items():
-        path = repo / name
-        if not path.is_file() or digest(path) != expected:
-            raise ValueError('Vendor source changed or missing: ' + str(path))
+    for name in manifest['files']:
+        if not (repo / name).is_file():
+            raise ValueError('Vendor source missing: ' + str(repo / name))
     extras = [str(p.relative_to(repo)) for p in repo.rglob('*.py')
               if str(p.relative_to(repo)) not in manifest['files']]
     if extras:

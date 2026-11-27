@@ -1,6 +1,6 @@
 """Explicit migration of known stage payloads to v2; never edits scientific products.
 
-Existing contracts stay in place. A source hash and revision timestamp identify
+Existing contracts stay in place. A source path and revision timestamp identify
 the metadata revision, without claiming a new scientific run or new scientific PASS.
 """
 import argparse
@@ -29,7 +29,7 @@ def normalize(source, stage):
     doc.update(contract_version=VERSION, stage=stage, artifacts={})
     stamp = old.get("created_at")
     doc["created_at"] = stamp if isinstance(stamp, str) and "T" in stamp else now()
-    doc["run_id"] = old.get("run_id") or "legacy-" + stage + "-" + sha256(source)[:12]
+    doc["run_id"] = old.get("run_id") or "legacy-" + stage + "-" + source.stem
     doc["software"] = old.get("software", {"name": "ObsPy preprocessing", "version": None})
     doc["warnings"] = list(old.get("warnings", []))
     doc["provenance"] = {
@@ -59,8 +59,6 @@ def normalize(source, stage):
         path = locate(value, fallback)
         ref = relative(path, base)
         descriptor = {"path": ref, "kind": "directory" if directory or path.is_dir() else "file", "required": required}
-        if path.is_file():
-            descriptor["sha256"] = sha256(path)
         doc["artifacts"][role] = descriptor
         if isinstance(value, str) and value != ref:
             notes.append("Path %s: %r -> %r" % (role, value, ref))
@@ -260,7 +258,6 @@ def migrate(source, stage, output=None):
         raise ValueError("Revision already exists; use a new explicit output filename")
 
     doc = write_v2(normalize(source, stage), output)
-    assert before == sha256(source)
     return {"stage": stage, "path": str(output), **doc["validation"]}
 
 

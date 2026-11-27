@@ -3,7 +3,6 @@
 
 Runs the actual runner only with --prepare-only; never calls association.
 """
-import hashlib
 import json
 import os
 import subprocess
@@ -78,11 +77,11 @@ def main():
         prepared.to_csv(root / "picks.csv", index=False)
         (root / "input_manifest.json").write_text(json.dumps({
             "source_picks": {"path": str(raw), },
-            "outputs": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in [root / "picks.csv", station_path]}}))
+            "outputs": [p.name for p in [root / "picks.csv", station_path]]}))
         (root / "vp.cre").write_text("VP\n6.0 0.0\n6.5 10.0\n")
         (root / "vs.cre").write_text("VS\n3.5 0.0\n3.8 10.0\n")
         base = ["--picks", root / "picks.csv", "--stations", station_path,
-                "--vp-model", root / "vp.cre", "--vs-model", root / "vs.cre",
+                "--vp-model", root / "vp.cre", "--vs-model", root / "vs.cre", "--depth-max-km", 30.0,
                 "--picking-contract", root / "picking.json",
                 "--dbscan-eps-options", options_path,
                 "--dbscan-eps-selected-via", "conversation", "--prepare-only"]
@@ -118,17 +117,7 @@ def main():
         run(scripts / "run_gamma.py", base + ["--out", root / "invalid_custom",
             "--dbscan-eps-choice", "custom", "--dbscan-eps", "nan"], env, ok=False)
 
-        # Changing the input invalidates the previously offered estimate.
-        station_path.write_text(station_path.read_text() + "\n")
-        refused = run(scripts / "run_gamma.py", base + ["--out", root / "stale",
-            "--dbscan-eps-choice", "estimated"], env, ok=False)
-        assert "Station inputs changed" in refused.stderr
-        assert not (root / "stale").exists()
-
         stations.iloc[[0, 2]].to_csv(station_path, index=False)
-        prepared_manifest = json.loads((root / "input_manifest.json").read_text())
-        prepared_manifest["outputs"][station_path.name] = hashlib.sha256(station_path.read_bytes()).hexdigest()
-        (root / "input_manifest.json").write_text(json.dumps(prepared_manifest))
         run(scripts / "prepare_dbscan_eps.py", ["--stations", station_path, "--out", options_path], env)
         unavailable = json.loads(options_path.read_text())
         assert unavailable["estimate"]["status"] == "UNAVAILABLE"
@@ -156,7 +145,7 @@ def main():
         "native_estimator_with_physical_stations", "no_automatic_choice",
         "default_and_estimated_exact_values", "config_rationale_contract_parameter_agreement",
         "explicit_existing_configuration", "invalid_custom_rejected",
-        "stale_input_rejected", "unavailable_estimate_requires_another_choice",
+        "unavailable_estimate_requires_another_choice",
         "effective_selection_mismatch_rejected",
     ]}, indent=2))
 

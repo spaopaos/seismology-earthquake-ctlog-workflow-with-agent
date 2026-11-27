@@ -14,8 +14,7 @@
   "eqnet": {
     "repo_path": "knowledge/repos/EQNet",
     "pinned_commit": "af94a08a85de4b2c917a1b9429b044e7f38e4c28",
-    "weights": "PhaseNet-Plus-v1/model_99.pth",
-    "weights_sha256": ""
+    "weights": "PhaseNet-Plus-v1/model_99.pth"
   },
   "picking": {
     "min_prob": 0.3,

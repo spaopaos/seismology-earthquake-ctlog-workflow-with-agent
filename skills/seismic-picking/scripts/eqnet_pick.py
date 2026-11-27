@@ -103,9 +103,7 @@ def main():
     ap.add_argument("--subdir-level", type=int, default=0)
     ap.add_argument("--workers", type=int, default=0)
     ap.add_argument("--weights", required=True, help="Local pinned PhaseNet+ checkpoint; network fetching is disabled")
-    ap.add_argument("--weights-sha256", default="f1643330e34bffaa4f7e3a5f7dd9205fb4019d76e5b9b6cb598232360d22f384")
     args = ap.parse_args()
-    from contract_io import sha256
     from runtime_support import verify_vendor
     if args.allow_unpinned:
         ap.error("Release runners require a validated source manifest")
@@ -174,8 +172,8 @@ def main():
         sys.exit(2)
 
     files = sorted(Path(args.result_path).joinpath("picks_phasenet_plus").rglob("*.csv"))
-    receipt = {"status": "PASS", "device": args.device,
-               "files": {str(p.relative_to(args.result_path)): sha256(p) for p in files}}
+    receipt = {"status": "PASS", "device": args.device, "output_csv_files": len(files),
+               "min_prob": args.min_prob}
     Path(args.result_path).joinpath("execution_receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 
 if __name__ == "__main__":

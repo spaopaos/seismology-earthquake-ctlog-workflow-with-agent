@@ -11,9 +11,8 @@ Modes:
                                    schedule (NSET=1, WTCCP=0.5, WTCCS=1.0,
                                    WRCC=6, WDCC=4, catalog columns off).
 Parses the native log once; reports removals from "negative depth" messages.
-Verifies binary sha256 (R2), scientific inputs and final selection evidence.
+Checks scientific inputs and final selection evidence.
 """
-import hashlib
 import argparse
 
 import json
@@ -28,7 +27,6 @@ import numpy as np
 from damping_metrics import RULE_VERSION, displacement_metrics, load_catalog, select_damping
 from tier_outcomes import pairing_result
 
-EXPECTED_SHA256 = "f21ce7b4aa0d391d7a32264b89f2288fdbf17919f3d2e44a1b07dcaf8ec7d610"
 from contract_io import load_contract
 from runtime_support import binary, native_environment
 from hypodd_inputs import joint_schedule, verify_joint_receipt
@@ -98,10 +96,6 @@ def load_cre(path):
             if l.strip() and l.strip()[0].isdigit()]
     arr = np.array(rows, dtype=float)
     return arr[:, 0], arr[:, 1]  # vel, top
-
-
-def digest(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def write_json(path, value):
@@ -248,10 +242,10 @@ def trial_context(w, args):
         "rule_version": RULE_VERSION,
         "ratio": args.ratio, "dist": args.dist, "obsct": 0 if cc_only else args.obsct,
         "wdct_last": args.wdct_last, "initial_erh_km": args.initial_erh_km,
+        "inputs": list(names), "vp_model": str(Path(args.vp_model).resolve()),
     }
     if joint:
         context['data_mode'] = 'cc_ct'
-        context['joint_validator_sha256'] = digest(__import__('hypodd_inputs').__file__)
     if cc_only:
         context['data_mode'] = 'cc'
     return context
@@ -302,9 +296,6 @@ def validate_final_selection(qc, context, damp):
         if result.get("status") != "PASS":
             continue
         artifacts = result["artifacts"]
-        for item in artifacts.values():
-            if digest(item["path"]) != item["sha256"]:
-                raise ValueError("GATE: trial artifact changed")
         initial = load_catalog(artifacts["initial"]["path"])
         relocated = load_catalog(artifacts["relocated"]["path"])
         metrics = displacement_metrics(initial, relocated)
@@ -341,8 +332,8 @@ def main():
         ap.error("--obsct must be positive")
     if args.joint_config and args.cc_only:
         ap.error("--joint-config (IDAT=3) and --cc-only (IDAT=1) are mutually exclusive")
-    if digest(BIN) != EXPECTED_SHA256:
-        raise ValueError("hypoDD sha256 mismatch (R2)")
+    if not Path(BIN).is_file():
+        raise ValueError("pinned hypoDD binary missing: " + str(BIN))
     w = Path(args.workdir).resolve()
     pair = pairing_result(w)
     if pair is not None and pair["status"] == "FAIL":

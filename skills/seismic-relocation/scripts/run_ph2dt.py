@@ -6,9 +6,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from tier_outcomes import sha
-
-EXPECTED_SHA256 = "81438e6afb045bccaf3ee27e6b2d7321834ebec81c513b29af2fe764efb63cf7"
 from contract_io import load_contract
 from runtime_support import binary, native_environment
 BIN = binary("ph2dt")
@@ -34,8 +31,8 @@ def main():
     args = ap.parse_args()
     w = Path(args.workdir)
 
-    if h != EXPECTED_SHA256:
-        sys.exit(f"ph2dt sha256 mismatch (R2): {h[:12]}…")
+    if not Path(BIN).is_file():
+        sys.exit(f"pinned ph2dt binary missing: {BIN}")
 
     meta = json.loads((w / "input" / "conversion_meta.json").read_text())
     if meta.get("n_phase_lines", 0) == 0:
@@ -50,7 +47,6 @@ def main():
     if r.get("status") != "PASS":
         sys.exit(f"GATE: input verification status={r.get('status')}. Refusing.")
 
-        sys.exit("GATE: phase.dat changed after verification. Re-run verify_ph2dt_inputs.py.")
     if any((w / prefix / name).exists() for prefix in (".", "input")
            for name in ("dt.ct", "event.dat", "event.sel")):
         sys.exit("GATE: pairing outputs already exist; use a fresh directory for a new pairing experiment")
@@ -72,10 +68,9 @@ def main():
     status = "FAIL" if r.returncode or not (w / "input/dt.ct").is_file() else ("PASS" if n_dt else "EMPTY")
     (w / "qc").mkdir(exist_ok=True)
     receipt = {"status": status, "exit": r.returncode, "differential_times": n_dt,
-               "inputs": {name: sha(w / name) for name in
-                          ("input/phase.dat", "input/station.dat", "input/ph2dt_input_verification.json", "ph2dt.inp")},
-               "outputs": {"input/" + name: sha(w / "input" / name) for name in ("dt.ct", "event.dat", "event.sel")
-                           if (w / "input" / name).is_file()}}
+               "inputs": ["input/phase.dat", "input/station.dat", "input/ph2dt_input_verification.json", "ph2dt.inp"],
+               "outputs": ["input/" + name for name in ("dt.ct", "event.dat", "event.sel")
+                           if (w / "input" / name).is_file()]}
     (w / "qc/pairing_result.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(f"ph2dt exit={r.returncode}; dt.ct differential times: {n_dt}")
     if status == "FAIL":

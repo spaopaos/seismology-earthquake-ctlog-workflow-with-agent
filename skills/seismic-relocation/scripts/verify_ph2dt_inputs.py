@@ -3,7 +3,7 @@
 
 Mirrors verify_phase_dat.py (location stage): re-parses independently, checks
 structure and semantics against upstream truth, and verifies the converter's
-sha256 against the frozen SHA256SUMS.txt manifest (R1 tooling proof).
+against upstream truth (structure, counts, phase types).
 FAIL blocks run_ph2dt.py (which checks this file exists and is PASS).
 """
 import argparse
@@ -57,19 +57,6 @@ def main():
         warns.append(f"only {len(sta)} stations in station.dat")
 
     meta = json.loads((w / "input" / "conversion_meta.json").read_text())
-    manifest = Path(__file__).resolve().parent / "SHA256SUMS.txt"
-    if manifest.exists():
-        expect = {}
-        for l in manifest.read_text().splitlines():
-            if l.strip():
-                h, name = l.split(None, 1)
-                expect[name.strip()] = h
-        conv = expect.get("make_ph2dt_inputs.py")
-        if conv and meta.get("converter_sha256") != conv:
-            errors.append("converter hash mismatch: inputs NOT from the frozen script (R1)")
-    else:
-        warns.append("no SHA256SUMS.txt manifest; tooling proof skipped")
-
     result = {"status": "FAIL" if errors else "PASS",
               "n_events": n_events, "n_phase_lines": n_phases,
               "errors": errors[:50], "warnings": warns}

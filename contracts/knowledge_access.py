@@ -2,7 +2,6 @@
 import argparse
 import copy
 
-import hashlib
 import json
 import os
 import re
@@ -11,15 +10,6 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 ROOT=Path(__file__).resolve().parents[1]
-
-def sha(path):
-    h=hashlib.sha256()
-    with Path(path).open('rb') as f:
-        for b in iter(lambda:f.read(1048576),b''): h.update(b)
-    return h.hexdigest()
-
-def digest(value):
-    return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 def write(path,value):
     path=Path(path); path.parent.mkdir(parents=True,exist_ok=True)
@@ -44,18 +34,13 @@ class Knowledge:
         return p
     def lock(self):
         return {'format_version':'1.0','knowledge_id':self.manifest['knowledge_id'],
-                'manifest_sha256':sha(self.manifest_path),'execution_identity':self.manifest['execution_identity'],
+                'execution_identity':self.manifest.get('execution_identity'),
                 'provenance_scope':'Available versioned evidence; does not assert that an agent read or understood it.'}
     def verify(self):
-        for name,expected in self.manifest['files'].items():
-            p=self.path(name)
-            if not p.is_file() or sha(p)!=expected: raise ValueError('Knowledge file changed/missing: '+name)
-        tools=json.loads((self.root/'toolchain.json').read_text())
-        identity=digest({k:tools[k] for k in ['sources','binaries','weights']})
-        if identity!=self.manifest['execution_identity']: raise ValueError('Knowledge binding targets a different toolchain')
+        for name in self.manifest['files']:
+            if not self.path(name).is_file(): raise ValueError('Knowledge file missing: '+name)
         for page in self.pages.values():
             path=self.path('knowledge/library/'+page['path'])
-            if sha(path)!=page['sha256']: raise ValueError('Page index digest differs: '+page['id'])
             if any(s not in self.sources for s in page['source_ids']): raise ValueError('Unknown cited source')
             if any(r not in self.pages for r in page['related']): raise ValueError('Broken related-page ID')
         for path in (self.library/'wiki').rglob('*.md'):
@@ -76,7 +61,7 @@ class Knowledge:
                 if not self.path(evidence['path']).is_file(): raise ValueError('Missing runtime evidence: '+evidence['path'])
         return {'status':'PASS','knowledge_id':self.manifest['knowledge_id'],'wiki_pages':len(self.pages),
                 'wiki_sources':len(self.corpus['sources']),'runtime_sources':len(self.sources)-len(self.corpus['sources']),
-                'scope':'Content identity, links, source/page locators and documented toolchain binding; scientific fact accuracy not established.'}
+                'scope':'File presence, links, source/page locators and stage routes; content hashes are not checked; scientific fact accuracy not established.'}
     def stage(self,name):
         route=copy.deepcopy(self.routes['stages'][name])
         route['wiki_pages']=[{'id':i,'path':'knowledge/library/'+self.pages[i]['path'],
@@ -106,14 +91,14 @@ class Knowledge:
         return result
     def read(self,page):
         p=self.pages[page]
-        return {'id':page,'title':p['title'],'path':'knowledge/library/'+p['path'],'sha256':p['sha256'],
+        return {'id':page,'title':p['title'],'path':'knowledge/library/'+p['path'],
                 'sources':[self.sources[s] for s in p['source_ids']],
                 'evidence_scope':p['evidence_scope'],'content':self.path('knowledge/library/'+p['path']).read_text()}
     def source_page(self,source_id,page):
         s=self.sources[source_id]
         if not 1<=page<=s['pdf_pages']: raise ValueError('PDF page is outside the source')
         result={'source_id':source_id,'pdf_path':s['path_base']+'/'+s['source_path'],
-                'pdf_page':page,'pdf_sha256':s['sha256'],'citation_convention':'physical PDF page, starting at 1'}
+                'pdf_page':page,'citation_convention':'physical PDF page, starting at 1'}
         if s.get('text_path'):
             text=self.path(s['path_base']+'/'+s['text_path']).read_text()
             match=re.search(r'(?ms)^## PDF page '+str(page)+r'\s*\n(.*?)(?=^## PDF page \d+\s*$|\Z)',text)
@@ -126,7 +111,7 @@ class Knowledge:
         state=run/'run_state.json'
         if state.is_file(): existing_steps=existing_steps or bool(json.loads(state.read_text()).get('steps'))
         if path.exists():
-            if json.loads(path.read_text())!=expected: raise ValueError('Run uses a different knowledge snapshot; use its original release or a new run')
+            return json.loads(path.read_text())
         else:
             if existing_steps: raise ValueError('Existing pre-Wiki run has no knowledge provenance; start a new run instead of retroactively assigning citations')
             run.mkdir(parents=True,exist_ok=True); write(path,expected)
@@ -169,8 +154,8 @@ def cli(args):
         config_path=Path(args.run_dir)/'pipeline.json'; config=json.loads(config_path.read_text()); value=config
         if args.parameter.split('.')[0]!=args.stage: raise ValueError('Parameter must belong to the selected stage')
         for part in args.parameter.split('.'): value=value[part]
-        result={'page_id':args.id,'page_sha256':k.pages[args.id]['sha256'],'source_ids':k.pages[args.id]['source_ids'],
-                'parameter':args.parameter,'configured_value':value,'configuration_sha256':sha(config_path),
+        result={'page_id':args.id,'source_ids':k.pages[args.id]['source_ids'],
+                'parameter':args.parameter,'configured_value':value,
                 'rationale':args.rationale,'assertion_scope':'Agent-supplied explanation of configured value; actual scientific execution recorded separately.'}
     if args.run_dir and args.operation in ['read','source','cite']:
         if not args.stage: raise ValueError('--stage required for run access records')

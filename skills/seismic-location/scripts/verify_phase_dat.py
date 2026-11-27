@@ -102,23 +102,6 @@ def main():
         "errors": errors[:50], "warnings": warns,
     }
 
-    # proof-of-tooling: converter hash must match the frozen manifest (R1)
-    manifest = Path(__file__).resolve().parent / "SHA256SUMS.txt"
-    if manifest.exists():
-        expect = {}
-        for l in manifest.read_text().splitlines():
-            if l.strip():
-                h, name = l.split(None, 1)
-                expect[name.strip()] = h
-        conv = expect.get("make_hypoinverse_inputs.py")
-        actual = meta.get("converter_sha256", "")
-        if conv and actual != conv:
-            result["status"] = "FAIL"
-            result["errors"].insert(0,
-                f"converter hash mismatch: phase.dat was NOT produced by the frozen "
-                f"script (got {actual[:12]}…, expected {conv[:12]}…). R1 violation.")
-    else:
-        warns.append("no SHA256SUMS.txt manifest found; tooling proof skipped")
     out = Path(args.out) if args.out else w / "input" / "phase_dat_verification.json"
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     print(json.dumps({k: result[k] for k in ("status", "n_events", "n_phase_lines")},

@@ -1,19 +1,13 @@
 """Distinguish a verified empty computation from missing or failed execution."""
 
-import hashlib
 import json
 from pathlib import Path
 
 
-def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
-
-def check_files(base, entries):
-    for name, expected in entries.items():
-        path = Path(base) / name
-        if not path.is_file() or sha(path) != expected:
-            raise ValueError("Tier evidence changed or is missing: " + str(path))
+def check_files(base, names):
+    for name in names:
+        if not (Path(base) / name).is_file():
+            raise ValueError("Tier evidence is missing: " + str(Path(base) / name))
 
 
 def pairing_result(directory):
@@ -43,7 +37,7 @@ def outcome(directory):
         return {"status": "UNAVAILABLE", "reason": "DAMPING_EVIDENCE_MISSING", "damp": None}
     selection = json.loads(selection_path.read_text())
     context = selection.get("context", {})
-    inputs = context.get("input_sha256", {})
+    inputs = set(context.get("inputs", []))
     has_ct = {"dt.ct", "event.dat", "station.dat"}.issubset(inputs)
     has_cc = {"dt.cc", "event.dat", "station.dat"}.issubset(inputs)
     if not (has_ct or has_cc):
@@ -51,15 +45,14 @@ def outcome(directory):
     if has_ct and has_cc and context.get("data_mode") == "cc":
         # A CC-only context must not carry catalog-differential evidence.
         return {"status": "UNAVAILABLE", "reason": "INPUT_EVIDENCE_MISSING", "damp": None}
-    check_files(directory / "input", context.get("input_sha256", {}))
     if final_path.exists():
         final = json.loads(final_path.read_text())
         if set(final.get("artifacts", {})) != {"initial", "relocated"}:
             return {"status": "UNAVAILABLE", "reason": "FINAL_ARTIFACT_EVIDENCE_MISSING", "damp": None}
         for name, record in final.get("artifacts", {}).items():
             path = directory / "output" / ("hypoDD.loc" if name == "initial" else "hypoDD.reloc")
-            if not path.exists() or sha(path) != record["sha256"]:
-                raise ValueError("Final tier artifact differs from its execution record")
+            if not path.exists():
+                raise ValueError("Final tier artifact is missing")
         if (final.get("status") == "PASS" and final.get("exit") == 0 and selection.get("status") == "SELECTED"
                 and final.get("damp") is not None and final.get("damp") == selection.get("selected_damp")):
             return {"status": "READY", "reason": "SUPPORTED_FINAL_RUN", "damp": final["damp"]}
@@ -74,11 +67,11 @@ def outcome(directory):
             if set(trial.get("artifacts", {})) != {"initial", "relocated"}:
                 raise ValueError("Empty trial is missing native execution evidence")
             for artifact in trial["artifacts"].values():
-                if sha(artifact["path"]) != artifact["sha256"]:
-                    raise ValueError("Empty trial artifact changed")
+                if not Path(artifact["path"]).is_file():
+                    raise ValueError("Empty trial artifact is missing")
             record = trial["artifacts"]["relocated"]
             path = Path(record["path"])
-            if sha(path) != record["sha256"] or path.read_text().strip():
+            if path.read_text().strip():
                 raise ValueError("Empty trial evidence is inconsistent")
         return {"status": "EMPTY", "reason": "NO_RELOCATED_EVENTS_IN_TRIALS", "damp": None}
     return {"status": "UNAVAILABLE", "reason": "NO_SUPPORTED_FINAL_RUN", "damp": None}

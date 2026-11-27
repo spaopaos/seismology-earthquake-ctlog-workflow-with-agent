@@ -4,7 +4,6 @@ Paths are relative to the contract file. The scientific environment needs only
 the standard library; full JSON Schema validation may use the user-selected
 existing interpreter in validator_config.json.
 """
-import hashlib
 import argparse
 import copy
 import csv
@@ -30,13 +29,6 @@ NAMES = {"preprocess": "downstream_contract.json", "picking": "picking.contract.
 def supported_version(doc):
     expected = "2.1" if doc.get("stage") == "detection" else VERSION
     return doc.get("contract_version") == expected
-
-
-    digest = hashlib.sha256()
-    with open(path, "rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def now():
@@ -359,8 +351,7 @@ def contract_file(path, stage):
     current = path.parent / "contract.v2.json"
     if current.is_file():
         revision = json.loads(current.read_text())
-        provenance = revision.get("provenance", {})
-        if provenance.get("source_contract_sha256") == sha256(path):
+        if revision.get("provenance", {}).get("source_contract_path") == path.name:
             return current
     raise ValueError("Legacy or stale contract requires explicit migration: " + str(path))
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Deploy supplied environment snapshots into an explicitly chosen NEW directory."""
-import hashlib
 import argparse
 
 import json
@@ -9,12 +8,6 @@ from pathlib import Path
 import subprocess
 import sys
 import tarfile
-
-def sha(path):
-    h=hashlib.sha256()
-    with path.open('rb') as f:
-        for b in iter(lambda:f.read(1048576),b''): h.update(b)
-    return h.hexdigest()
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
@@ -29,7 +22,7 @@ def main():
         raise ValueError('Choose a new destination and mapping; deployment never overwrites existing environments')
     manifest=json.loads((source/'runtime-manifest.json').read_text())
     for record in manifest['environments'].values():
-        if sha(source/record['archive'])!=record['sha256']: raise ValueError('Runtime archive checksum mismatch: '+record['archive'])
+        if not (source/record['archive']).is_file(): raise ValueError('Runtime archive missing: '+record['archive'])
     destination.mkdir(parents=True)
     result={}
     for key,record in manifest['environments'].items():

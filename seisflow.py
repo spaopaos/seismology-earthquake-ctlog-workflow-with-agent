@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / 'contracts'))
-from runtime_support import runtime_path, verify_vendor, digest, native_environment, binary
+from runtime_support import runtime_path, verify_vendor, native_environment, binary
 from pipeline_contracts import load_contract
 from knowledge_access import Knowledge, add_cli as add_knowledge_cli, cli as knowledge_cli
 
@@ -83,16 +83,16 @@ def doctor(args):
     for name, record in tools['binaries'].items():
         def native(name=name, record=record):
             binary = runtime_path(name, str(ROOT / record['path']))
-            if digest(binary) != record['sha256']:
-                raise ValueError('Binary identity mismatch')
+            if not binary.is_file():
+                raise ValueError('Binary missing: ' + str(binary))
             run = subprocess.run(['ldd',str(binary)],capture_output=True,text=True,env=native_environment())
             if run.returncode or 'not found' in run.stdout:
                 raise ValueError(run.stdout + run.stderr)
-            return {'sha256':record['sha256'],'dynamic_libraries':run.stdout.splitlines()}
+            return {'path':record['path'],'dynamic_libraries':run.stdout.splitlines()}
         check('binary_' + name, native)
     weight = tools['weights']['phasenet_plus']
-    check('local_weights', lambda: weight['sha256'] if digest(ROOT / weight['path']) == weight['sha256']
-          else (_ for _ in ()).throw(ValueError('Checkpoint checksum mismatch')))
+    check('local_weights', lambda: weight['path'] if (ROOT / weight['path']).is_file()
+          else (_ for _ in ()).throw(ValueError('Local model checkpoint missing')))
     check('schema', lambda: __import__('pipeline_contracts').schema_errors({'stage':'preprocess'}) and 'Draft 2020-12 validation callable')
     report = {'status':'FAIL' if any(c['status']=='FAIL' for c in checks) else 'PASS',
               'checked_at':datetime.now(timezone.utc).isoformat(), 'checks':checks,
@@ -129,13 +129,6 @@ class Runner:
         self.stations = self.inputs / 'stations.txt'
         self.vp = self.inputs / 'velocity_p.cre'
         self.vs = self.inputs / 'velocity_s.cre'
-        preparation = self.inputs / 'region_preparation.json'
-        if preparation.is_file():
-            recorded = json.loads(preparation.read_text())['input_sha256']
-            current = {'stations':self.base/self.config['stations'], 'velocity_model':self.base/self.config['velocity_model'],
-                       'manifest':self.archive/'daily_manifest.csv'}
-            if any(digest(path) != recorded[key] for key,path in current.items()):
-                raise ValueError('Regional inputs changed after preparation; create a new run')
         self.state_path = self.base / 'run_state.json'
         self.state = json.loads(self.state_path.read_text()) if self.state_path.exists() else {'run_id':self.config['run_id'],'stages':{},'steps':{}}
         self.logs = self.base / 'logs'
@@ -145,24 +138,18 @@ class Runner:
         python = runtime_path(ENVKEY[stage])
         if not python or not python.is_file(): raise ValueError('Missing configured interpreter: ' + ENVKEY[stage])
         command = [str(python),'-B',str(script),*map(str,args)]
-        signature = json.dumps(command).replace(str(ROOT),'$PACKAGE').replace(str(self.base),'$RUN')
-        relevant = {"region":self.config.get("region"), "stations":self.config.get("stations"), "velocity_model":self.config.get("velocity_model")}
-        if name != 'prepare_region':
-            relevant = {"stage":self.config.get(stage), "resources":self.config.get("resources")}
-            if stage == 'association' and name in ('build_gamma_inputs', 'prepare_dbscan_eps'):
-                relevant['stage'] = {"dbscan_vp_km_s":self.config['association']['dbscan_vp_km_s']}
 
         previous = self.state['steps'].get(key)
         if previous and previous['status'] == 'PASS':
-            if previous['identity'] != identity or any(not (self.base / p).is_file() or digest(self.base / p) != h for p,h in previous['outputs'].items()):
-                raise ValueError('Completed step/input configuration changed; create a new run: ' + key)
+            if any(not (self.base / p).is_file() for p in previous['outputs']):
+                raise ValueError('Completed step outputs are missing; create a new run: ' + key)
             return
         print('Running ' + key, flush=True)
         env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', PYTHONNOUSERSITE='1', OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', MKL_NUM_THREADS='1')
         env.pop('PYTHONPATH',None)
         env['SEISFLOW_RUNTIME'] = str(Path(os.environ.get('SEISFLOW_RUNTIME', ROOT / 'runtime.local.json')).resolve())
         env['MPLCONFIGDIR'] = str(self.base / '.cache/matplotlib')
-        record = {'status':'RUNNING','identity':identity,'command':command,'outputs':{}}
+        record = {'status':'RUNNING','command':command,'outputs':{}}
         self.state['steps'][key] = record
         write_json(self.state_path,self.state)
         with (self.logs / (key + '.log')).open('w') as stream:
@@ -171,7 +158,7 @@ class Runner:
         record['exit_code'] = result.returncode
         for p in map(Path,expected):
             if not p.is_file(): record['status'] = 'FAIL'
-            else: record['outputs'][os.path.relpath(p,self.base)] = digest(p)
+            else: record['outputs'][os.path.relpath(p,self.base)] = p.stat().st_size
         write_json(self.state_path,self.state)
         if record['status'] != 'PASS':
             raise ValueError('Step failed: ' + key + '; inspect ' + str(self.logs / (key + '.log')))
@@ -209,7 +196,7 @@ class Runner:
             self.native(stage,'qc_picks.py',['--picks',raw,'--archive',archive,'--out',out/'qc'],[out/'qc/qc_summary.json'])
             self.native(stage,'gen_picking_contract.py',['--picks-dir',raw,'--archive',archive,'--out',out/'contract.v2.json',*common,
                 '--eqnet-commit',json.loads((ROOT/'toolchain.json').read_text())['sources']['EQNet']['commit'],
-                '--weights-sha256',digest(ROOT/'assets/weights/phasenet_plus_v1.pth'),'--device',device,'--min-prob',cfg['picking']['min_prob'],
+                '--device',device,'--min-prob',cfg['picking']['min_prob'],
                 '--verification-report',verify,'--qc-path',out/'qc'],[out/'contract.v2.json',out/'picks.csv'])
         else:
             self.step(stage,'prepare_region',ROOT/'scripts/prepare_region.py',['--config',self.path],

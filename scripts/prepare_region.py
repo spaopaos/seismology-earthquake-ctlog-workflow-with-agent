@@ -10,7 +10,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'contracts'))
 from station_identity import resolve_groups
 from archive_interface import archive_records
-from pipeline_contracts import sha256
 
 def load_model(path):
     path = Path(path)
@@ -55,8 +54,7 @@ def main():
         column = 'v' + phase + '_km_s'
         lines = ['REGIONAL ' + phase.upper()] + [f'{v:.8g} {z:.8g}' for z,v in zip(model.depth_top_km, model[column])]
         (output / ('velocity_' + phase + '.cre')).write_text('\n'.join(lines) + '\n')
-    receipt = {'input_sha256': {'stations': sha256(station_path), 'velocity_model': sha256(model_path),
-                               'manifest': sha256(archive / 'daily_manifest.csv')},
+    receipt = {'stations': str(station_path), 'velocity_model': str(model_path),
                'groups': len(stations), 'layers': len(model), 'region': region,
                'model_vp_vs_by_layer': (model.vp_km_s / model.vs_km_s).tolist()}
     (output / 'region_preparation.json').write_text(json.dumps(receipt, indent=2) + '\n')

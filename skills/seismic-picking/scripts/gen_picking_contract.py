@@ -27,7 +27,6 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--eqnet-commit", required=True)
-    ap.add_argument("--weights-sha256", default="")
     ap.add_argument("--device", default="unknown")
     ap.add_argument("--min-prob", type=float, default=0.3)
     ap.add_argument("--mode", default="whole_day", choices=["whole_day", "chunked"])
